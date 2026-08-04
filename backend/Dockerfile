@@ -5,16 +5,13 @@ FROM python:3.12-slim AS builder
 
 WORKDIR /build
 
-# Copy only project metadata first for better layer caching.
+# Copy project metadata and app code to build wheels.
 COPY pyproject.toml ./
+COPY app ./app
 
 # Resolve dependencies and build wheels into /wheels.
-RUN pip install --upgrade pip build && \
-    pip wheel --wheel-dir /wheels \
-        fastapi \
-        "uvicorn[standard]" \
-        pydantic-settings \
-        supabase
+RUN pip install --upgrade pip && \
+    pip wheel --wheel-dir /wheels .
 
 # ---- Stage 2: runtime ----
 FROM python:3.12-slim AS runtime
@@ -26,11 +23,7 @@ WORKDIR /app
 
 # Install prebuilt wheels (no build toolchain in the final image).
 COPY --from=builder /wheels /wheels
-RUN pip install --no-cache-dir --no-index --find-links=/wheels \
-        fastapi \
-        "uvicorn[standard]" \
-        pydantic-settings \
-        supabase && \
+RUN pip install --no-cache-dir /wheels/* && \
     rm -rf /wheels
 
 # Application code.
