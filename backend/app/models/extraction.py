@@ -1,6 +1,6 @@
 """Pydantic schemas for AI placement data extraction (PRD Section 3.3)."""
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -44,3 +44,21 @@ class IngestTextRequest(BaseModel):
     """Request payload for text-based ingestion endpoint."""
 
     text: str
+
+
+class UpdateResult(BaseModel):
+    """Pydantic schema for diff extraction output (PRD Section 3.3)."""
+
+    new_dates: list[DetectedDate] = Field(default_factory=list)
+    field_changes: dict[str, Any] = Field(default_factory=dict)
+    summary_of_changes: str
+
+
+class DriveUpdateDraftResponse(BaseModel):
+    """Draft proposed-changes returned by POST /drives/{id}/updates."""
+
+    update_id: str
+    drive_id: str
+    update_result: UpdateResult
+    raw_text: str | None = None
+    source_type: str = "whatsapp_text"

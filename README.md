@@ -24,6 +24,11 @@ A production-grade monorepo for tracking college placement drives, automated dat
 - **Multi-Table Database Persistence**: Writes records atomically across `companies` (if new), `drives`, `drive_dates` (normalizing `is_primary_deadline=true` on exactly one primary deadline), `applications` (default status `not_applied`), and `drive_documents`.
 - **Document Attachment Storage**: Uploads attached PDF/DOCX files to Supabase Storage bucket `drive-documents` with `drive_update_id = NULL`.
 
+### 🔄 Post-Save Updates & Timeline (`POST /drives/{id}/updates` & `PATCH /drives/{id}/updates/{update_id}/confirm`)
+- **Diff-Oriented Update Extraction (`POST /drives/{id}/updates`)**: Accepts follow-up raw text or uploaded documents (`.pdf`/`.docx`). Automatically generates a compact summary of the drive's existing state on record (`existing_drive_summary`) and runs the LLM Diff Prompt (PRD Section 3.2) to extract only new or changed fields (`UpdateResult` draft) without modifying the database directly.
+- **Human Confirmation Gate**: Proposed update diffs (`new_dates` and `field_changes`) are returned as a draft for user confirmation before any database mutations occur.
+- **Confirm & Merge Endpoint (`PATCH /drives/{id}/updates/{update_id}/confirm`)**: Merges confirmed update additions by writing a `drive_updates` audit record, appending new `drive_dates` rows, applying confirmed field modifications to `drives`, and uploading follow-up document attachments to Supabase Storage linked to `drive_documents.drive_update_id`.
+
 ### 🛡️ Draft Confirmation Screen & Trust Gate (PRD 1.3.3 & Risk Mitigation #4)
 - **Interactive Draft Cards**: Renders AI extraction results into editable cards for company details, role title, CGPA cutoffs, branches, application links, and dates.
 - **Amber vs. Green Date Badges**:

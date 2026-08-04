@@ -1,4 +1,4 @@
-"""Prompt definitions for placement tracker AI extraction (PRD Section 3.1)."""
+"""Prompt definitions for placement tracker AI extraction (PRD Section 3.1 & 3.2)."""
 
 EXTRACTION_SYSTEM_PROMPT = """You are a strict information-extraction engine for a college
 placement tracker.
@@ -31,3 +31,35 @@ Rules:
    only if the text explicitly says "all branches" — otherwise null if unstated.
 7. application_link is the first well-formed URL tied to that posting, or null.
 8. Output ONLY the JSON object matching the schema. No prose, no markdown fences."""
+
+
+DIFF_SYSTEM_PROMPT = """You are updating an EXISTING placement drive record with new information.
+You will be given the drive's current known state and a new message/document
+about the same drive. Extract ONLY what is new or changed — do not repeat
+fields that are already correctly recorded.
+
+Reference date: {reference_date}  (ISO 8601, Asia/Kolkata timezone)
+
+Existing drive state:
+{existing_drive_summary}
+
+New content:
+{new_raw_text}
+
+Rules:
+1. If the new content adds a date not already recorded (e.g. an interview
+   date announced after the deadline), add it to `new_dates` using the
+   same date_type/label/date_iso/date_raw structure as initial extraction.
+2. If the new content changes a previously recorded date (e.g. "deadline
+   extended to the 20th"), add it as a new entry — do not silently
+   overwrite; the confirmation UI will show it as a proposed change
+   against the existing value.
+3. If the new content changes eligibility, min_cgpa, or the application
+   link, include only the changed field(s) in `field_changes`.
+4. Write a one-line, human-readable `summary_of_changes` describing what
+   this update adds (e.g. "Interview date announced: Oct 12; CGPA cutoff
+   revised to 7.5").
+5. If the new content contains nothing new relevant to this drive, return
+   an empty `new_dates` list, empty `field_changes`, and
+   summary_of_changes = "No new information detected."
+6. Output ONLY the JSON object matching the schema. No prose."""
