@@ -12,23 +12,31 @@
 -- ---------------------------------------------------------------------------
 CREATE EXTENSION IF NOT EXISTS pgcrypto;  -- provides gen_random_uuid()
 
-CREATE SCHEMA IF NOT EXISTS auth;
+DO $$
+BEGIN
+    -- On real Supabase, auth.users is already created and managed by Supabase Auth.
+    -- Only create mock auth schema and users table on local plain Postgres.
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = 'auth' AND table_name = 'users'
+    ) THEN
+        EXECUTE 'CREATE SCHEMA IF NOT EXISTS auth';
+        EXECUTE 'CREATE TABLE IF NOT EXISTS auth.users (id UUID PRIMARY KEY DEFAULT gen_random_uuid())';
+    END IF;
+END $$;
 
-CREATE TABLE IF NOT EXISTS auth.users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid()
-);
-
--- Provide auth.uid() only if it does not already exist (Supabase defines it).
-CREATE OR REPLACE FUNCTION auth.uid()
-RETURNS UUID
-LANGUAGE sql
-STABLE
-AS $$
-    SELECT NULLIF(
-        current_setting('request.jwt.claim.sub', true),
-        ''
-    )::uuid
-$$;
+DO $$
+BEGIN
+    -- On real Supabase, auth.uid() is provided natively.
+    -- Only define mock auth.uid() function if missing.
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_proc p 
+        JOIN pg_namespace n ON p.pronamespace = n.oid 
+        WHERE n.nspname = 'auth' AND p.proname = 'uid'
+    ) THEN
+        EXECUTE 'CREATE FUNCTION auth.uid() RETURNS UUID LANGUAGE sql STABLE AS ''SELECT NULLIF(current_setting(''''request.jwt.claim.sub'''', true), '''''''')::uuid''';
+    END IF;
+END $$;
 
 -- ---------------------------------------------------------------------------
 -- Tables
