@@ -16,6 +16,13 @@ class Settings(BaseSettings):
     supabase_anon_key: str = ""
     supabase_service_role_key: str = ""
 
+    # LLM Provider Configuration
+    llm_provider: str = "groq"
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "qwen2.5:7b"
+
     # Comma-separated list of allowed CORS origins for the frontend.
     cors_origins: str = "http://localhost:5173"
 
