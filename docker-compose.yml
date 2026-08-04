@@ -20,13 +20,22 @@ services:
   backend:
     build:
       context: ./backend
+    env_file:
+      - path: ./backend/.env
+        required: false
     environment:
-      # Points at the local Postgres for dev. Supabase env vars are read from
-      # a .env file if present; defaults are harmless placeholders.
+      # Points at local Postgres for dev. Supabase env vars read from .env if present.
       SUPABASE_URL: ${SUPABASE_URL:-http://localhost:54321}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-local-anon-key}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-local-service-role-key}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+
+      # LLM Provider & Extraction Settings
+      LLM_PROVIDER: ${LLM_PROVIDER:-groq}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
     ports:
       - "8000:8000"
     depends_on:
