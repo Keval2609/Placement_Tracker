@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import ingest
+from app.routers import drives, ingest
 
 settings = get_settings()
 
@@ -19,6 +19,7 @@ app.add_middleware(
 )
 
 app.include_router(ingest.router)
+app.include_router(drives.router)
 
 
 @app.get("/health")

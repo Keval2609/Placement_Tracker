@@ -17,6 +17,13 @@ A production-grade monorepo for tracking college placement drives, automated dat
 - **Retry & Graceful Fallback**: Retries once on provider/validation errors, then degrades to a 200 OK empty draft (`{"postings": []}`) so the frontend can fall back to a manual-entry form instead of crashing with a 500.
 - **Ingestion Audit Log**: Every ingestion attempt records source type (`whatsapp_text`, `pdf`, `docx`) and status (`success`, `partial`, `failed`) into the Supabase `ingestion_log` table.
 
+### 💾 Confirmed Drive Save & Backend Logic (`POST /drives`)
+- **Server-Side Deadline Enforcement (HTTP 422)**: Re-validates that at least one `application_deadline` date has `confirmed_by_user=true`. Directly rejects unconfirmed or missing deadline requests server-side even if bypassed by client calls.
+- **Deduplication Check (HTTP 409)**: Matches on `(company_id, role_title, primary_deadline_date)`. If an existing drive matches, responds with `409 Conflict` containing `existing_drive_id` so the user can view the existing drive instead of creating duplicates.
+- **Company-Type Classification & Tagging**: Automatically tags companies as `product`, `startup`, `service`, `psu`, or `unknown`. Ships with a static lookup list of 35+ well-known Indian companies (e.g. TCS, Infosys, Swiggy, Zomato, Razorpay, Google, ISRO) for fast zero-latency tagging, falling back to LLM classification for unknown company names.
+- **Multi-Table Database Persistence**: Writes records atomically across `companies` (if new), `drives`, `drive_dates` (normalizing `is_primary_deadline=true` on exactly one primary deadline), `applications` (default status `not_applied`), and `drive_documents`.
+- **Document Attachment Storage**: Uploads attached PDF/DOCX files to Supabase Storage bucket `drive-documents` with `drive_update_id = NULL`.
+
 ### 🛡️ Draft Confirmation Screen & Trust Gate (PRD 1.3.3 & Risk Mitigation #4)
 - **Interactive Draft Cards**: Renders AI extraction results into editable cards for company details, role title, CGPA cutoffs, branches, application links, and dates.
 - **Amber vs. Green Date Badges**:
