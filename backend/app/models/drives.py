@@ -137,3 +137,52 @@ class DriveDocumentsResponse(BaseModel):
 
     drive_id: str
     documents: list[DocumentItem] = Field(default_factory=list)
+
+
+class ApplicationStatusUpdate(BaseModel):
+    """Payload for PATCH /applications/{id}."""
+
+    status: Literal[
+        "not_applied",
+        "applied",
+        "oa",
+        "interview",
+        "offer",
+        "rejected",
+        "withdrawn",
+    ]
+    notes: str | None = None
+
+
+class ApplicationResponse(BaseModel):
+    """Response returned upon updating an application status."""
+
+    id: str
+    drive_id: str
+    status: str
+    applied_at: str | None = None
+    notes: str | None = None
+    updated_at: str
+
+
+class DriveCardResponse(BaseModel):
+    """Drive summary card representation for GET /drives main dashboard list."""
+
+    id: str
+    company_id: str
+    company_name: str
+    company_type: str
+    role_title: str
+    application_id: str
+    application_status: str = "not_applied"
+    applied_at: str | None = None
+    primary_deadline_iso: str
+    days_left: int
+    is_overdue: bool
+    created_at: str
+
+
+class DriveListResponse(BaseModel):
+    """Response wrapper for GET /drives."""
+
+    drives: list[DriveCardResponse] = Field(default_factory=list)

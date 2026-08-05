@@ -2,22 +2,24 @@ import { useState } from "react";
 import { IngestInput } from "./components/IngestInput";
 import { ConfirmationScreen } from "./components/ConfirmationScreen";
 import { DriveDetailPage } from "./components/DriveDetailPage";
-import { DrivePostingDraft, ExtractionAPIResponse } from "./types/extraction";
+import { DashboardPage } from "./components/DashboardPage";
+import { ExtractionAPIResponse } from "./types/extraction";
 
 function App() {
+  const [activeDriveId, setActiveDriveId] = useState<string | null>(null);
+  const [isIngesting, setIsIngesting] = useState<boolean>(false);
   const [extractionResult, setExtractionResult] =
     useState<ExtractionAPIResponse | null>(null);
-  const [activeDriveId, setActiveDriveId] = useState<string | null>(null);
-  const [savedPayload, setSavedPayload] = useState<DrivePostingDraft[] | null>(null);
 
-  const handleReset = () => {
+  const handleResetIngest = () => {
     setExtractionResult(null);
-    setSavedPayload(null);
+    setIsIngesting(false);
   };
 
-  const handleSaveConfirmedDraft = (postings: DrivePostingDraft[]) => {
-    console.log("Confirmed Draft Ready for DB persistence:", postings);
-    setSavedPayload(postings);
+  const handleOpenIngest = () => {
+    setActiveDriveId(null);
+    setExtractionResult(null);
+    setIsIngesting(true);
   };
 
   return (
@@ -25,7 +27,13 @@ function App() {
       {/* Header Bar */}
       <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-20">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveDriveId(null)}>
+          <div
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => {
+              setActiveDriveId(null);
+              setIsIngesting(false);
+            }}
+          >
             <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow-lg">
               PT
             </div>
@@ -34,24 +42,31 @@ function App() {
                 Placement Tracker
               </h1>
               <p className="text-[10px] text-slate-400">
-                Drive Details, Timeline & Document Repository
+                Placement Drives, Timeline & Application Tracking
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            {activeDriveId ? (
+            {activeDriveId || isIngesting ? (
               <button
                 type="button"
-                onClick={() => setActiveDriveId(null)}
+                onClick={() => {
+                  setActiveDriveId(null);
+                  setIsIngesting(false);
+                }}
                 className="text-xs px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
               >
-                + New Ingestion
+                ← Back to Dashboard
               </button>
             ) : (
-              <div className="text-xs px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-medium">
-                PRD Section 1.3.4 Detail View
-              </div>
+              <button
+                type="button"
+                onClick={handleOpenIngest}
+                className="text-xs px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow transition-colors"
+              >
+                + New Notice
+              </button>
             )}
           </div>
         </div>
@@ -64,26 +79,24 @@ function App() {
             driveId={activeDriveId}
             onBackToDashboard={() => setActiveDriveId(null)}
           />
-        ) : !extractionResult ? (
-          <IngestInput onExtractionSuccess={(data) => setExtractionResult(data)} />
+        ) : isIngesting ? (
+          !extractionResult ? (
+            <IngestInput onExtractionSuccess={(data) => setExtractionResult(data)} />
+          ) : (
+            <ConfirmationScreen
+              initialResult={extractionResult}
+              onReset={handleResetIngest}
+              onSaveConfirmedDraft={() => {
+                setIsIngesting(false);
+                setExtractionResult(null);
+              }}
+            />
+          )
         ) : (
-          <ConfirmationScreen
-            initialResult={extractionResult}
-            onReset={handleReset}
-            onSaveConfirmedDraft={handleSaveConfirmedDraft}
+          <DashboardPage
+            onSelectDrive={(id) => setActiveDriveId(id)}
+            onOpenIngest={handleOpenIngest}
           />
-        )}
-
-        {/* Debug Payload Viewer */}
-        {savedPayload && !activeDriveId && (
-          <div className="mt-8 p-4 bg-slate-900 border border-emerald-500/30 rounded-xl space-y-2">
-            <div className="text-xs font-bold text-emerald-400">
-              Confirmed Client Payload (POST /drives)
-            </div>
-            <pre className="text-[11px] font-mono bg-slate-950 p-3 rounded text-slate-300 overflow-x-auto max-h-60 border border-slate-800">
-              {JSON.stringify(savedPayload, null, 2)}
-            </pre>
-          </div>
         )}
       </main>
     </div>

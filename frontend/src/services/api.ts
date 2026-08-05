@@ -1,8 +1,11 @@
 import { ExtractionAPIResponse } from "../types/extraction";
 import {
+  ApplicationResponse,
+  ApplicationStatus,
   ConfirmUpdatePayload,
   ConfirmUpdateResponse,
   DocumentItem,
+  DriveCard,
   DriveDetail,
   DriveUpdateDraft,
   TimelineEvent,
@@ -40,6 +43,37 @@ export async function ingestFile(file: File): Promise<ExtractionAPIResponse> {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || `Server error (${response.status})`);
+  }
+
+  return response.json();
+}
+
+export async function fetchDashboardDrives(): Promise<DriveCard[]> {
+  const response = await fetch(`${API_BASE_URL}/drives`);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Failed fetching drives (${response.status})`);
+  }
+  const data = await response.json();
+  return data.drives || [];
+}
+
+export async function updateApplicationStatus(
+  applicationId: string,
+  status: ApplicationStatus,
+  notes?: string
+): Promise<ApplicationResponse> {
+  const response = await fetch(`${API_BASE_URL}/applications/${applicationId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ status, notes }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Failed updating status (${response.status})`);
   }
 
   return response.json();

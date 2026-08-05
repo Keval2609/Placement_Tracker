@@ -11,6 +11,7 @@ Handles:
    (`POST /drives/{id}/updates`), and confirmed update merge
    (`PATCH /drives/{id}/updates/{update_id}/confirm`).
 8. Detail page queries: GET drive detail, timeline events, and signed document URLs.
+9. Dashboard queries: GET drives list with days-left calculations and PATCH application status.
 """
 
 import logging
@@ -23,14 +24,17 @@ from fastapi import HTTPException, status
 
 from app.config import get_settings
 from app.models.drives import (
+    ApplicationResponse,
     ConfirmedDateItem,
     ConfirmUpdatePayload,
     ConfirmUpdateResponse,
     CreateDriveRequest,
     DocumentItem,
+    DriveCardResponse,
     DriveDateSaved,
     DriveDetailResponse,
     DriveDocumentsResponse,
+    DriveListResponse,
     DriveResponse,
     DriveTimelineResponse,
     TimelineEvent,
@@ -310,10 +314,12 @@ def save_drive(
         for d in payload.dates
     ]
 
+    app_id = str(uuid.uuid4())
     app_row = {
-        "id": str(uuid.uuid4()),
+        "id": app_id,
         "drive_id": drive_id,
         "status": "not_applied",
+        "applied_at": None,
         "notes": payload.application_link if payload.application_link else None,
         "updated_at": now_iso,
     }
@@ -360,6 +366,7 @@ def save_drive(
         _in_memory_drives[drive_id] = drive_row
         _in_memory_dates.extend(date_rows)
         _in_memory_applications[drive_id] = app_row
+        _in_memory_applications[app_id] = app_row
         if doc_row:
             _in_memory_documents.append(doc_row)
 
@@ -860,4 +867,207 @@ def get_drive_documents(drive_id: str, user_id: str) -> DriveDocumentsResponse:
     return DriveDocumentsResponse(
         drive_id=drive_id,
         documents=doc_items,
+    )
+
+
+def list_drives_for_dashboard(user_id: str) -> DriveListResponse:
+    """Fetch card list of all drives for main dashboard with days-left calculations."""
+    settings = get_settings()
+    now_dt = datetime.now(KOLKATA_TZ)
+    now_date = now_dt.date()
+
+    drives_data: list[dict[str, Any]] = []
+    companies_map: dict[str, dict[str, Any]] = {}
+    dates_data: list[dict[str, Any]] = []
+    apps_data: list[dict[str, Any]] = []
+
+    use_supabase = bool(settings.supabase_url and settings.supabase_service_role_key)
+
+    if use_supabase:
+        try:
+            supabase = get_service_client()
+            d_res = supabase.table("drives").select("*").eq("user_id", user_id).execute()
+            drives_data = d_res.data
+            if drives_data:
+                comp_ids = list({d["company_id"] for d in drives_data})
+                c_res = supabase.table("companies").select("*").in_("id", comp_ids).execute()
+                for c in c_res.data:
+                    companies_map[c["id"]] = c
+
+                drive_ids = [d["id"] for d in drives_data]
+                dates_res = (
+                    supabase.table("drive_dates")
+                    .select("*")
+                    .in_("drive_id", drive_ids)
+                    .execute()
+                )
+                dates_data = dates_res.data
+
+                apps_res = (
+                    supabase.table("applications")
+                    .select("*")
+                    .in_("drive_id", drive_ids)
+                    .execute()
+                )
+                apps_data = apps_res.data
+        except Exception as err:
+            logger.warning("Failed fetching drives for dashboard from Supabase: %s", err)
+            use_supabase = False
+
+    if not use_supabase:
+        drives_data = [d for d in _in_memory_drives.values() if d["user_id"] == user_id]
+        companies_map = _in_memory_companies
+        dates_data = _in_memory_dates
+        apps_data = list(_in_memory_applications.values())
+
+    cards: list[DriveCardResponse] = []
+
+    for d in drives_data:
+        did = d["id"]
+        comp = companies_map.get(d["company_id"], {})
+        cname = comp.get("name", "Unknown Company")
+        ctype = comp.get("company_type", "unknown")
+
+        app_info = next((a for a in apps_data if a["drive_id"] == did), {})
+        app_id = app_info.get("id", str(uuid.uuid4()))
+        app_status = app_info.get("status", "not_applied")
+        applied_at = app_info.get("applied_at")
+
+        # Find primary deadline
+        drive_dates = [dt for dt in dates_data if dt["drive_id"] == did]
+        primary_dt = next((dt for dt in drive_dates if dt.get("is_primary_deadline")), None)
+        if not primary_dt:
+            primary_dt = next(
+                (dt for dt in drive_dates if dt.get("date_type") == "application_deadline"),
+                None,
+            )
+
+        if not primary_dt and drive_dates:
+            primary_dt = drive_dates[0]
+
+        primary_iso = (
+            primary_dt["date_iso"]
+            if primary_dt
+            else datetime.now(KOLKATA_TZ).isoformat()
+        )
+
+        try:
+            deadline_dt = datetime.fromisoformat(primary_iso)
+            if deadline_dt.tzinfo is None:
+                deadline_dt = deadline_dt.replace(tzinfo=KOLKATA_TZ)
+            deadline_date = deadline_dt.date()
+            days_left = (deadline_date - now_date).days
+            is_overdue = deadline_date < now_date
+        except Exception:
+            days_left = 0
+            is_overdue = False
+
+        cards.append(
+            DriveCardResponse(
+                id=did,
+                company_id=d["company_id"],
+                company_name=cname,
+                company_type=ctype,
+                role_title=d.get("role_title", "Position"),
+                application_id=app_id,
+                application_status=app_status,
+                applied_at=applied_at,
+                primary_deadline_iso=primary_iso,
+                days_left=days_left,
+                is_overdue=is_overdue,
+                created_at=d.get("created_at", now_dt.isoformat()),
+            )
+        )
+
+    # Sort active drives (is_overdue=False) nearest deadline first, overdue at bottom
+    active_cards = [c for c in cards if not c.is_overdue]
+    overdue_cards = [c for c in cards if c.is_overdue]
+
+    active_cards.sort(key=lambda c: (c.days_left, c.primary_deadline_iso))
+    overdue_cards.sort(key=lambda c: (c.days_left, c.primary_deadline_iso))
+
+    return DriveListResponse(drives=[*active_cards, *overdue_cards])
+
+
+def update_application_status(
+    application_id: str,
+    new_status: str,
+    notes: str | None,
+    user_id: str,
+) -> ApplicationResponse:
+    """Update application status. Sets applied_at once if moving to 'applied' for the first time."""
+    settings = get_settings()
+    now_iso = datetime.now(KOLKATA_TZ).isoformat()
+
+    app_row: dict[str, Any] | None = None
+    use_supabase = bool(settings.supabase_url and settings.supabase_service_role_key)
+
+    if use_supabase:
+        try:
+            supabase = get_service_client()
+            res = (
+                supabase.table("applications")
+                .select("*")
+                .eq("id", application_id)
+                .execute()
+            )
+            if res.data:
+                app_row = res.data[0]
+        except Exception as err:
+            logger.warning("Failed fetching application from Supabase: %s", err)
+            use_supabase = False
+
+    if not app_row:
+        app_row = _in_memory_applications.get(application_id)
+        if not app_row:
+            # Fallback search by drive_id or value match
+            for a in _in_memory_applications.values():
+                if a.get("id") == application_id:
+                    app_row = a
+                    break
+
+    if not app_row:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Application record with ID {application_id} not found.",
+        )
+
+    existing_applied_at = app_row.get("applied_at")
+
+    # Set applied_at ONCE if moving to 'applied' and not set before
+    if new_status == "applied" and not existing_applied_at:
+        applied_at = now_iso
+    else:
+        applied_at = existing_applied_at
+
+    updates = {
+        "status": new_status,
+        "applied_at": applied_at,
+        "updated_at": now_iso,
+    }
+    if notes is not None:
+        updates["notes"] = notes
+
+    written_to_supabase = False
+    if use_supabase:
+        try:
+            supabase = get_service_client()
+            supabase.table("applications").update(updates).eq("id", application_id).execute()
+            written_to_supabase = True
+        except Exception as err:
+            logger.warning("Failed updating application in Supabase: %s", err)
+
+    if not written_to_supabase:
+        app_row.update(updates)
+        _in_memory_applications[application_id] = app_row
+        if "drive_id" in app_row:
+            _in_memory_applications[app_row["drive_id"]] = app_row
+
+    return ApplicationResponse(
+        id=application_id,
+        drive_id=app_row.get("drive_id", ""),
+        status=new_status,
+        applied_at=applied_at,
+        notes=app_row.get("notes"),
+        updated_at=now_iso,
     )

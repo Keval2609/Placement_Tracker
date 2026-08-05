@@ -1,4 +1,4 @@
-"""FastAPI router for /drives endpoints (creation, updates, timeline, documents)."""
+"""FastAPI router for /drives endpoints (creation, updates, timeline, documents, dashboard list)."""
 
 import json
 from typing import Annotated
@@ -13,6 +13,7 @@ from app.models.drives import (
     CreateDriveRequest,
     DriveDetailResponse,
     DriveDocumentsResponse,
+    DriveListResponse,
     DriveResponse,
     DriveTimelineResponse,
 )
@@ -23,10 +24,27 @@ from app.services.drive_service import (
     get_drive_detail,
     get_drive_documents,
     get_drive_timeline,
+    list_drives_for_dashboard,
     save_drive,
 )
 
 router = APIRouter(prefix="/drives", tags=["Drives"])
+
+
+@router.get(
+    "",
+    response_model=DriveListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="List all placement drives for home dashboard",
+    description=(
+        "Returns all drive cards for the user, sorted by nearest primary deadline ascending. "
+        "Calculates days_left and is_overdue for each drive card."
+    ),
+)
+async def fetch_dashboard_drives(
+    user_id: Annotated[str, Depends(get_current_user_id)],
+) -> DriveListResponse:
+    return list_drives_for_dashboard(user_id=user_id)
 
 
 @router.post(

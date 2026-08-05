@@ -9,6 +9,18 @@ A production-grade monorepo for tracking college placement drives, automated dat
 
 ## Current Architecture & Features
 
+### 🏠 Main Dashboard & Application Tracking (PRD Section 1.3.5)
+- **Home Dashboard (`GET /drives`)**: Displays placement drive cards sorted by nearest `is_primary_deadline` ascending.
+- **Closed / Overdue Section**: Overdue and past deadlines automatically sort into a visually distinct "Closed / Past Drives" section at the bottom of the dashboard.
+- **Persistent Filters (`localStorage`)**:
+  - **Company Type Multi-Select**: Filter by `product`, `startup`, `service`, `psu`, or `unknown`. Selections are persisted in `localStorage` under `pt_filter_company_types` to survive page reloads.
+  - **Application Status Multi-Select**: Filter by `not_applied`, `applied`, `oa`, `interview`, `offer`, `rejected`, or `withdrawn`.
+  - **Deadline Window Selector**: Filter by `next_7_days`, `next_30_days`, or `all`.
+- **Inline Status Updating (`PATCH /applications/{id}`)**:
+  - Direct status update dropdown on each card with unrestricted state transitions (allowing users to roll back or undo accidental changes).
+  - **Set-Once `applied_at` Timestamp**: Automatically sets `applied_at` when status transitions to `applied` for the first time, leaving `applied_at` untouched on subsequent status changes (e.g. `applied → interview`).
+- **Drive Navigation**: Tapping any drive card navigates directly to its detail page (`/drives/{id}`).
+
 ### 🤖 AI Extraction Pipeline (PRD Section 3.1 & 3.3)
 - **Raw Text Ingestion (`POST /ingest/text`)**: Parses unstructured WhatsApp placement messages and extracts job postings with dates typed as `application_deadline`, `oa`, `interview`, `ppt`, `result`, `joining`, `other`. Resolves relative dates anchored in IST (`Asia/Kolkata`).
 - **Document Ingestion (`POST /ingest/file`)**: Accepts multipart `.pdf` (via `pdfplumber`) and `.docx` (via `python-docx`) uploads up to 10MB, flattens table structures with `" | "` separators, and extracts structured posting drafts.
