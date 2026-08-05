@@ -75,3 +75,65 @@ class ConfirmUpdateResponse(BaseModel):
     summary_of_changes: str
     added_dates_count: int
     updated_fields_count: int
+
+
+class DriveDateSaved(ConfirmedDateItem):
+    """Saved drive date record with ID."""
+
+    id: str
+
+
+class DriveDetailResponse(BaseModel):
+    """Complete drive detail view response for GET /drives/{id}."""
+
+    id: str
+    company_id: str
+    company_name: str
+    company_type: str
+    role_title: str
+    eligibility_raw: str | None = None
+    min_cgpa: float | None = None
+    eligible_branches: list[str] = Field(default_factory=list)
+    application_link: str | None = None
+    status: str = "confirmed"
+    application_status: str = "not_applied"
+    created_at: str
+    dates: list[DriveDateSaved] = Field(default_factory=list)
+
+
+class TimelineEvent(BaseModel):
+    """Represents a single event in the drive's chronological timeline."""
+
+    id: str
+    event_type: Literal["initial_capture", "update"]
+    source_type: Literal["whatsapp_text", "pdf", "docx"] = "whatsapp_text"
+    summary_of_changes: str
+    raw_text: str | None = None
+    created_at: str
+
+
+class DriveTimelineResponse(BaseModel):
+    """Chronological timeline response for GET /drives/{id}/timeline."""
+
+    drive_id: str
+    timeline: list[TimelineEvent] = Field(default_factory=list)
+
+
+class DocumentItem(BaseModel):
+    """Represents an attached document for GET /drives/{id}/documents."""
+
+    id: str
+    drive_id: str
+    drive_update_id: str | None = None
+    original_filename: str
+    storage_path: str
+    uploaded_at: str
+    download_url: str
+    update_summary: str | None = None
+
+
+class DriveDocumentsResponse(BaseModel):
+    """Document list response for GET /drives/{id}/documents."""
+
+    drive_id: str
+    documents: list[DocumentItem] = Field(default_factory=list)

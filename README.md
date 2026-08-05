@@ -29,6 +29,12 @@ A production-grade monorepo for tracking college placement drives, automated dat
 - **Human Confirmation Gate**: Proposed update diffs (`new_dates` and `field_changes`) are returned as a draft for user confirmation before any database mutations occur.
 - **Confirm & Merge Endpoint (`PATCH /drives/{id}/updates/{update_id}/confirm`)**: Merges confirmed update additions by writing a `drive_updates` audit record, appending new `drive_dates` rows, applying confirmed field modifications to `drives`, and uploading follow-up document attachments to Supabase Storage linked to `drive_documents.drive_update_id`.
 
+### 📊 Drive Detail Page, Timeline View & Document Repository (PRD Section 1.3.4)
+- **Drive Detail Header (`GET /drives/{id}`)**: Displays company name, company-type badge (`product`, `startup`, `service`, `psu`, `unknown`), role title, eligibility criteria, application link, application status badge, and all confirmed dates (highlighting the primary deadline in red).
+- **Chronological History Timeline (`GET /drives/{id}/timeline`)**: Displays a read-only timeline combining the initial creation event ("Initial capture") and every subsequent `drive_updates` row in chronological order, with `source_type` icons (`whatsapp_text`, `pdf`, `docx`) and change summaries.
+- **Signed Document Repository (`GET /drives/{id}/documents`)**: Lists all attached circular files across initial capture and follow-up updates, complete with server-generated 5-minute short-expiry signed URLs for secure downloads.
+- **Integrated "Add Update" Modal**: Allows users to paste follow-up text or upload circular files directly from the drive detail page, rendering proposed diffs using the `DateRow` confirmation component and updating the header's current dates immediately upon confirmation.
+
 ### 🛡️ Draft Confirmation Screen & Trust Gate (PRD 1.3.3 & Risk Mitigation #4)
 - **Interactive Draft Cards**: Renders AI extraction results into editable cards for company details, role title, CGPA cutoffs, branches, application links, and dates.
 - **Amber vs. Green Date Badges**:

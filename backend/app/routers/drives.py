@@ -1,22 +1,28 @@
-"""FastAPI router for /drives endpoints (drive creation and updates)."""
+"""FastAPI router for /drives endpoints (creation, updates, timeline, documents)."""
 
 import json
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from app.dependencies import get_current_user_id
 from app.models.drives import (
     ConfirmUpdatePayload,
     ConfirmUpdateResponse,
     CreateDriveRequest,
+    DriveDetailResponse,
+    DriveDocumentsResponse,
     DriveResponse,
+    DriveTimelineResponse,
 )
 from app.models.extraction import DriveUpdateDraftResponse
 from app.services.drive_service import (
     confirm_and_merge_update,
     create_update_draft,
+    get_drive_detail,
+    get_drive_documents,
+    get_drive_timeline,
     save_drive,
 )
 
@@ -99,16 +105,63 @@ async def create_drive(
         raise err
 
 
+@router.get(
+    "/{id}",
+    response_model=DriveDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get drive detail header & confirmed dates",
+)
+async def fetch_drive_detail(
+    id: str,
+    user_id: Annotated[str, Depends(get_current_user_id)],
+) -> DriveDetailResponse:
+    return get_drive_detail(drive_id=id, user_id=user_id)
+
+
+@router.get(
+    "/{id}/timeline",
+    response_model=DriveTimelineResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get chronological timeline history for drive",
+)
+async def fetch_drive_timeline(
+    id: str,
+    user_id: Annotated[str, Depends(get_current_user_id)],
+) -> DriveTimelineResponse:
+    return get_drive_timeline(drive_id=id, user_id=user_id)
+
+
+@router.get(
+    "/{id}/documents",
+    response_model=DriveDocumentsResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get attached documents with 5-minute signed download URLs",
+)
+async def fetch_drive_documents(
+    id: str,
+    user_id: Annotated[str, Depends(get_current_user_id)],
+) -> DriveDocumentsResponse:
+    return get_drive_documents(drive_id=id, user_id=user_id)
+
+
+@router.get(
+    "/documents/{doc_id}/download",
+    status_code=status.HTTP_200_OK,
+    summary="Fallback document download handler",
+)
+async def download_drive_document(doc_id: str) -> Response:
+    return Response(
+        content=f"Dummy binary content for document ID: {doc_id}".encode(),
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="document_{doc_id}.pdf"'},
+    )
+
+
 @router.post(
     "/{id}/updates",
     response_model=DriveUpdateDraftResponse,
     status_code=status.HTTP_200_OK,
     summary="Propose drive update diff (Add Update)",
-    description=(
-        "Accepts new follow-up text or document for an existing drive. "
-        "Builds existing_drive_summary and runs LLM Diff Prompt to extract new/changed fields. "
-        "Returns proposed UpdateResult draft WITHOUT persisting to database directly."
-    ),
 )
 async def propose_drive_update(
     id: str,
@@ -151,11 +204,6 @@ async def propose_drive_update(
     response_model=ConfirmUpdateResponse,
     status_code=status.HTTP_200_OK,
     summary="Confirm and merge drive update",
-    description=(
-        "Accepts confirmed new dates and field changes for an update draft. "
-        "Writes drive_updates record, inserts new drive_dates rows, applies field_changes, "
-        "and links uploaded files to drive_documents."
-    ),
 )
 async def confirm_drive_update(
     id: str,

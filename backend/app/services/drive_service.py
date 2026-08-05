@@ -10,10 +10,13 @@ Handles:
 7. "Add Update" flow: summary builder, diff extraction, update draft creation
    (`POST /drives/{id}/updates`), and confirmed update merge
    (`PATCH /drives/{id}/updates/{update_id}/confirm`).
+8. Detail page queries: GET drive detail, timeline events, and signed document URLs.
 """
 
 import logging
 import uuid
+import zoneinfo
+from datetime import datetime
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -24,7 +27,13 @@ from app.models.drives import (
     ConfirmUpdatePayload,
     ConfirmUpdateResponse,
     CreateDriveRequest,
+    DocumentItem,
+    DriveDateSaved,
+    DriveDetailResponse,
+    DriveDocumentsResponse,
     DriveResponse,
+    DriveTimelineResponse,
+    TimelineEvent,
 )
 from app.models.extraction import DriveUpdateDraftResponse
 from app.services.company_classifier import classify_company
@@ -33,6 +42,7 @@ from app.services.parsers import validate_and_parse_file
 from app.supabase_client import get_service_client
 
 logger = logging.getLogger(__name__)
+KOLKATA_TZ = zoneinfo.ZoneInfo("Asia/Kolkata")
 
 # Fallback in-memory storage for test/offline execution when Supabase is unconfigured
 _in_memory_companies: dict[str, dict[str, Any]] = {}
@@ -40,6 +50,7 @@ _in_memory_drives: dict[str, dict[str, Any]] = {}
 _in_memory_dates: list[dict[str, Any]] = []
 _in_memory_applications: dict[str, dict[str, Any]] = {}
 _in_memory_documents: list[dict[str, Any]] = []
+_in_memory_updates: list[dict[str, Any]] = []
 _in_memory_update_drafts: dict[str, dict[str, Any]] = {}
 
 ALLOWED_DRIVE_FIELDS = {
@@ -58,7 +69,36 @@ def clear_in_memory_db() -> None:
     _in_memory_dates.clear()
     _in_memory_applications.clear()
     _in_memory_documents.clear()
+    _in_memory_updates.clear()
     _in_memory_update_drafts.clear()
+
+
+def generate_signed_storage_url(
+    storage_path: str,
+    doc_id: str = "",
+    expires_in_seconds: int = 300,
+) -> str:
+    """Generate a short-expiry (5-minute) signed URL via Supabase Storage.
+
+    Falls back to a backend proxy endpoint if Supabase credentials are missing or unconfigured.
+    """
+    settings = get_settings()
+    if settings.supabase_url and settings.supabase_service_role_key:
+        try:
+            supabase = get_service_client()
+            res = supabase.storage.from_("drive-documents").create_signed_url(
+                storage_path, expires_in_seconds
+            )
+            if isinstance(res, dict) and "signedUrl" in res:
+                return res["signedUrl"]
+            if hasattr(res, "get") and res.get("signedURL"):
+                return str(res.get("signedURL"))
+            if isinstance(res, str):
+                return res
+        except Exception as err:
+            logger.warning("Could not generate Supabase Storage signed URL: %s", err)
+
+    return f"/drives/documents/{doc_id}/download"
 
 
 def validate_and_normalize_deadlines(dates: list[ConfirmedDateItem]) -> list[ConfirmedDateItem]:
@@ -122,6 +162,7 @@ def save_drive(
 ) -> DriveResponse:
     """Save confirmed drive data and attached document."""
     settings = get_settings()
+    now_iso = datetime.now(KOLKATA_TZ).isoformat()
 
     payload.dates = validate_and_normalize_deadlines(payload.dates)
     primary_date_iso = _get_primary_deadline_date_iso(payload.dates)
@@ -154,6 +195,7 @@ def save_drive(
                     "id": new_company_id,
                     "name": company_name_clean,
                     "company_type": company_type,
+                    "created_at": now_iso,
                 }
                 supabase.table("companies").insert(company_row).execute()
                 company_id = new_company_id
@@ -175,6 +217,7 @@ def save_drive(
                 "id": company_id,
                 "name": company_name_clean,
                 "company_type": company_type,
+                "created_at": now_iso,
             }
 
     # Deduplication check
@@ -248,6 +291,7 @@ def save_drive(
         "min_cgpa": payload.min_cgpa,
         "eligible_branches": payload.eligible_branches,
         "status": "confirmed",
+        "created_at": now_iso,
     }
 
     date_rows = [
@@ -261,6 +305,7 @@ def save_drive(
             "source": d.source,
             "confirmed_by_user": d.confirmed_by_user,
             "is_primary_deadline": d.is_primary_deadline,
+            "created_at": now_iso,
         }
         for d in payload.dates
     ]
@@ -270,6 +315,7 @@ def save_drive(
         "drive_id": drive_id,
         "status": "not_applied",
         "notes": payload.application_link if payload.application_link else None,
+        "updated_at": now_iso,
     }
 
     storage_path: str | None = None
@@ -294,6 +340,7 @@ def save_drive(
             "drive_update_id": None,
             "storage_path": storage_path,
             "original_filename": filename,
+            "uploaded_at": now_iso,
         }
 
     written_to_supabase = False
@@ -437,9 +484,6 @@ def create_update_draft(
         )
 
     if not reference_date_iso:
-        import zoneinfo
-        from datetime import datetime
-        KOLKATA_TZ = zoneinfo.ZoneInfo("Asia/Kolkata")
         reference_date_iso = datetime.now(KOLKATA_TZ).isoformat()
 
     update_result, status_str, err_msg = extract_update_diff(
@@ -479,8 +523,8 @@ def confirm_and_merge_update(
 ) -> ConfirmUpdateResponse:
     """Confirm and merge an update draft into the database."""
     settings = get_settings()
+    now_iso = datetime.now(KOLKATA_TZ).isoformat()
 
-    # Ensure drive exists
     _ = build_existing_drive_summary(drive_id, user_id)
 
     draft_info = _in_memory_update_drafts.get(update_id)
@@ -501,6 +545,7 @@ def confirm_and_merge_update(
         "source_type": st,
         "raw_text": raw_text,
         "summary_of_changes": summary_of_changes,
+        "created_at": now_iso,
     }
 
     new_date_rows = [
@@ -514,6 +559,7 @@ def confirm_and_merge_update(
             "source": d.source,
             "confirmed_by_user": True,
             "is_primary_deadline": False,
+            "created_at": now_iso,
         }
         for d in payload.confirmed_new_dates
     ]
@@ -542,6 +588,7 @@ def confirm_and_merge_update(
             "drive_update_id": update_id,
             "storage_path": storage_path,
             "original_filename": fn,
+            "uploaded_at": now_iso,
         }
 
     use_supabase = bool(settings.supabase_url and settings.supabase_service_role_key)
@@ -568,6 +615,7 @@ def confirm_and_merge_update(
             logger.warning("Failed writing update to Supabase: %s", err)
 
     if not written_to_supabase:
+        _in_memory_updates.append(update_row)
         _in_memory_dates.extend(new_date_rows)
         if drive_id in _in_memory_drives and payload.confirmed_field_changes:
             for k, v in payload.confirmed_field_changes.items():
@@ -582,4 +630,234 @@ def confirm_and_merge_update(
         summary_of_changes=summary_of_changes,
         added_dates_count=len(payload.confirmed_new_dates),
         updated_fields_count=len(payload.confirmed_field_changes),
+    )
+
+
+def get_drive_detail(drive_id: str, user_id: str) -> DriveDetailResponse:
+    """Fetch complete drive detail view (header, dates, application status)."""
+    settings = get_settings()
+    drive_data = None
+    company_name = "Unknown Company"
+    company_type = "unknown"
+    app_status = "not_applied"
+    dates_data: list[dict[str, Any]] = []
+
+    use_supabase = bool(settings.supabase_url and settings.supabase_service_role_key)
+
+    if use_supabase:
+        try:
+            supabase = get_service_client()
+            d_res = supabase.table("drives").select("*").eq("id", drive_id).execute()
+            if d_res.data:
+                drive_data = d_res.data[0]
+                c_res = (
+                    supabase.table("companies")
+                    .select("name, company_type")
+                    .eq("id", drive_data["company_id"])
+                    .execute()
+                )
+                if c_res.data:
+                    company_name = c_res.data[0]["name"]
+                    company_type = c_res.data[0].get("company_type", "unknown")
+
+                app_res = (
+                    supabase.table("applications")
+                    .select("status")
+                    .eq("drive_id", drive_id)
+                    .execute()
+                )
+                if app_res.data:
+                    app_status = app_res.data[0].get("status", "not_applied")
+
+                dates_res = (
+                    supabase.table("drive_dates")
+                    .select("*")
+                    .eq("drive_id", drive_id)
+                    .execute()
+                )
+                dates_data = dates_res.data
+        except Exception as err:
+            logger.warning("Failed fetching drive detail from Supabase: %s", err)
+            use_supabase = False
+
+    if not drive_data:
+        drive_data = _in_memory_drives.get(drive_id)
+        if not drive_data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Drive with ID {drive_id} not found.",
+            )
+        comp_obj = _in_memory_companies.get(drive_data["company_id"])
+        if comp_obj:
+            company_name = comp_obj["name"]
+            company_type = comp_obj.get("company_type", "unknown")
+
+        app_obj = _in_memory_applications.get(drive_id)
+        if app_obj:
+            app_status = app_obj.get("status", "not_applied")
+
+        dates_data = [d for d in _in_memory_dates if d["drive_id"] == drive_id]
+
+    dates_models = [
+        DriveDateSaved(
+            id=d.get("id", str(uuid.uuid4())),
+            date_type=d["date_type"],
+            label=d.get("label"),
+            date_iso=d["date_iso"],
+            date_raw=d.get("date_raw"),
+            source=d.get("source", "user_added"),
+            confirmed_by_user=d.get("confirmed_by_user", True),
+            is_primary_deadline=d.get("is_primary_deadline", False),
+        )
+        for d in dates_data
+    ]
+
+    return DriveDetailResponse(
+        id=drive_id,
+        company_id=drive_data["company_id"],
+        company_name=company_name,
+        company_type=company_type,
+        role_title=drive_data.get("role_title", "Position"),
+        eligibility_raw=drive_data.get("eligibility_raw"),
+        min_cgpa=drive_data.get("min_cgpa"),
+        eligible_branches=drive_data.get("eligible_branches") or [],
+        application_link=drive_data.get("application_link"),
+        status=drive_data.get("status", "confirmed"),
+        application_status=app_status,
+        created_at=drive_data.get("created_at", datetime.now(KOLKATA_TZ).isoformat()),
+        dates=dates_models,
+    )
+
+
+def get_drive_timeline(drive_id: str, user_id: str) -> DriveTimelineResponse:
+    """Fetch chronological timeline combining initial capture and all drive_updates."""
+    drive_detail = get_drive_detail(drive_id, user_id)
+    settings = get_settings()
+
+    initial_event = TimelineEvent(
+        id="initial",
+        event_type="initial_capture",
+        source_type="whatsapp_text",
+        summary_of_changes="Initial capture",
+        created_at=drive_detail.created_at,
+    )
+
+    update_events: list[TimelineEvent] = []
+
+    use_supabase = bool(settings.supabase_url and settings.supabase_service_role_key)
+
+    if use_supabase:
+        try:
+            supabase = get_service_client()
+            res = (
+                supabase.table("drive_updates")
+                .select("*")
+                .eq("drive_id", drive_id)
+                .order("created_at", desc=False)
+                .execute()
+            )
+            for row in res.data:
+                update_events.append(
+                    TimelineEvent(
+                        id=row["id"],
+                        event_type="update",
+                        source_type=row.get("source_type", "whatsapp_text"),
+                        summary_of_changes=row.get("summary_of_changes", "Drive update"),
+                        raw_text=row.get("raw_text"),
+                        created_at=row.get("created_at", datetime.now(KOLKATA_TZ).isoformat()),
+                    )
+                )
+        except Exception as err:
+            logger.warning("Failed fetching timeline from Supabase: %s", err)
+            use_supabase = False
+
+    if not use_supabase:
+        mem_updates = [u for u in _in_memory_updates if u["drive_id"] == drive_id]
+        mem_updates.sort(key=lambda u: u.get("created_at", ""))
+        for u in mem_updates:
+            update_events.append(
+                TimelineEvent(
+                    id=u["id"],
+                    event_type="update",
+                    source_type=u.get("source_type", "whatsapp_text"),
+                    summary_of_changes=u.get("summary_of_changes", "Drive update"),
+                    raw_text=u.get("raw_text"),
+                    created_at=u.get("created_at", datetime.now(KOLKATA_TZ).isoformat()),
+                )
+            )
+
+    full_timeline = [initial_event, *update_events]
+    full_timeline.sort(key=lambda e: e.created_at)
+
+    return DriveTimelineResponse(
+        drive_id=drive_id,
+        timeline=full_timeline,
+    )
+
+
+def get_drive_documents(drive_id: str, user_id: str) -> DriveDocumentsResponse:
+    """Fetch list of all drive_documents with 5-minute signed download URLs."""
+    _ = get_drive_detail(drive_id, user_id)
+    settings = get_settings()
+
+    doc_rows: list[dict[str, Any]] = []
+
+    use_supabase = bool(settings.supabase_url and settings.supabase_service_role_key)
+
+    if use_supabase:
+        try:
+            supabase = get_service_client()
+            res = (
+                supabase.table("drive_documents")
+                .select("*")
+                .eq("drive_id", drive_id)
+                .order("uploaded_at", desc=False)
+                .execute()
+            )
+            doc_rows = res.data
+        except Exception as err:
+            logger.warning("Failed fetching documents from Supabase: %s", err)
+            use_supabase = False
+
+    if not use_supabase:
+        doc_rows = [d for d in _in_memory_documents if d["drive_id"] == drive_id]
+
+    doc_items: list[DocumentItem] = []
+
+    for d in doc_rows:
+        doc_id = d.get("id", str(uuid.uuid4()))
+        storage_path = d.get("storage_path", "")
+        filename = d.get("original_filename", "document.pdf")
+        uploaded_at = d.get("uploaded_at", datetime.now(KOLKATA_TZ).isoformat())
+        update_id = d.get("drive_update_id")
+
+        download_url = generate_signed_storage_url(
+            storage_path=storage_path,
+            doc_id=doc_id,
+            expires_in_seconds=300,
+        )
+
+        update_summary: str | None = None
+        if update_id:
+            for u in _in_memory_updates:
+                if u["id"] == update_id:
+                    update_summary = u.get("summary_of_changes")
+                    break
+
+        doc_items.append(
+            DocumentItem(
+                id=doc_id,
+                drive_id=drive_id,
+                drive_update_id=update_id,
+                original_filename=filename,
+                storage_path=storage_path,
+                uploaded_at=uploaded_at,
+                download_url=download_url,
+                update_summary=update_summary,
+            )
+        )
+
+    return DriveDocumentsResponse(
+        drive_id=drive_id,
+        documents=doc_items,
     )

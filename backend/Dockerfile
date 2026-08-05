@@ -5,13 +5,16 @@ FROM python:3.12-slim AS builder
 
 WORKDIR /build
 
+ENV PIP_DEFAULT_TIMEOUT=100 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+
 # Copy project metadata and app code to build wheels.
 COPY pyproject.toml ./
 COPY app ./app
 
 # Resolve dependencies and build wheels into /wheels.
-RUN pip install --upgrade pip && \
-    pip wheel --wheel-dir /wheels .
+RUN pip wheel --wheel-dir /wheels --default-timeout=100 --retries 5 .
 
 # ---- Stage 2: runtime ----
 FROM python:3.12-slim AS runtime
