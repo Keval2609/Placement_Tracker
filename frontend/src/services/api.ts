@@ -182,3 +182,71 @@ export async function confirmDriveUpdate(
 
   return response.json();
 }
+
+/* Alert System API Endpoints */
+
+export async function fetchVapidPublicKey(): Promise<string> {
+  const response = await fetch(`${API_BASE_URL}/push/vapid-public-key`);
+  if (!response.ok) {
+    throw new Error("Failed fetching VAPID public key");
+  }
+  const data = await response.json();
+  return data.public_key;
+}
+
+export async function savePushSubscription(
+  subscription: PushSubscriptionJSON | Record<string, unknown>
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/push/subscribe`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(subscription),
+  });
+  if (!response.ok) {
+    throw new Error("Failed saving push subscription");
+  }
+}
+
+export async function linkTelegramChat(chatId: string): Promise<string> {
+  const response = await fetch(`${API_BASE_URL}/telegram/link`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed linking Telegram chat");
+  }
+  const data = await response.json();
+  return data.chat_id;
+}
+
+export async function fetchTelegramStatus(): Promise<{ is_linked: boolean; chat_id: string | null }> {
+  const response = await fetch(`${API_BASE_URL}/telegram/status`);
+  if (!response.ok) {
+    return { is_linked: false, chat_id: null };
+  }
+  return response.json();
+}
+
+export async function triggerOnboardingTest(): Promise<{ test_id: string; message: string }> {
+  const response = await fetch(`${API_BASE_URL}/push/onboarding-test`, {
+    method: "POST",
+  });
+  if (!response.ok) {
+    throw new Error("Failed triggering onboarding test push");
+  }
+  return response.json();
+}
+
+export async function fetchOnboardingTestStatus(): Promise<{
+  has_tested: boolean;
+  ack_received: boolean;
+  show_oem_warning: boolean;
+}> {
+  const response = await fetch(`${API_BASE_URL}/push/onboarding-test/status`);
+  if (!response.ok) {
+    return { has_tested: false, ack_received: false, show_oem_warning: false };
+  }
+  return response.json();
+}

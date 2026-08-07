@@ -23,6 +23,14 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen2.5:7b"
 
+    # Web Push VAPID Configuration
+    vapid_private_key: str = ""
+    vapid_public_key: str = ""
+    vapid_claim_email: str = "mailto:admin@placementtracker.app"
+
+    # Telegram Bot Configuration
+    telegram_bot_token: str = ""
+
     # Comma-separated list of allowed CORS origins for the frontend.
     cors_origins: str = "http://localhost:5173"
 

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Plus, Loader2, AlertCircle, Sparkles, FolderArchive, Layers } from "lucide-react";
 import { DashboardFilterBar } from "./DashboardFilterBar";
 import { DriveCardComponent } from "./DriveCardComponent";
+import { NotificationSetupBanner } from "./NotificationSetupBanner";
 import { ApplicationStatus, CompanyType, DeadlineWindow, DriveCard } from "../types/drive";
 import { fetchDashboardDrives } from "../services/api";
 
@@ -106,6 +107,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <span>+ Parse New Notice</span>
         </button>
       </div>
+
+      {/* Multi-Channel Alerts & OEM Notification Setup Banner */}
+      <NotificationSetupBanner />
 
       {/* Filter Bar */}
       <DashboardFilterBar

@@ -9,6 +9,15 @@ A production-grade monorepo for tracking college placement drives, automated dat
 
 ## Current Architecture & Features
 
+### 🔔 Alert System, Escalation Engine & OEM Battery Warning (PRD 1.3.6 & Risk Mitigation #2)
+- **Web Push & VAPID Setup (`GET /push/vapid-public-key` & `POST /push/subscribe`)**: Auto-generates or loads VAPID keypairs (`pywebpush`). Registers PWA service worker push subscriptions for background notification delivery.
+- **Telegram Bot Linking (`POST /telegram/link`)**: Allows users to link their Telegram account `chat_id` for fallback delivery via Telegram Bot API (`https://api.telegram.org`).
+- **APScheduler Background Jobs**:
+  - `run_deadline_check_job`: Scans confirmed primary deadlines in IST (`Asia/Kolkata`) at **48h**, **24h**, and **6h** thresholds. Tracks fired thresholds per drive to prevent duplicate alerts.
+  - `run_escalation_job`: Periodic worker scanning for unacknowledged Web Push notifications > 10 minutes old. Automatically triggers Telegram fallback messages when push notifications are missed!
+- **Onboarding Delivery Self-Test (`POST /push/onboarding-test`)**: Triggers an onboarding test push notification for immediate client verification (`POST /push/ack`).
+- **OEM Battery Optimization Detection**: Detects Android OEM brands (`Samsung`, `Xiaomi`/`MIUI`, `Oppo`, `Vivo`, `OnePlus`, `Realme`, `Huawei`) via User-Agent Client Hints (`navigator.userAgentData`). Renders an in-app warning banner (*"Didn't get that? Your phone may be blocking background notifications"*) with brand-specific setup instructions and direct links to `dontkillmyapp.com`.
+
 ### 🏠 Main Dashboard & Application Tracking (PRD Section 1.3.5)
 - **Home Dashboard (`GET /drives`)**: Displays placement drive cards sorted by nearest `is_primary_deadline` ascending.
 - **Closed / Overdue Section**: Overdue and past deadlines automatically sort into a visually distinct "Closed / Past Drives" section at the bottom of the dashboard.
@@ -81,6 +90,7 @@ cp .env.example .env
 Fill in your configuration:
 - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 - `GROQ_API_KEY` (Get a key from [console.groq.com](https://console.groq.com))
+- `TELEGRAM_BOT_TOKEN` (Optional Telegram Bot Token for escalation fallback)
 
 ### 2. Local Backend Run
 
@@ -105,10 +115,8 @@ docker compose up --build
 curl http://localhost:8000/health
 # {"status":"ok"}
 
-# Test extraction API
-curl -X POST http://localhost:8000/ingest/text \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Google SDE Intern 2026. Min CGPA: 8.0. Apply by 10th Aug: https://careers.google.com/jobs/1"}'
+# Get public VAPID key
+curl http://localhost:8000/push/vapid-public-key
 ```
 
 ---
@@ -139,6 +147,9 @@ npm run dev
 | `GROQ_MODEL` | Groq Model ID | `llama-3.3-70b-versatile` |
 | `OLLAMA_BASE_URL` | Local Ollama Base URL | `http://localhost:11434` |
 | `OLLAMA_MODEL` | Local Ollama Model Name | `qwen2.5:7b` |
+| `VAPID_PUBLIC_KEY` | Web Push VAPID Public Key | `""` (auto-generated if empty) |
+| `VAPID_PRIVATE_KEY` | Web Push VAPID Private Key | `""` (auto-generated if empty) |
+| `TELEGRAM_BOT_TOKEN` | Telegram Bot API Token for escalation fallback | `""` |
 
 ### Frontend (`frontend/.env`)
 
