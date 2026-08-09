@@ -4,6 +4,7 @@ A production-grade monorepo for tracking college placement drives, automated dat
 
 - **`/backend`** — FastAPI (Python 3.11+) + Supabase + Groq/Ollama LLM Pipeline
 - **`/frontend`** — Vite + React + TypeScript + Tailwind (PWA)
+- **`/doc/deployment-guide.md`** — Production Deployment, CI/CD Workflows & Alert Scheduler Uptime Setup
 
 ---
 

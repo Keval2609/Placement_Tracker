@@ -45,15 +45,49 @@ _telegram_links: dict[str, str] = {}
 _alert_history: dict[str, dict[str, Any]] = {}
 _fired_thresholds: set[str] = set()
 _onboarding_tests: dict[str, dict[str, Any]] = {}
+_last_scheduler_heartbeat: datetime | None = None
 
 
 def clear_alert_stores() -> None:
     """Clear alert state (useful for testing)."""
+    global _last_scheduler_heartbeat
     _subscriptions.clear()
     _telegram_links.clear()
     _alert_history.clear()
     _fired_thresholds.clear()
     _onboarding_tests.clear()
+    _last_scheduler_heartbeat = None
+
+
+def record_scheduler_heartbeat() -> None:
+    """Record heartbeat timestamp for the background alert scheduler."""
+    global _last_scheduler_heartbeat
+    _last_scheduler_heartbeat = datetime.now(KOLKATA_TZ)
+    logger.debug("Recorded alert scheduler heartbeat at %s", _last_scheduler_heartbeat.isoformat())
+
+
+def get_scheduler_health(max_stale_seconds: int = 900) -> tuple[bool, dict[str, Any]]:
+    """Check whether the alert scheduler has run within max_stale_seconds (default 15 minutes)."""
+    if _last_scheduler_heartbeat is None:
+        return False, {
+            "status": "stale",
+            "message": "Alert scheduler heartbeat has not been recorded yet.",
+            "last_heartbeat_iso": None,
+            "seconds_since_last_heartbeat": None,
+            "max_stale_seconds": max_stale_seconds,
+        }
+
+    now_dt = datetime.now(KOLKATA_TZ)
+    elapsed_seconds = (now_dt - _last_scheduler_heartbeat).total_seconds()
+    is_healthy = elapsed_seconds <= max_stale_seconds
+
+    details = {
+        "status": "healthy" if is_healthy else "stale",
+        "last_heartbeat_iso": _last_scheduler_heartbeat.isoformat(),
+        "seconds_since_last_heartbeat": round(elapsed_seconds, 2),
+        "max_stale_seconds": max_stale_seconds,
+    }
+    return is_healthy, details
 
 
 def get_or_create_vapid_keys() -> tuple[str, str]:
@@ -276,6 +310,7 @@ def get_onboarding_test_status(user_id: str) -> dict[str, Any]:
 
 def run_deadline_check_job() -> None:
     """Scheduled job: Checks all primary deadlines against thresholds (48h, 24h, 6h)."""
+    record_scheduler_heartbeat()
     from app.dependencies import DEFAULT_MOCK_USER_ID
 
     now_dt = datetime.now(KOLKATA_TZ)
@@ -362,6 +397,7 @@ async def run_escalation_job() -> None:
 
     Auto-fires Telegram fallback to user's chat_id if unacked within timeout window.
     """
+    record_scheduler_heartbeat()
     now_dt = datetime.now(KOLKATA_TZ)
 
     for alert_id, rec in list(_alert_history.items()):

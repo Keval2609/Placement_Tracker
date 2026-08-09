@@ -1,0 +1,17 @@
+name: Supabase Keepalive
+
+on:
+  schedule:
+    - cron: "0 6 * * 1,4"   # Mondays and Thursdays at 06:00 UTC (well under 7 days apart)
+  workflow_dispatch:        # Allow manual execution from GitHub UI
+
+jobs:
+  ping:
+    name: Ping Supabase REST API
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST Endpoint
+        run: |
+          curl -s -f -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/companies?select=id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" > /dev/null
+          echo "Supabase keepalive ping successful."

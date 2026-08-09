@@ -4,7 +4,9 @@ import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from typing import Any
+
+from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
 try:
@@ -21,7 +23,11 @@ from app.logging_config import setup_logging
 from app.middleware import RequestLoggingMiddleware
 from app.routers import alerts, applications, drives, ingest
 from app.sentry_setup import init_sentry
-from app.services.alert_service import run_deadline_check_job, run_escalation_job
+from app.services.alert_service import (
+    get_scheduler_health,
+    run_deadline_check_job,
+    run_escalation_job,
+)
 
 setup_logging()
 init_sentry()
@@ -74,8 +80,21 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/health/scheduler")
+async def scheduler_health() -> dict[str, Any]:
+    """Uptime health check endpoint specifically monitoring the alert scheduler heartbeat."""
+    is_healthy, details = get_scheduler_health(max_stale_seconds=900)
+    if not is_healthy:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=details,
+        )
+    return details
+
+
 @app.get("/sentry-debug")
 async def sentry_debug() -> None:
     """Deliberately trigger a caught/unhandled exception for Sentry error verification."""
     _ = 1 / 0
+
 
