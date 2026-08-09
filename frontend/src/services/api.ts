@@ -12,7 +12,10 @@ import {
 } from "../types/drive";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV
+    ? "http://localhost:8000"
+    : "https://placement-tracker-yzdq.onrender.com");
 
 export async function ingestText(text: string): Promise<ExtractionAPIResponse> {
   const response = await fetch(`${API_BASE_URL}/ingest/text`, {
