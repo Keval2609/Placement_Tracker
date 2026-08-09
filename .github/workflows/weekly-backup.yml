@@ -9,6 +9,8 @@ jobs:
   backup:
     name: Database Backup (pg_dump)
     runs-on: ubuntu-latest
+    permissions:
+      contents: write     # Required for gh release create to upload backup assets
 
     steps:
       - name: Checkout repository
@@ -23,6 +25,7 @@ jobs:
         env:
           PGCONN: ${{ secrets.SUPABASE_DB_URL }}
         run: |
+          set -eo pipefail
           TIMESTAMP=$(date +'%Y-%m-%d_%H%M%S')
           DUMP_FILENAME="placement_tracker_backup_${TIMESTAMP}.sql.gz"
           echo "DUMP_FILENAME=${DUMP_FILENAME}" >> $GITHUB_ENV
@@ -46,3 +49,4 @@ jobs:
             --title "Postgres Backup ${TIMESTAMP}" \
             --notes "Automated weekly Supabase database backup generated at ${TIMESTAMP}." \
             --prerelease
+
