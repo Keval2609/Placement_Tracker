@@ -1,4 +1,5 @@
-"""Automated tests for Dashboard Drives list and Application Status updates (PRD 1.3.5)."""
+import zoneinfo
+from datetime import datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -7,6 +8,7 @@ from app.main import app
 from app.services.drive_service import clear_in_memory_db
 
 client = TestClient(app)
+KOLKATA_TZ = zoneinfo.ZoneInfo("Asia/Kolkata")
 
 
 @pytest.fixture(autouse=True)
@@ -38,12 +40,13 @@ def create_drive(company_name: str, deadline_iso: str) -> str:
 
 def test_get_dashboard_drives_sorting_and_overdue() -> None:
     """Test GET /drives returns active drives sorted nearest deadline first, overdue at bottom."""
+    now_dt = datetime.now(KOLKATA_TZ)
     # Future deadline 1: 10 days out
-    d1 = create_drive("Google", "2026-08-15T23:59:59+05:30")
+    d1 = create_drive("Google", (now_dt + timedelta(days=10)).isoformat())
     # Future deadline 2: 2 days out (nearest active)
-    d2 = create_drive("Microsoft", "2026-08-07T23:59:59+05:30")
+    d2 = create_drive("Microsoft", (now_dt + timedelta(days=2)).isoformat())
     # Past deadline: overdue
-    d3 = create_drive("Infosys", "2026-01-01T23:59:59+05:30")
+    d3 = create_drive("Infosys", (now_dt - timedelta(days=10)).isoformat())
 
     resp = client.get("/drives")
     assert resp.status_code == 200

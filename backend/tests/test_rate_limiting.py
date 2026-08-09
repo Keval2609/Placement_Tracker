@@ -2,12 +2,20 @@
 
 from unittest.mock import MagicMock, patch
 
+import pytest
 from fastapi.testclient import TestClient
 
+from app.limiter import limiter
 from app.main import app
 from app.models.extraction import ExtractionResult
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def reset_limiter() -> None:
+    """Reset rate limiter storage before each test run."""
+    limiter._storage.reset()
 
 
 @patch("app.routers.ingest.extract_with_retry")
