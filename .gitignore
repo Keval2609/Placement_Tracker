@@ -31,3 +31,4 @@ doc/
 
 # Docker
 *.pid
+error.md

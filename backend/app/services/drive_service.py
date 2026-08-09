@@ -86,21 +86,19 @@ def generate_signed_storage_url(
 
     Falls back to a backend proxy endpoint if Supabase credentials are missing or unconfigured.
     """
-    settings = get_settings()
-    if settings.supabase_url and settings.supabase_service_role_key:
-        try:
-            supabase = get_service_client()
-            res = supabase.storage.from_("drive-documents").create_signed_url(
-                storage_path, expires_in_seconds
-            )
-            if isinstance(res, dict) and "signedUrl" in res:
-                return res["signedUrl"]
-            if hasattr(res, "get") and res.get("signedURL"):
-                return str(res.get("signedURL"))
-            if isinstance(res, str):
-                return res
-        except Exception as err:
-            logger.warning("Could not generate Supabase Storage signed URL: %s", err)
+    try:
+        supabase = get_service_client()
+        res = supabase.storage.from_("drive-documents").create_signed_url(
+            storage_path, expires_in_seconds
+        )
+        if isinstance(res, dict) and "signedUrl" in res:
+            return res["signedUrl"]
+        if hasattr(res, "get") and res.get("signedURL"):
+            return str(res.get("signedURL"))
+        if isinstance(res, str):
+            return res
+    except Exception as err:
+        logger.warning("Could not generate Supabase Storage signed URL: %s", err)
 
     return f"/drives/documents/{doc_id}/download"
 
