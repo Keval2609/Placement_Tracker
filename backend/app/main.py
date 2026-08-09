@@ -12,9 +12,19 @@ try:
 except ImportError:
     AsyncIOScheduler = None  # type: ignore[assignment,misc]
 
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
 from app.config import get_settings
+from app.limiter import limiter
+from app.logging_config import setup_logging
+from app.middleware import RequestLoggingMiddleware
 from app.routers import alerts, applications, drives, ingest
+from app.sentry_setup import init_sentry
 from app.services.alert_service import run_deadline_check_job, run_escalation_job
+
+setup_logging()
+init_sentry()
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -40,6 +50,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
@@ -58,3 +72,10 @@ app.include_router(alerts.router)
 async def health() -> dict[str, str]:
     """Liveness probe."""
     return {"status": "ok"}
+
+
+@app.get("/sentry-debug")
+async def sentry_debug() -> None:
+    """Deliberately trigger a caught/unhandled exception for Sentry error verification."""
+    _ = 1 / 0
+

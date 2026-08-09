@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen2.5:7b"
 
+    # Sentry Error Tracking Configuration
+    sentry_dsn: str = "https://25ac8a51008ac0549d9858ed9e5d5ca4@o4511879102332928.ingest.de.sentry.io/4511879109083216"
+
     # Web Push VAPID Configuration
     vapid_private_key: str = ""
     vapid_public_key: str = ""

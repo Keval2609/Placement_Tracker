@@ -27,8 +27,9 @@ jobs:
       - name: Lint (ruff)
         run: ruff check .
 
-      - name: Test (pytest)
-        run: pytest
+      - name: Test (pytest with >=70% coverage threshold on target modules)
+        run: |
+          pytest --cov=app.services.llm --cov=app.services.drive_service --cov=app.models.extraction --cov-fail-under=70 --cov-report=term-missing
 
   frontend:
     name: Frontend (eslint + build)

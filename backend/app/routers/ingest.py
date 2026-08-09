@@ -3,8 +3,9 @@
 import zoneinfo
 from datetime import datetime
 
-from fastapi import APIRouter, File, UploadFile, status
+from fastapi import APIRouter, File, Request, UploadFile, status
 
+from app.limiter import limiter
 from app.models.extraction import ExtractionResult, IngestTextRequest
 from app.services.ingestion_logger import log_ingestion_attempt
 from app.services.llm import extract_with_retry
@@ -32,7 +33,8 @@ def get_current_reference_date_iso() -> str:
         "a draft held client-side pending confirmation."
     ),
 )
-async def ingest_text(payload: IngestTextRequest) -> ExtractionResult:
+@limiter.limit("10/minute")
+async def ingest_text(request: Request, payload: IngestTextRequest) -> ExtractionResult:
     reference_date_iso = get_current_reference_date_iso()
     result, extraction_status, error_msg = extract_with_retry(
         raw_text=payload.text,
@@ -59,7 +61,8 @@ async def ingest_text(payload: IngestTextRequest) -> ExtractionResult:
         "persisting to the database."
     ),
 )
-async def ingest_file(file: UploadFile = File(...)) -> ExtractionResult:
+@limiter.limit("10/minute")
+async def ingest_file(request: Request, file: UploadFile = File(...)) -> ExtractionResult:
     content = await file.read()
     parsed_text, source_type = validate_and_parse_file(file, content)
 
