@@ -2,6 +2,7 @@
 
 import zoneinfo
 from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -133,7 +134,12 @@ async def test_escalation_logic_unacked_push_to_telegram() -> None:
     rec["push_sent_at"] = past_sent_time
 
     # 4. Run escalation job -> should escalate to Telegram fallback
-    await run_escalation_job()
+    with patch(
+        "app.services.alert_service.send_telegram_message_async",
+        new_callable=AsyncMock,
+        return_value=True,
+    ):
+        await run_escalation_job()
 
     assert rec["status"] == "telegram_escalated"
     assert "telegram_sent_at" in rec
