@@ -35,7 +35,9 @@ class Settings(BaseSettings):
     telegram_bot_token: str = ""
 
     # Comma-separated list of allowed CORS origins for the frontend.
-    cors_origins: str = "http://localhost:5173"
+    cors_origins: str = (
+        "http://localhost:5173,http://localhost:3000,https://placement-tracker-azure-chi.vercel.app"
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
