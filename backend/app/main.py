@@ -73,6 +73,16 @@ app.include_router(applications.router)
 app.include_router(alerts.router)
 
 
+@app.get("/")
+async def root() -> dict[str, str]:
+    """Root endpoint providing service status and API documentation links."""
+    return {
+        "message": "Placement Tracker API is running",
+        "docs": "/docs",
+        "health": "/health",
+    }
+
+
 @app.get("/health")
 async def health() -> dict[str, str]:
     """Liveness probe."""
