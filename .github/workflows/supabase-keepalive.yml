@@ -12,6 +12,34 @@ jobs:
     steps:
       - name: Ping Supabase REST Endpoint
         run: |
-          curl -s -f -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/companies?select=id&limit=1" \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" > /dev/null
-          echo "Supabase keepalive ping successful."
+          raw_url="${{ secrets.SUPABASE_URL }}"
+          anon_key="${{ secrets.SUPABASE_ANON_KEY }}"
+
+          supabase_url="$(printf '%s' "$raw_url" | tr -d '[:space:]' | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")"
+          if [ -z "$supabase_url" ]; then
+            echo "SUPABASE_URL secret is empty."
+            exit 1
+          fi
+
+          if [ -z "$anon_key" ]; then
+            echo "SUPABASE_ANON_KEY secret is empty."
+            exit 1
+          fi
+
+          if [[ ! "$supabase_url" =~ ^https?:// ]]; then
+            supabase_url="https://$supabase_url"
+          fi
+          supabase_url="${supabase_url%/}"
+
+          status_code="$(curl -sS -o /dev/null -w '%{http_code}' \
+            --connect-timeout 15 \
+            --max-time 30 \
+            -X GET "${supabase_url}/rest/v1/" \
+            -H "apikey: $anon_key")"
+
+          if [[ "$status_code" == "000" || "$status_code" =~ ^5 ]]; then
+            echo "Supabase keepalive ping failed with HTTP status: $status_code"
+            exit 1
+          fi
+
+          echo "Supabase keepalive ping successful (HTTP $status_code)."
