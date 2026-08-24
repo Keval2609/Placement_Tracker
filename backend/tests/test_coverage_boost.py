@@ -34,7 +34,7 @@ def test_generate_signed_storage_url_supabase_and_fallback() -> None:
     # 1. Supabase success path
     with patch("app.services.drive_service.get_service_client") as mock_supabase:
         mock_client = MagicMock()
-        mock_client.storage.from_().create_signed_url.return_value = {
+        mock_client.storage.from_.return_value.create_signed_url.return_value = {
             "signedUrl": "https://supabase.co/signed/doc.pdf"
         }
         mock_supabase.return_value = mock_client

@@ -31,14 +31,24 @@ jobs:
           fi
           supabase_url="${supabase_url%/}"
 
-          status_code="$(curl -sS -o /dev/null -w '%{http_code}' \
+          curl_out="$(curl -sS -o /dev/null -w '%{http_code}' \
             --connect-timeout 15 \
             --max-time 30 \
             -X GET "${supabase_url}/rest/v1/" \
-            -H "apikey: $anon_key")"
+            -H "apikey: $anon_key" 2>&1)" || curl_exit=$?
 
-          if [[ "$status_code" == "000" || "$status_code" =~ ^5 ]]; then
-            echo "Supabase keepalive ping failed with HTTP status: $status_code"
+          status_code="${curl_out: -3}"
+          if [[ "${curl_exit:-0}" -ne 0 || "$status_code" == "000" || "$status_code" =~ ^5 ]]; then
+            echo "::error::Supabase keepalive ping failed! (HTTP: ${status_code:-000})"
+            echo "Diagnostic details:"
+            echo "  URL requested: ${supabase_url}/rest/v1/"
+            echo "  Curl output/error: ${curl_out}"
+            echo ""
+            echo "Common causes & troubleshooting:"
+            echo "  1. 'Could not resolve host': The project URL '${supabase_url}' is invalid, miscopied, or deleted."
+            echo "     Ensure 'SUPABASE_URL' in GitHub Repository Secrets is set to your active project URL (e.g., https://<project-ref>.supabase.co)."
+            echo "  2. Project Paused: If the Supabase project was paused due to inactivity, resume it at https://supabase.com/dashboard."
+            echo "  3. Invalid Key: Verify 'SUPABASE_ANON_KEY' in GitHub Repository Secrets matches your project's anon key."
             exit 1
           fi
 
