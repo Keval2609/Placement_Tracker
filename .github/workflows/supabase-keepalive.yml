@@ -2,7 +2,7 @@ name: Supabase Keepalive
 
 on:
   schedule:
-    - cron: "0 6 * * 1,4"   # Mondays and Thursdays at 06:00 UTC (well under 7 days apart)
+    - cron: "0 6 * * 1,3,5"   # Mondays, Wednesdays and Thursdays at 06:00 UTC (well under 7 days apart)
   workflow_dispatch:        # Allow manual execution from GitHub UI
 
 jobs:
