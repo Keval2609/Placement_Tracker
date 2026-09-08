@@ -1,6 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { Filter, Calendar, Building2, CheckSquare, Square, RotateCcw } from "lucide-react";
+import {
+  LayoutGrid,
+  Columns3,
+  Table,
+  Search,
+  Building2,
+  CheckSquare,
+  Square,
+  RotateCcw,
+  SlidersHorizontal,
+} from "lucide-react";
 import { ApplicationStatus, CompanyType, DeadlineWindow } from "../types/drive";
+
+export type DashboardViewMode = "grid" | "funnel" | "table";
 
 const ALL_STATUSES: { id: ApplicationStatus; label: string }[] = [
   { id: "not_applied", label: "Not Applied" },
@@ -17,7 +29,7 @@ const ALL_COMPANY_TYPES: { id: CompanyType; label: string }[] = [
   { id: "startup", label: "Startup" },
   { id: "service", label: "Service" },
   { id: "psu", label: "PSU" },
-  { id: "unknown", label: "Unknown" },
+  { id: "unknown", label: "Other" },
 ];
 
 const STORAGE_KEY_COMPANY_TYPES = "pt_filter_company_types";
@@ -29,6 +41,12 @@ interface DashboardFilterBarProps {
   onCompanyTypesChange: (types: CompanyType[]) => void;
   deadlineWindow: DeadlineWindow;
   onDeadlineWindowChange: (window: DeadlineWindow) => void;
+  viewMode?: DashboardViewMode;
+  onViewModeChange?: (mode: DashboardViewMode) => void;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+  totalCount?: number;
+  filteredCount?: number;
 }
 
 export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = ({
@@ -38,10 +56,15 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = ({
   onCompanyTypesChange,
   deadlineWindow,
   onDeadlineWindowChange,
+  viewMode = "grid",
+  onViewModeChange,
+  searchQuery = "",
+  onSearchChange,
+  totalCount,
+  filteredCount,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Initialize company_type filter from localStorage if present
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_COMPANY_TYPES);
@@ -85,6 +108,7 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = ({
     const allComp = ALL_COMPANY_TYPES.map((c) => c.id);
     onCompanyTypesChange(allComp);
     onDeadlineWindowChange("all");
+    if (onSearchChange) onSearchChange("");
     try {
       localStorage.setItem(STORAGE_KEY_COMPANY_TYPES, JSON.stringify(allComp));
     } catch {
@@ -93,148 +117,196 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = ({
   };
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4 shadow-xl">
-      {/* Top Filter Summary Header */}
+    <div className="bg-[#f7f7f7] border border-[#e6e6e6] p-4 sm:p-5 space-y-4">
+      {/* Top row: Search input & View Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-indigo-400" />
-          <h2 className="text-xs font-bold text-white uppercase tracking-wider">
-            Filter & Search Drives
-          </h2>
-          <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-mono">
-            {selectedCompanyTypes.length}/{ALL_COMPANY_TYPES.length} Types
-          </span>
+        {/* Search Input */}
+        <div className="relative flex-1 min-w-[220px] max-w-md">
+          <Search className="w-4 h-4 text-[#6b6b6b] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search drives by company or role..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
+            className="w-full pl-9 pr-8 py-2 bg-white border border-[#e6e6e6] text-xs text-[#262626] placeholder-[#9a9a9a] focus:outline-none focus:border-[#1c69d4] focus:ring-1 focus:ring-[#1c69d4] transition-colors"
+          />
+          {searchQuery && onSearchChange && (
+            <button
+              onClick={() => onSearchChange("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#6b6b6b] hover:text-[#262626]"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* View Switcher (Cards / Funnel / Table) */}
+        {onViewModeChange && (
+          <div className="flex items-center bg-white p-0.5 border border-[#e6e6e6] shrink-0">
+            <button
+              type="button"
+              onClick={() => onViewModeChange("grid")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.5px] transition-colors ${
+                viewMode === "grid"
+                  ? "bg-[#262626] text-white"
+                  : "text-[#6b6b6b] hover:text-[#262626]"
+              }`}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Cards</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onViewModeChange("funnel")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.5px] transition-colors ${
+                viewMode === "funnel"
+                  ? "bg-[#262626] text-white"
+                  : "text-[#6b6b6b] hover:text-[#262626]"
+              }`}
+            >
+              <Columns3 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Pipeline</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onViewModeChange("table")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.5px] transition-colors ${
+                viewMode === "table"
+                  ? "bg-[#262626] text-white"
+                  : "text-[#6b6b6b] hover:text-[#262626]"
+              }`}
+            >
+              <Table className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Table</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Second row: Stage Chips & Deadline Buttons */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-[#e6e6e6]">
+        {/* Status Stage Chips */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+          {ALL_STATUSES.map((st) => {
+            const isSelected = selectedStatuses.includes(st.id);
+            return (
+              <button
+                key={st.id}
+                type="button"
+                onClick={() => handleStatusToggle(st.id)}
+                className={`px-3 py-1 text-xs font-bold uppercase tracking-[0.5px] transition-colors cursor-pointer border ${
+                  isSelected
+                    ? "bg-[#1c69d4] text-white border-[#1c69d4]"
+                    : "bg-white text-[#6b6b6b] border-[#cccccc] hover:border-[#262626] hover:text-[#262626]"
+                }`}
+              >
+                {st.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Deadline Window Buttons */}
         <div className="flex items-center gap-2">
-          <div className="inline-flex rounded-lg bg-slate-950 p-1 border border-slate-800 text-xs">
+          <div className="inline-flex bg-white p-0.5 border border-[#e6e6e6] text-xs">
             <button
               type="button"
               onClick={() => onDeadlineWindowChange("next_7_days")}
-              className={`px-2.5 py-1 rounded-md font-medium transition-all ${
+              className={`px-2.5 py-1 font-bold uppercase tracking-[0.5px] transition-colors ${
                 deadlineWindow === "next_7_days"
-                  ? "bg-indigo-600 text-white shadow"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "bg-[#262626] text-white"
+                  : "text-[#6b6b6b] hover:text-[#262626]"
               }`}
             >
-              Next 7 Days
+              Next 7D
             </button>
             <button
               type="button"
               onClick={() => onDeadlineWindowChange("next_30_days")}
-              className={`px-2.5 py-1 rounded-md font-medium transition-all ${
+              className={`px-2.5 py-1 font-bold uppercase tracking-[0.5px] transition-colors ${
                 deadlineWindow === "next_30_days"
-                  ? "bg-indigo-600 text-white shadow"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "bg-[#262626] text-white"
+                  : "text-[#6b6b6b] hover:text-[#262626]"
               }`}
             >
-              Next 30 Days
+              Next 30D
             </button>
             <button
               type="button"
               onClick={() => onDeadlineWindowChange("all")}
-              className={`px-2.5 py-1 rounded-md font-medium transition-all ${
+              className={`px-2.5 py-1 font-bold uppercase tracking-[0.5px] transition-colors ${
                 deadlineWindow === "all"
-                  ? "bg-indigo-600 text-white shadow"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "bg-[#262626] text-white"
+                  : "text-[#6b6b6b] hover:text-[#262626]"
               }`}
             >
-              All Window
+              All
             </button>
           </div>
 
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold px-2 py-1"
+            className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[0.5px] text-[#1c69d4] hover:text-[#0653b6] px-2 py-1 transition-colors"
           >
-            {isExpanded ? "Hide Filters ▲" : "Show Filters ▼"}
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>{isExpanded ? "Hide Filters ▲" : "Filters ▼"}</span>
           </button>
         </div>
       </div>
 
-      {/* Expanded Filter Options */}
+      {/* Expanded Company Type Panel */}
       {isExpanded && (
-        <div className="pt-3 border-t border-slate-800/80 space-y-4 text-xs">
-          {/* Company Type Filter (Persisted in localStorage) */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-slate-300 font-bold">
-              <div className="flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Company Type Filter (Survives Reload)</span>
-              </div>
-              <span className="text-[10px] text-slate-500 font-mono">localStorage sync</span>
+        <div className="pt-3 border-t border-[#e6e6e6] space-y-3 text-xs animate-fade-in">
+          <div className="flex items-center justify-between text-[#262626] font-bold">
+            <div className="flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5 text-[#1c69d4]" />
+              <span className="uppercase tracking-[0.5px]">Company Type Classification</span>
             </div>
-
-            <div className="flex flex-wrap gap-2">
-              {ALL_COMPANY_TYPES.map((type) => {
-                const isSelected = selectedCompanyTypes.includes(type.id);
-                return (
-                  <button
-                    key={type.id}
-                    type="button"
-                    onClick={() => handleCompanyTypeToggle(type.id)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border text-xs font-medium transition-all ${
-                      isSelected
-                        ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/40"
-                        : "bg-slate-950 text-slate-500 border-slate-800 hover:border-slate-700"
-                    }`}
-                  >
-                    {isSelected ? (
-                      <CheckSquare className="w-3.5 h-3.5 text-indigo-400" />
-                    ) : (
-                      <Square className="w-3.5 h-3.5 text-slate-600" />
-                    )}
-                    <span>{type.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <span className="text-[11px] text-[#6b6b6b] font-mono">
+              {selectedCompanyTypes.length}/{ALL_COMPANY_TYPES.length} Active
+            </span>
           </div>
 
-          {/* Application Status Filter */}
-          <div className="space-y-2">
-            <div className="text-slate-300 font-bold flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Application Status Filter</span>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {ALL_STATUSES.map((st) => {
-                const isSelected = selectedStatuses.includes(st.id);
-                return (
-                  <button
-                    key={st.id}
-                    type="button"
-                    onClick={() => handleStatusToggle(st.id)}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium transition-all ${
-                      isSelected
-                        ? "bg-slate-800 text-slate-200 border-slate-700"
-                        : "bg-slate-950 text-slate-500 border-slate-800 hover:border-slate-700"
-                    }`}
-                  >
-                    {isSelected ? (
-                      <CheckSquare className="w-3.5 h-3.5 text-indigo-400" />
-                    ) : (
-                      <Square className="w-3.5 h-3.5 text-slate-600" />
-                    )}
-                    <span>{st.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+          <div className="flex flex-wrap gap-2">
+            {ALL_COMPANY_TYPES.map((type) => {
+              const isSelected = selectedCompanyTypes.includes(type.id);
+              return (
+                <button
+                  key={type.id}
+                  type="button"
+                  onClick={() => handleCompanyTypeToggle(type.id)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 border text-xs font-bold uppercase tracking-[0.5px] transition-colors ${
+                    isSelected
+                      ? "bg-white text-[#1c69d4] border-[#1c69d4]"
+                      : "bg-white text-[#6b6b6b] border-[#cccccc] hover:border-[#6b6b6b]"
+                  }`}
+                >
+                  {isSelected ? (
+                    <CheckSquare className="w-3.5 h-3.5 text-[#1c69d4]" />
+                  ) : (
+                    <Square className="w-3.5 h-3.5 text-[#9a9a9a]" />
+                  )}
+                  <span>{type.label}</span>
+                </button>
+              );
+            })}
           </div>
 
-          {/* Reset Filters Action */}
-          <div className="pt-2 flex justify-end">
+          <div className="pt-2 border-t border-[#e6e6e6] flex items-center justify-between">
+            {typeof totalCount === "number" && typeof filteredCount === "number" && (
+              <span className="text-[11px] text-[#6b6b6b] font-mono">
+                Displaying <strong className="text-[#262626]">{filteredCount}</strong> of {totalCount} drives
+              </span>
+            )}
+
             <button
               type="button"
               onClick={handleResetFilters}
-              className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-white"
+              className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-[1px] text-[#6b6b6b] hover:text-[#1c69d4] transition-colors ml-auto cursor-pointer"
             >
               <RotateCcw className="w-3 h-3" />
-              <span>Reset All Filters</span>
+              <span>Reset All</span>
             </button>
           </div>
         </div>

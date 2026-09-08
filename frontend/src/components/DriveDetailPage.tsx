@@ -55,9 +55,9 @@ export const DriveDetailPage: React.FC<DriveDetailPageProps> = ({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-slate-400">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-        <span className="text-sm font-medium">Loading placement drive detail...</span>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-[#6b6b6b]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#1c69d4]" />
+        <span className="text-sm font-light">Loading placement drive detail...</span>
       </div>
     );
   }
@@ -68,36 +68,36 @@ export const DriveDetailPage: React.FC<DriveDetailPageProps> = ({
         <button
           type="button"
           onClick={onBackToDashboard}
-          className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white"
+          className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.5px] text-[#1c69d4] hover:text-[#0653b6] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Ingestion</span>
+          <span>Back to Dashboard</span>
         </button>
 
-        <div className="p-6 bg-slate-900 border border-red-500/30 rounded-xl space-y-2 text-center">
-          <AlertCircle className="w-8 h-8 text-red-400 mx-auto" />
-          <h2 className="text-base font-bold text-white">Error Loading Drive</h2>
-          <p className="text-xs text-slate-400">{error || "Drive record not found."}</p>
+        <div className="p-8 bg-[#fef2f2] border border-[#fecaca] space-y-2 text-center">
+          <AlertCircle className="w-8 h-8 text-[#dc2626] mx-auto" />
+          <h2 className="text-base font-bold text-[#262626]">Error Loading Drive</h2>
+          <p className="text-xs font-light text-[#6b6b6b]">{error || "Drive record not found."}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
       {/* Navigation Top Bar */}
       <div className="flex items-center justify-between">
         <button
           type="button"
           onClick={onBackToDashboard}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-white border border-[#cccccc] hover:bg-[#f7f7f7] text-xs font-bold uppercase tracking-[0.5px] text-[#262626] transition-colors cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4 text-indigo-400" />
-          <span>← Back to Ingestion Workflow</span>
+          <ArrowLeft className="w-4 h-4 text-[#1c69d4]" />
+          <span>Back to Dashboard</span>
         </button>
 
-        <span className="text-[11px] font-mono text-slate-500">
-          Drive ID: {drive.id.slice(0, 8)}...
+        <span className="text-[11px] font-mono text-[#6b6b6b] bg-[#f7f7f7] px-3 py-1 border border-[#e6e6e6]">
+          Drive Reference: {drive.id.slice(0, 8)}...
         </span>
       </div>
 

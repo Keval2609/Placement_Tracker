@@ -121,20 +121,20 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm overflow-y-auto">
+      <div className="bg-white border border-[#e6e6e6] w-full max-w-2xl my-8 shadow-2xl">
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+        <div className="px-6 py-4 border-b border-[#e6e6e6] flex items-center justify-between bg-[#fafafa]">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-indigo-400" />
-            <h2 className="text-base font-bold text-white tracking-tight">
+            <Sparkles className="w-5 h-5 text-[#1c69d4]" />
+            <h2 className="text-base font-bold uppercase tracking-[1px] text-[#262626]">
               Add Drive Update
             </h2>
           </div>
           <button
             type="button"
             onClick={handleClose}
-            className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors"
+            className="p-1 text-[#6b6b6b] hover:text-[#262626] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -143,7 +143,7 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
         {/* Modal Content Body */}
         <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-300 rounded-lg text-xs flex items-center gap-2">
+            <div className="p-3 bg-[#fef2f2] border border-[#fecaca] text-[#dc2626] text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -153,7 +153,7 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
             /* Stage 1: Input Form */
             <form onSubmit={handleProposeDiff} className="space-y-4">
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-300">
+                <label className="block text-xs font-bold uppercase tracking-[1px] text-[#262626]">
                   Paste Follow-up WhatsApp Message
                 </label>
                 <textarea
@@ -161,17 +161,17 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
                   onChange={(e) => setTextInput(e.target.value)}
                   placeholder="e.g. Interview shortlisted candidates: OA results out! Interview on the 12th at 10 AM..."
                   rows={5}
-                  className="w-full text-xs p-3 rounded-lg bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
+                  className="w-full text-xs p-3 bg-white border border-[#cccccc] text-[#262626] placeholder:text-[#9a9a9a] focus:outline-none focus:border-[#1c69d4] font-mono"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-300">
+                <label className="block text-xs font-bold uppercase tracking-[1px] text-[#262626]">
                   Or Attach Follow-up Circular File (.pdf / .docx)
                 </label>
                 <div className="flex items-center gap-3">
-                  <label className="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-700 rounded-lg cursor-pointer transition-colors">
-                    <Upload className="w-4 h-4 text-indigo-400" />
+                  <label className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-bold uppercase tracking-[0.5px] bg-[#f7f7f7] hover:bg-[#ebebeb] text-[#262626] border border-[#cccccc] cursor-pointer transition-colors">
+                    <Upload className="w-4 h-4 text-[#1c69d4]" />
                     <span>{selectedFile ? selectedFile.name : "Choose File"}</span>
                     <input
                       type="file"
@@ -185,7 +185,7 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setSelectedFile(null)}
-                      className="text-xs text-red-400 hover:text-red-300"
+                      className="text-xs text-[#dc2626] hover:underline font-bold uppercase tracking-wider"
                     >
                       Remove file
                     </button>
@@ -197,48 +197,48 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
                 <button
                   type="submit"
                   disabled={isLoading || (!textInput.trim() && !selectedFile)}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-[#1c69d4] hover:bg-[#0653b6] disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Extracting Diff...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      <span>Extract Proposed Update</span>
-                    </>
-                  )}
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Extracting Diff...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  <span>Extract Proposed Update</span>
+                </>
+              )}
                 </button>
               </div>
             </form>
           ) : (
             /* Stage 2: Diff Confirmation Gate */
             <div className="space-y-6">
-              <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-xs space-y-1">
-                <div className="font-bold text-indigo-300 flex items-center gap-1.5">
+              <div className="p-4 bg-[#eff6ff] border border-[#bfdbfe] text-xs space-y-1">
+                <div className="font-bold text-[#1c69d4] flex items-center gap-1.5 uppercase tracking-[1px]">
                   <Sparkles className="w-4 h-4" />
                   <span>Proposed Change Summary</span>
                 </div>
-                <div className="text-slate-300 font-medium">
+                <div className="text-[#262626] font-light">
                   {summaryOfChanges || "No changes extracted."}
                 </div>
               </div>
 
               {/* Proposed Field Changes */}
               {Object.keys(fieldChanges).length > 0 && (
-                <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg space-y-2">
-                  <div className="text-xs font-bold text-slate-300">
+                <div className="p-4 bg-[#fafafa] border border-[#e6e6e6] space-y-2">
+                  <div className="text-xs font-bold uppercase tracking-[1px] text-[#262626]">
                     Proposed Field Modifications
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
                     {Object.entries(fieldChanges).map(([k, v]) => (
-                      <div key={k} className="p-2 rounded bg-slate-900 border border-slate-800">
-                        <span className="text-slate-400 uppercase font-mono text-[10px] block">
+                      <div key={k} className="p-2 bg-white border border-[#cccccc]">
+                        <span className="text-[#6b6b6b] uppercase font-mono text-[10px] block">
                           {k}
                         </span>
-                        <span className="text-indigo-300 font-semibold">{String(v)}</span>
+                        <span className="text-[#1c69d4] font-bold">{String(v)}</span>
                       </div>
                     ))}
                   </div>
@@ -248,13 +248,13 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
               {/* Proposed Dates with DateRow Confirmation Rules */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <label className="text-xs font-bold uppercase tracking-[1.5px] text-[#262626]">
                     Proposed New Dates ({dates.length})
                   </label>
                   <button
                     type="button"
                     onClick={handleAddManualDate}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-indigo-400 hover:text-indigo-300"
+                    className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[0.5px] text-[#1c69d4] hover:text-[#0653b6]"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add Date Manually</span>
@@ -262,7 +262,7 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
                 </div>
 
                 {dates.length === 0 ? (
-                  <div className="text-xs text-slate-400 italic bg-slate-950 p-4 rounded text-center border border-slate-800">
+                  <div className="text-xs text-[#6b6b6b] italic bg-[#fafafa] p-4 text-center border border-[#e6e6e6]">
                     No new dates extracted from this update.
                   </div>
                 ) : (
@@ -281,18 +281,18 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
 
               {/* Save Gate Status Explanation */}
               {!allDatesConfirmed && (
-                <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded text-amber-300 text-xs flex items-center gap-2 font-medium">
+                <div className="p-3 bg-[#fffbeb] border border-[#fde68a] text-[#b45309] text-xs flex items-center gap-2 font-bold uppercase tracking-[0.5px]">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>Please confirm or dismiss all AI-suggested dates above before saving.</span>
                 </div>
               )}
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-between pt-3 border-t border-[#e6e6e6]">
                 <button
                   type="button"
                   onClick={() => setDraft(null)}
-                  className="text-xs text-slate-400 hover:text-white"
+                  className="text-xs font-bold uppercase tracking-[0.5px] text-[#6b6b6b] hover:text-[#262626]"
                 >
                   ← Back to edit input
                 </button>
@@ -301,7 +301,7 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
                   type="button"
                   onClick={handleConfirmMerge}
                   disabled={!canSave}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-950 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-6 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-[#1c69d4] hover:bg-[#0653b6] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                   {isLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

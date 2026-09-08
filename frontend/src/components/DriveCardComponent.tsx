@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Building2, Clock, ChevronRight, Loader2, CalendarCheck } from "lucide-react";
+import { Clock, ChevronRight, Loader2, CalendarCheck } from "lucide-react";
 import { ApplicationStatus, DriveCard } from "../types/drive";
 import { updateApplicationStatus } from "../services/api";
 
@@ -8,14 +8,6 @@ interface DriveCardComponentProps {
   onSelectDrive: (driveId: string) => void;
   onStatusUpdated?: () => void;
 }
-
-const COMPANY_TYPE_STYLES: Record<string, { label: string; style: string }> = {
-  product: { label: "Product", style: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30" },
-  startup: { label: "Startup", style: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" },
-  service: { label: "Service", style: "bg-amber-500/20 text-amber-300 border-amber-500/30" },
-  psu: { label: "PSU", style: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
-  unknown: { label: "Unknown", style: "bg-slate-500/20 text-slate-400 border-slate-500/30" },
-};
 
 const STATUS_OPTIONS: { id: ApplicationStatus; label: string }[] = [
   { id: "not_applied", label: "Not Applied" },
@@ -34,8 +26,6 @@ export const DriveCardComponent: React.FC<DriveCardComponentProps> = ({
 }) => {
   const [currentStatus, setCurrentStatus] = useState<ApplicationStatus>(drive.application_status);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-
-  const typeBadge = COMPANY_TYPE_STYLES[drive.company_type] || COMPANY_TYPE_STYLES.unknown;
 
   const handleStatusChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
@@ -58,18 +48,24 @@ export const DriveCardComponent: React.FC<DriveCardComponentProps> = ({
       const absDays = Math.abs(drive.days_left);
       return {
         label: `Closed (${absDays} ${absDays === 1 ? "day" : "days"} ago)`,
-        style: "bg-red-500/20 text-red-300 border-red-500/30",
+        style: "bg-[#f7f7f7] text-[#6b6b6b] border-[#e6e6e6]",
       };
     }
     if (drive.days_left === 0) {
       return {
-        label: "Deadline Today!",
-        style: "bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse font-bold",
+        label: "Closes Today",
+        style: "bg-[#fef2f2] text-[#dc2626] border-[#fecaca] font-bold animate-pulse",
+      };
+    }
+    if (drive.days_left <= 2) {
+      return {
+        label: `${drive.days_left}d left`,
+        style: "bg-[#fffbeb] text-[#b45309] border-[#fde68a] font-bold",
       };
     }
     return {
       label: `${drive.days_left} ${drive.days_left === 1 ? "day" : "days"} left`,
-      style: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30 font-medium",
+      style: "bg-[#eff6ff] text-[#1c69d4] border-[#bfdbfe] font-medium",
     };
   };
 
@@ -84,75 +80,157 @@ export const DriveCardComponent: React.FC<DriveCardComponentProps> = ({
     }
   };
 
+  const getStatusBadge = () => {
+    switch (currentStatus) {
+      case "offer":
+        return { label: "Offer Accepted 🎉", style: "bg-[#ecfdf5] text-[#15803d] border-[#bbf7d0]" };
+      case "interview":
+        return { label: "Interview Round", style: "bg-[#f5f3ff] text-[#6d28d9] border-[#ddd6fe]" };
+      case "oa":
+        return { label: "OA Test Scheduled", style: "bg-[#eff6ff] text-[#1c69d4] border-[#bfdbfe]" };
+      case "applied":
+        return { label: "Applied", style: "bg-[#eff6ff] text-[#1c69d4] border-[#bfdbfe]" };
+      case "rejected":
+        return { label: "Not Selected", style: "bg-[#fef2f2] text-[#dc2626] border-[#fecaca]" };
+      case "withdrawn":
+        return { label: "Withdrawn", style: "bg-[#f7f7f7] text-[#6b6b6b] border-[#e6e6e6]" };
+      default:
+        return { label: "Not Applied", style: "bg-[#f7f7f7] text-[#6b6b6b] border-[#e6e6e6]" };
+    }
+  };
+
+  const statusBadge = getStatusBadge();
+
   return (
     <div
       onClick={() => onSelectDrive(drive.id)}
-      className={`p-5 rounded-xl border transition-all duration-200 cursor-pointer shadow-lg hover:shadow-indigo-500/10 space-y-4 group ${
+      className={`group relative overflow-hidden bg-white border transition-all duration-200 cursor-pointer space-y-4 p-5 ${
         drive.is_overdue
-          ? "bg-slate-950/60 border-slate-800/80 opacity-75 hover:opacity-100 hover:border-slate-700"
-          : "bg-slate-900 border-slate-800 hover:border-indigo-500/50"
+          ? "border-[#e6e6e6] opacity-80 hover:opacity-100 hover:border-[#cccccc]"
+          : "border-[#e6e6e6] hover:border-[#1c69d4]"
       }`}
     >
       {/* Top Header Row */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <h3 className="text-base font-bold text-white group-hover:text-indigo-300 transition-colors">
-              {drive.company_name}
-            </h3>
-            <span
-              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${typeBadge.style}`}
-            >
-              {typeBadge.label}
-            </span>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3.5">
+          {/* BMW Dark Navy Monogram Avatar */}
+          <div className="w-11 h-11 bg-[#1a2129] border border-[#262e38] flex items-center justify-center font-bold text-white text-sm shrink-0">
+            {drive.company_name.slice(0, 2).toUpperCase()}
           </div>
 
-          <div className="text-xs text-slate-300 font-medium flex items-center gap-1.5">
-            <Building2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-            <span>{drive.role_title}</span>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-base font-bold text-[#262626] group-hover:text-[#1c69d4] transition-colors tracking-tight">
+                {drive.company_name}
+              </h3>
+              <span className="text-[10px] font-bold uppercase tracking-[1px] px-2 py-0.5 bg-[#f7f7f7] text-[#6b6b6b] border border-[#e6e6e6]">
+                {drive.company_type}
+              </span>
+            </div>
+
+            <p className="text-xs text-[#3c3c3c] font-light line-clamp-1">
+              {drive.role_title}
+            </p>
           </div>
         </div>
 
         {/* Days Left Chip */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <span
-            className={`text-xs px-2.5 py-1 rounded-full border flex items-center gap-1.5 ${daysChip.style}`}
+            className={`text-xs px-2.5 py-1 border inline-flex items-center gap-1.5 ${daysChip.style}`}
           >
             <Clock className="w-3.5 h-3.5" />
             <span>{daysChip.label}</span>
           </span>
+        </div>
+      </div>
 
-          <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all" />
+      {/* Recruitment Funnel Stepper */}
+      <div className="pt-2">
+        <div className="text-[10px] font-bold text-[#6b6b6b] uppercase tracking-[1.5px] mb-2 flex items-center justify-between">
+          <span>Recruitment Funnel</span>
+          <span className={`px-2 py-0.5 text-[10px] border ${statusBadge.style}`}>
+            {statusBadge.label}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-4 gap-1 items-center">
+          {["Applied", "OA Test", "Interview", "Offer"].map((step, idx) => {
+            const currentIdx =
+              currentStatus === "offer"
+                ? 3
+                : currentStatus === "interview"
+                ? 2
+                : currentStatus === "oa"
+                ? 1
+                : currentStatus === "applied"
+                ? 0
+                : -1;
+
+            const isCompleted = idx < currentIdx;
+            const isCurrent = idx === currentIdx;
+
+            return (
+              <div key={step} className="space-y-1">
+                <div
+                  className={`h-1.5 transition-all ${
+                    isCompleted
+                      ? "bg-[#22c55e]"
+                      : isCurrent
+                      ? "bg-[#1c69d4]"
+                      : "bg-[#e6e6e6]"
+                  }`}
+                />
+                <span
+                  className={`text-[9px] block truncate text-center uppercase tracking-wider ${
+                    isCurrent
+                      ? "text-[#1c69d4] font-bold"
+                      : isCompleted
+                      ? "text-[#22c55e] font-medium"
+                      : "text-[#9a9a9a] font-light"
+                  }`}
+                >
+                  {step}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
       {/* Bottom Controls & Status Row */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-800/80 text-xs">
-        <div className="text-slate-400 font-mono text-[11px] flex items-center gap-1">
-          <CalendarCheck className="w-3.5 h-3.5 text-slate-500" />
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#e6e6e6] text-xs">
+        <div className="text-[#6b6b6b] font-mono text-[11px] flex items-center gap-1.5">
+          <CalendarCheck className="w-3.5 h-3.5 text-[#9a9a9a]" />
           <span>Deadline: {formatDate(drive.primary_deadline_iso)}</span>
         </div>
 
         {/* Inline Application Status Dropdown */}
-        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-          <label className="text-[11px] font-medium text-slate-400">Status:</label>
-          <div className="relative">
-            <select
-              value={currentStatus}
-              onChange={handleStatusChange}
-              disabled={isUpdatingStatus}
-              className="text-xs font-semibold px-3 py-1 rounded-lg bg-slate-950 border border-slate-700 text-slate-200 focus:outline-none focus:border-indigo-500 cursor-pointer disabled:opacity-50"
-            >
-              {STATUS_OPTIONS.map((opt) => (
-                <option key={opt.id} value={opt.id} className="bg-slate-900 text-slate-100">
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            {isUpdatingStatus && (
-              <Loader2 className="w-3 h-3 animate-spin text-indigo-400 absolute right-2 top-2" />
-            )}
+        <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-[#6b6b6b]">Stage:</label>
+            <div className="relative">
+              <select
+                value={currentStatus}
+                onChange={handleStatusChange}
+                disabled={isUpdatingStatus}
+                className="text-xs font-semibold px-2.5 py-1 bg-white border border-[#cccccc] text-[#262626] focus:outline-none focus:border-[#1c69d4] cursor-pointer disabled:opacity-50 transition-colors"
+              >
+                {STATUS_OPTIONS.map((opt) => (
+                  <option key={opt.id} value={opt.id} className="bg-white text-[#262626]">
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              {isUpdatingStatus && (
+                <Loader2 className="w-3 h-3 animate-spin text-[#1c69d4] absolute right-2 top-2" />
+              )}
+            </div>
           </div>
+
+          <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[1.5px] text-[#1c69d4] group-hover:text-[#0653b6] transition-colors">
+            View <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </span>
         </div>
       </div>
     </div>

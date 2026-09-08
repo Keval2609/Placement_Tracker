@@ -24,7 +24,6 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
   // Map incoming API response to stateful editable draft format
   const [postings, setPostings] = useState<DrivePostingDraft[]>(() => {
     if (!initialResult.postings || initialResult.postings.length === 0) {
-      // Fallback empty draft if AI output was empty
       return [
         {
           id: `draft_${Date.now()}_0`,
@@ -54,7 +53,7 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
         date_iso: d.date_iso,
         date_raw: d.date_raw,
         source: "ai_suggested",
-        confirmed_by_user: false, // Flagged unconfirmed by default
+        confirmed_by_user: false,
       })),
     }));
   });
@@ -121,23 +120,24 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
 
   if (savedSuccess) {
     return (
-      <div className="bg-slate-900 border border-emerald-500/30 rounded-xl p-8 text-center space-y-4 shadow-2xl">
-        <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
-        <h3 className="text-xl font-bold text-slate-100">
-          Draft Confirmed & Prepared for Persistence!
+      <div className="bg-white border border-[#bbf7d0] p-8 text-center space-y-4 max-w-xl mx-auto">
+        <div className="w-16 h-16 bg-[#ecfdf5] border border-[#bbf7d0] text-[#15803d] flex items-center justify-center mx-auto">
+          <CheckCircle2 className="w-8 h-8" />
+        </div>
+        <h3 className="text-xl font-bold text-[#262626] tracking-tight">
+          Draft Confirmed & Validated
         </h3>
-        <p className="text-xs text-slate-400 max-w-md mx-auto">
-          All dates have been human-confirmed. This payload is validated and ready
-          for <code className="text-indigo-400 bg-slate-950 px-1.5 py-0.5 rounded">POST /drives</code>.
+        <p className="text-xs font-light text-[#6b6b6b] max-w-md mx-auto leading-relaxed">
+          All dates and criteria have been human-verified and prepared for tracking.
         </p>
 
         <div className="pt-4 flex justify-center gap-3">
           <button
             type="button"
             onClick={onReset}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition-colors"
+            className="px-6 py-2.5 bg-[#1c69d4] hover:bg-[#0653b6] text-white text-xs font-bold uppercase tracking-[0.5px] transition-all"
           >
-            Ingest Another Message
+            Ingest Another Notice
           </button>
         </div>
       </div>
@@ -145,35 +145,36 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl mx-auto">
       {/* Top Controls Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-slate-900 border border-slate-800 rounded-xl">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-white border border-[#e6e6e6]">
         <button
           type="button"
           onClick={onReset}
-          className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#f7f7f7] border border-[#e6e6e6] text-xs font-bold uppercase tracking-[0.5px] text-[#262626] hover:bg-[#ebebeb] transition-colors cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4" /> Start Over
+          <ArrowLeft className="w-4 h-4 text-[#1c69d4]" />
+          <span>Start Over</span>
         </button>
 
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={handleAddEmptyPosting}
-            className="inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.5px] px-4 py-2 bg-white hover:bg-[#f7f7f7] text-[#262626] border border-[#cccccc] transition-colors cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" /> Add Another Posting
+            <Plus className="w-4 h-4 text-[#1c69d4]" />
+            <span>Add Another Posting</span>
           </button>
         </div>
       </div>
 
-      {/* Trust & Constraint Banner */}
-      <div className="p-4 bg-indigo-950/40 border border-indigo-500/30 rounded-xl flex items-start gap-3 text-xs text-indigo-200">
-        <ShieldCheck className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
+      {/* Trust & Verification Banner */}
+      <div className="p-4 bg-[#eff6ff] border border-[#bfdbfe] flex items-start gap-3 text-xs text-[#1c69d4]">
+        <ShieldCheck className="w-5 h-5 text-[#1c69d4] shrink-0 mt-0.5" />
         <div>
-          <span className="font-bold">Human-in-the-loop Confirmation Gate:</span> Each
-          AI-suggested date requires explicit confirmation, edit, or dismissal before
-          saving. Bulk-confirm is disabled by design.
+          <span className="font-bold text-[#262626] block uppercase tracking-[0.5px]">Human-in-the-Loop Confirmation Gate</span>
+          <span className="text-[#3c3c3c] font-light">Each AI-extracted date requires explicit confirmation or dismissal before saving to protect against missed deadlines.</span>
         </div>
       </div>
 
@@ -191,18 +192,18 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
       </div>
 
       {/* Bottom Save Action Bar */}
-      <div className="sticky bottom-4 z-10 bg-slate-950/90 backdrop-blur border border-slate-800 p-4 rounded-xl shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="sticky bottom-4 z-20 bg-white border border-[#e6e6e6] p-4.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
         {/* Status / Reason Banner */}
         <div className="w-full sm:w-auto">
           {!isSaveEnabled ? (
-            <div className="inline-flex items-center gap-2 text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
+            <div className="inline-flex items-center gap-2 text-xs text-[#b45309] bg-[#fffbeb] border border-[#fde68a] px-3.5 py-1.5 font-bold uppercase tracking-[0.5px]">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-[#b45309]" />
               <span>{disableSaveReason}</span>
             </div>
           ) : (
-            <div className="inline-flex items-center gap-2 text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>All dates human-confirmed! Ready to save.</span>
+            <div className="inline-flex items-center gap-2 text-xs text-[#15803d] bg-[#ecfdf5] border border-[#bbf7d0] px-3.5 py-1.5 font-bold uppercase tracking-[0.5px]">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-[#15803d]" />
+              <span>All dates confirmed. Ready to save.</span>
             </div>
           )}
         </div>
@@ -212,9 +213,10 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
           type="button"
           onClick={handleSave}
           disabled={!isSaveEnabled}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:hover:bg-emerald-600 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg transition-all shadow-lg"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#1c69d4] hover:bg-[#0653b6] disabled:opacity-40 disabled:hover:bg-[#1c69d4] disabled:cursor-not-allowed text-white text-xs font-bold uppercase tracking-[0.5px] transition-all cursor-pointer shadow-sm"
         >
-          <Save className="w-4 h-4" /> Save Confirmed Drive(s)
+          <Save className="w-4 h-4" />
+          <span>Save Confirmed Drive(s)</span>
         </button>
       </div>
     </div>

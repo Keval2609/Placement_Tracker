@@ -8,6 +8,7 @@ import {
   triggerOnboardingTest,
 } from '../services/api';
 import { detectOemBrand, OemInfo } from '../utils/oemDetection';
+import { Bell, Send, AlertTriangle, ShieldCheck, SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-react';
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -38,16 +39,13 @@ export const NotificationSetupBanner: React.FC = () => {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check OEM brand
     const info = detectOemBrand();
     setOemInfo(info);
 
-    // Check push permission state
     if ('Notification' in window && Notification.permission === 'granted') {
       setPushEnabled(true);
     }
 
-    // Load Telegram link & onboarding test status
     loadStatus();
   }, []);
 
@@ -77,7 +75,6 @@ export const NotificationSetupBanner: React.FC = () => {
         return;
       }
 
-      // Register push via service worker
       if ('serviceWorker' in navigator) {
         const registration = await navigator.serviceWorker.ready;
         const vapidPublicKey = await fetchVapidPublicKey();
@@ -91,12 +88,11 @@ export const NotificationSetupBanner: React.FC = () => {
           });
         }
 
-        await savePushSubscription(subscription.toJSON());
+        await savePushSubscription(subscription);
         setPushEnabled(true);
-        setStatusMessage('Web Push notifications enabled successfully!');
+        setStatusMessage('Web Push enabled successfully.');
       }
     } catch (err: unknown) {
-      console.error('Push setup failed:', err);
       setStatusMessage(`Push setup failed: ${(err as Error).message}`);
     }
   };
@@ -107,9 +103,9 @@ export const NotificationSetupBanner: React.FC = () => {
 
     setTelegramLoading(true);
     try {
-      await linkTelegramChat(telegramChatId.trim());
-      setIsTelegramLinked(true);
-      setStatusMessage(`Telegram chat_id ${telegramChatId} linked as fallback!`);
+      const linkedId = await linkTelegramChat(telegramChatId.trim());
+      setIsTelegramLinked(Boolean(linkedId));
+      setStatusMessage('Telegram chat successfully linked.');
     } catch (err: unknown) {
       setStatusMessage(`Telegram link failed: ${(err as Error).message}`);
     } finally {
@@ -122,14 +118,13 @@ export const NotificationSetupBanner: React.FC = () => {
       setStatusMessage('Sending test push notification...');
       await triggerOnboardingTest();
 
-      // Poll status 3 seconds later
       setTimeout(async () => {
         const updated = await fetchOnboardingTestStatus();
         setTestStatus(updated);
         if (updated.ack_received) {
-          setStatusMessage('✅ Push test verified successfully!');
+          setStatusMessage('Push test verified successfully.');
         } else {
-          setStatusMessage('⚠️ Test push sent. If unacknowledged, Telegram fallback will trigger.');
+          setStatusMessage('Test push sent. If unacknowledged, Telegram fallback will trigger.');
         }
       }, 3000);
     } catch (err: unknown) {
@@ -138,75 +133,82 @@ export const NotificationSetupBanner: React.FC = () => {
   };
 
   return (
-    <div className="mb-6 rounded-xl border border-slate-700/60 bg-slate-900/80 p-4 text-slate-100 shadow-md backdrop-blur-sm">
+    <div className="border border-[#e6e6e6] bg-[#fafafa] p-4 sm:p-5 text-[#262626] space-y-3">
       {/* Alert Header Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600/20 text-indigo-400">
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-              />
-            </svg>
+          <div className="flex h-10 w-10 items-center justify-center bg-white text-[#1c69d4] border border-[#cccccc]">
+            <Bell className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-100">
-              Multi-Channel Alerts & Fallback Escalation
-            </h3>
-            <p className="text-xs text-slate-400">
-              Web Push (48h/24h/6h) + Telegram Bot fallback if push goes unacked for 10 min.
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-xs sm:text-sm font-bold text-[#262626] tracking-tight">
+                Multi-Channel Alerts & Fallback
+              </h3>
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border ${
+                    pushEnabled
+                      ? 'bg-[#ecfdf5] text-[#15803d] border-[#bbf7d0]'
+                      : 'bg-[#fffbeb] text-[#b45309] border-[#fde68a]'
+                  }`}
+                >
+                  {pushEnabled ? 'Push: Active' : 'Push: Off'}
+                </span>
+                <span
+                  className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border ${
+                    isTelegramLinked
+                      ? 'bg-[#ecfdf5] text-[#15803d] border-[#bbf7d0]'
+                      : 'bg-white text-[#6b6b6b] border-[#cccccc]'
+                  }`}
+                >
+                  {isTelegramLinked ? 'Telegram: Linked' : 'Telegram: Off'}
+                </span>
+              </div>
+            </div>
+            <p className="text-[11px] font-light text-[#6b6b6b]">
+              Web Push alerts (48h/24h/6h) + Telegram fallback if unacknowledged for 10 min.
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => setBannerExpanded(!bannerExpanded)}
-            className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-700"
-          >
-            {bannerExpanded ? 'Hide Settings' : 'Configure Alerts & Telegram'}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setBannerExpanded(!bannerExpanded)}
+          className="inline-flex items-center gap-1.5 border border-[#cccccc] bg-white px-3 py-1.5 text-xs font-bold uppercase tracking-[0.5px] text-[#262626] hover:bg-[#f7f7f7] transition-colors cursor-pointer"
+        >
+          <SlidersHorizontal className="w-3.5 h-3.5 text-[#1c69d4]" />
+          <span>{bannerExpanded ? 'Hide Settings' : 'Configure Channels'}</span>
+          {bannerExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+        </button>
       </div>
 
       {statusMessage && (
-        <div className="mt-3 rounded-md bg-indigo-950/60 p-2.5 text-xs text-indigo-300 border border-indigo-800/50">
+        <div className="bg-[#eff6ff] p-2.5 text-xs text-[#1c69d4] border border-[#bfdbfe]">
           {statusMessage}
         </div>
       )}
 
-      {/* OEM Background Notification Warning Banner */}
+      {/* OEM Background Notification Warning */}
       {testStatus.show_oem_warning && oemInfo && (
-        <div className="mt-4 rounded-lg border border-amber-500/40 bg-amber-950/40 p-4 text-amber-200">
+        <div className="border border-[#fde68a] bg-[#fffbeb] p-3.5 text-[#92400e]">
           <div className="flex items-start gap-3">
-            <div className="mt-0.5 text-amber-400 text-lg">⚠️</div>
-            <div className="flex-1">
-              <h4 className="font-semibold text-amber-100 text-sm">
-                Didn't get that? Your phone may be blocking background notifications
+            <AlertTriangle className="w-5 h-5 text-[#b45309] shrink-0 mt-0.5" />
+            <div className="flex-1 text-xs">
+              <h4 className="font-bold text-[#92400e] text-xs">
+                Your phone might be blocking background notifications ({oemInfo.oemName})
               </h4>
-              <p className="mt-1 text-xs text-amber-300/90 leading-relaxed">
-                Detected device: <strong className="text-amber-200">{oemInfo.oemName}</strong> ({oemInfo.brand}).
-                {' '}{oemInfo.advice}
+              <p className="mt-1 text-[#92400e] font-light leading-relaxed text-[11px]">
+                {oemInfo.advice}
               </p>
-              <div className="mt-3 flex items-center gap-3">
+              <div className="mt-2">
                 <a
                   href={oemInfo.unwhitelistUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded bg-amber-600 px-3 py-1.5 text-xs font-medium text-slate-950 hover:bg-amber-500"
+                  className="inline-flex items-center gap-1 bg-[#b45309] px-2.5 py-1 text-[11px] font-bold text-white hover:bg-[#92400e] transition-colors"
                 >
-                  Fix Battery Settings on DontKillMyApp.com
-                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
+                  Fix on DontKillMyApp.com ↗
                 </a>
               </div>
             </div>
@@ -216,63 +218,66 @@ export const NotificationSetupBanner: React.FC = () => {
 
       {/* Expanded Alert Settings Panel */}
       {bannerExpanded && (
-        <div className="mt-4 grid grid-cols-1 gap-4 border-t border-slate-800 pt-4 md:grid-cols-2">
+        <div className="mt-3 grid grid-cols-1 gap-3.5 border-t border-[#e6e6e6] pt-3.5 md:grid-cols-2">
           {/* Step 1: Web Push Setup */}
-          <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3.5">
+          <div className="border border-[#e6e6e6] bg-white p-3.5 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-300">
-                1. Web Push Notification
+              <span className="text-xs font-bold text-[#262626] flex items-center gap-1.5">
+                <Bell className="w-3.5 h-3.5 text-[#1c69d4]" />
+                Browser Web Push
               </span>
               <span
-                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border ${
                   pushEnabled
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                    : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                    ? 'bg-[#ecfdf5] text-[#15803d] border-[#bbf7d0]'
+                    : 'bg-[#fffbeb] text-[#b45309] border-[#fde68a]'
                 }`}
               >
-                {pushEnabled ? '● Enabled' : '○ Not Setup'}
+                {pushEnabled ? 'Enabled' : 'Not Setup'}
               </span>
             </div>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="text-[11px] font-light text-[#6b6b6b]">
               VAPID signed background alerts for primary deadlines.
             </p>
             <button
+              type="button"
               onClick={handleEnablePush}
               disabled={pushEnabled}
-              className="mt-3 w-full rounded-md bg-indigo-600 py-1.5 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+              className="w-full bg-[#1c69d4] py-2 text-xs font-bold uppercase tracking-[0.5px] text-white hover:bg-[#0653b6] disabled:opacity-50 transition-colors cursor-pointer"
             >
-              {pushEnabled ? 'Push Permission Granted' : 'Enable Web Push Notifications'}
+              {pushEnabled ? 'Push Permission Active' : 'Enable Web Push'}
             </button>
           </div>
 
           {/* Step 2: Telegram Account Linking */}
-          <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3.5">
+          <div className="border border-[#e6e6e6] bg-white p-3.5 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-300">
-                2. Telegram Fallback Setup
+              <span className="text-xs font-bold text-[#262626] flex items-center gap-1.5">
+                <Send className="w-3.5 h-3.5 text-[#1c69d4]" />
+                Telegram Bot Fallback
               </span>
               <span
-                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border ${
                   isTelegramLinked
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                    : 'bg-slate-700 text-slate-400'
+                    ? 'bg-[#ecfdf5] text-[#15803d] border-[#bbf7d0]'
+                    : 'bg-white text-[#6b6b6b] border-[#cccccc]'
                 }`}
               >
-                {isTelegramLinked ? '● Linked' : '○ Not Linked'}
+                {isTelegramLinked ? 'Linked' : 'Not Linked'}
               </span>
             </div>
-            <form onSubmit={handleLinkTelegram} className="mt-2.5 flex items-center gap-2">
+            <form onSubmit={handleLinkTelegram} className="flex items-center gap-2">
               <input
                 type="text"
                 placeholder="Enter Telegram Chat ID"
                 value={telegramChatId}
                 onChange={(e) => setTelegramChatId(e.target.value)}
-                className="flex-1 rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+                className="flex-1 border border-[#cccccc] bg-white px-3 py-1.5 text-xs text-[#262626] placeholder-[#9a9a9a] focus:border-[#1c69d4] focus:outline-none"
               />
               <button
                 type="submit"
                 disabled={telegramLoading}
-                className="rounded-md bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-500 disabled:opacity-50"
+                className="bg-[#1a2129] px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.5px] text-white hover:bg-[#262e38] disabled:opacity-50 transition-colors cursor-pointer"
               >
                 {isTelegramLinked ? 'Update' : 'Link'}
               </button>
@@ -280,18 +285,20 @@ export const NotificationSetupBanner: React.FC = () => {
           </div>
 
           {/* Step 3: Self-Test Onboarding Push */}
-          <div className="col-span-1 md:col-span-2 rounded-lg border border-slate-800 bg-slate-950/50 p-3.5 flex flex-wrap items-center justify-between gap-3">
+          <div className="col-span-1 md:col-span-2 border border-[#e6e6e6] bg-white p-3.5 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <span className="text-xs font-semibold text-slate-300">
-                3. Onboarding Delivery Self-Test
+              <span className="text-xs font-bold text-[#262626] flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#22c55e]" />
+                Onboarding Delivery Self-Test
               </span>
-              <p className="text-xs text-slate-400">
-                Test push delivery & OEM battery optimization detection on your phone.
+              <p className="text-[11px] font-light text-[#6b6b6b]">
+                Simulates deadline escalation and checks background battery lock.
               </p>
             </div>
             <button
+              type="button"
               onClick={handleRunOnboardingTest}
-              className="rounded-md bg-emerald-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-emerald-500"
+              className="bg-[#1c69d4] px-4 py-2 text-xs font-bold uppercase tracking-[0.5px] text-white hover:bg-[#0653b6] transition-colors cursor-pointer"
             >
               Run Delivery Self-Test
             </button>
