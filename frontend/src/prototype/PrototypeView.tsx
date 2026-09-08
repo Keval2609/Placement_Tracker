@@ -104,7 +104,7 @@ export const PrototypeView: React.FC<PrototypeViewProps> = ({ onExitPrototype })
               DEMO SHOWCASE PREVIEW
             </span>
             <span className="text-[#6b6b6b] font-light hidden sm:inline">
-              — Interactive Prototype using BMW Design Architecture (Cards, Funnel Pipeline, Quick Filters, AI Parser & Detail Views)
+              — Interactive Prototype Showcase (Cards, Funnel Pipeline, Quick Filters, AI Parser & Detail Views)
             </span>
           </div>
 

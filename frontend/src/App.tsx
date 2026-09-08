@@ -8,7 +8,19 @@ import { PrototypeView } from "./prototype/PrototypeView";
 import { ArrowLeft, Plus, Sparkles } from "lucide-react";
 
 function App() {
-  const [showPrototype, setShowPrototype] = useState<boolean>(false);
+  const [showPrototype, setShowPrototype] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      return (
+        params.get("demo") === "true" ||
+        params.get("mock") === "true" ||
+        params.get("prototype") === "true" ||
+        window.location.hash === "#demo" ||
+        window.location.hash === "#mock"
+      );
+    }
+    return false;
+  });
   const [activeDriveId, setActiveDriveId] = useState<string | null>(null);
   const [isIngesting, setIsIngesting] = useState<boolean>(false);
   const [extractionResult, setExtractionResult] =
@@ -26,7 +38,21 @@ function App() {
   };
 
   if (showPrototype) {
-    return <PrototypeView onExitPrototype={() => setShowPrototype(false)} />;
+    return (
+      <PrototypeView
+        onExitPrototype={() => {
+          setShowPrototype(false);
+          if (
+            window.location.search.includes("demo") ||
+            window.location.search.includes("mock") ||
+            window.location.hash.includes("demo") ||
+            window.location.hash.includes("mock")
+          ) {
+            window.history.replaceState({}, "", window.location.pathname);
+          }
+        }}
+      />
+    );
   }
 
   return (
