@@ -20,16 +20,29 @@ A production-grade monorepo for tracking college placement drives, automated dat
 - **OEM Battery Optimization Detection**: Detects Android OEM brands (`Samsung`, `Xiaomi`/`MIUI`, `Oppo`, `Vivo`, `OnePlus`, `Realme`, `Huawei`) via User-Agent Client Hints (`navigator.userAgentData`). Renders an in-app warning banner (*"Didn't get that? Your phone may be blocking background notifications"*) with brand-specific setup instructions and direct links to `dontkillmyapp.com`.
 
 ### 🏠 Main Dashboard & Application Tracking (PRD Section 1.3.5)
-- **Home Dashboard (`GET /drives`)**: Displays placement drive cards sorted by nearest `is_primary_deadline` ascending.
+- **Executive KPI Hero Metrics**: High-contrast dark navy hero band presenting real-time summary statistics — *Total Opportunities Tracked*, *Urgent Deadlines (< 72h)* with action alerts, *Active In Pipeline*, and *Offers Secured* — with one-click category filtering.
+- **Multiple Visual Layouts**:
+  - **Card Grid View**: Crisp rectangular cards with dark monogram badges, compensation tags, 4-stage recruitment funnels (*Applied*, *OA Test*, *Interview*, *Offer*), and urgency countdown chips.
+  - **Pipeline Funnel View (Kanban)**: Visual columns (*Eligible / Not Applied*, *Applied*, *OA Scheduled*, *Interview Round*, *Offer Secured*) with one-click `Move Next` stage advancement.
+  - **Dense Table View**: High-density scanning table displaying company, role, package, CGPA, stage, and primary deadline countdown.
+- **Interactive Mock Showcase**: Dedicated demonstration mode populated with realistic Tier-1 campus placement drives (Google, Microsoft, Goldman Sachs, Uber, Cisco, TCS) for zero-setup exploration and manual verification.
 - **Closed / Overdue Section**: Overdue and past deadlines automatically sort into a visually distinct "Closed / Past Drives" section at the bottom of the dashboard.
 - **Persistent Filters (`localStorage`)**:
   - **Company Type Multi-Select**: Filter by `product`, `startup`, `service`, `psu`, or `unknown`. Selections are persisted in `localStorage` under `pt_filter_company_types` to survive page reloads.
   - **Application Status Multi-Select**: Filter by `not_applied`, `applied`, `oa`, `interview`, `offer`, `rejected`, or `withdrawn`.
   - **Deadline Window Selector**: Filter by `next_7_days`, `next_30_days`, or `all`.
+  - **Real-Time Text Search**: Instant search by company name, role title, branch, and package.
 - **Inline Status Updating (`PATCH /applications/{id}`)**:
   - Direct status update dropdown on each card with unrestricted state transitions (allowing users to roll back or undo accidental changes).
   - **Set-Once `applied_at` Timestamp**: Automatically sets `applied_at` when status transitions to `applied` for the first time, leaving `applied_at` untouched on subsequent status changes (e.g. `applied → interview`).
 - **Drive Navigation**: Tapping any drive card navigates directly to its detail page (`/drives/{id}`).
+
+### 🎨 Design System & Aesthetics
+- **Canvas & Contrast**: Pure white base canvas (`#ffffff`) framed by an executive dark navy hero band (`#1a2129`) with elevated metric tiles (`#262e38`).
+- **Engineered Precision Geometry**: Crisp 0px rectangular radius across buttons, cards, filters, and inputs for high density and modern clarity.
+- **Editorial Typographic Contrast**: High-contrast pairings using Inter 700 Bold for display headlines and Inter 300 Light for readable body copy.
+- **Signature Divider**: 4px horizontal accent tricolor stripe running across the top header rule.
+- **Hairlines**: Clean 1px `#e6e6e6` dividers and `#cccccc` interactive element borders.
 
 ### 🤖 AI Extraction Pipeline (PRD Section 3.1 & 3.3)
 - **Raw Text Ingestion (`POST /ingest/text`)**: Parses unstructured WhatsApp placement messages and extracts job postings with dates typed as `application_deadline`, `oa`, `interview`, `ppt`, `result`, `joining`, `other`. Resolves relative dates anchored in IST (`Asia/Kolkata`).
