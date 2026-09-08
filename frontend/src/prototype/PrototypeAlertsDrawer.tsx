@@ -10,12 +10,12 @@ export const PrototypeAlertsDrawer: React.FC<PrototypeAlertsDrawerProps> = ({
   isOpen,
   onClose,
 }) => {
-  if (!isOpen) return null;
-
   const [pushActive, setPushActive] = useState(true);
   const [telegramLinked, setTelegramLinked] = useState(false);
   const [telegramHandle, setTelegramHandle] = useState("");
   const [testSent, setTestSent] = useState(false);
+
+  if (!isOpen) return null;
 
   const handleLinkTelegram = (e: React.FormEvent) => {
     e.preventDefault();

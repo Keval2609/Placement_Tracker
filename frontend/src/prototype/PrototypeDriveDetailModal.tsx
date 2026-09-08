@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PrototypeDrive } from "./mockData";
 import {
   X,
@@ -23,12 +23,18 @@ export const PrototypeDriveDetailModal: React.FC<PrototypeDriveDetailModalProps>
   onClose,
   onUpdateStatus,
 }) => {
-  if (!drive) return null;
-
   const [newUpdateTitle, setNewUpdateTitle] = useState("");
   const [newUpdateNotes, setNewUpdateNotes] = useState("");
   const [isAddingUpdate, setIsAddingUpdate] = useState(false);
-  const [localTimeline, setLocalTimeline] = useState(drive.timeline);
+  const [localTimeline, setLocalTimeline] = useState(drive?.timeline ?? []);
+
+  useEffect(() => {
+    if (drive) {
+      setLocalTimeline(drive.timeline);
+    }
+  }, [drive]);
+
+  if (!drive) return null;
 
   const handleAddTimelineEvent = (e: React.FormEvent) => {
     e.preventDefault();

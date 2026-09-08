@@ -22,8 +22,6 @@ export const PrototypeIngestModal: React.FC<PrototypeIngestModalProps> = ({
   onClose,
   onDriveCreated,
 }) => {
-  if (!isOpen) return null;
-
   const [activeTab, setActiveTab] = useState<"text" | "file">("text");
   const [inputText, setInputText] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -36,6 +34,8 @@ export const PrototypeIngestModal: React.FC<PrototypeIngestModalProps> = ({
     branches: string[];
     link: string;
   } | null>(null);
+
+  if (!isOpen) return null;
 
   const handleLoadSample = () => {
     setInputText(SAMPLE_WHATSAPP_NOTICE);
