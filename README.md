@@ -158,7 +158,7 @@ npm run dev
 | `CORS_ORIGINS` | Allowed frontend origins | `http://localhost:5173` |
 | `LLM_PROVIDER` | Active extraction LLM provider (`groq` or `ollama`) | `groq` |
 | `GROQ_API_KEY` | Groq API Key | `""` |
-| `GROQ_MODEL` | Groq Model ID | `llama-3.3-70b-versatile` |
+| `GROQ_MODEL` | Groq Model ID | `openai/gpt-oss-20b` |
 | `OLLAMA_BASE_URL` | Local Ollama Base URL | `http://localhost:11434` |
 | `OLLAMA_MODEL` | Local Ollama Model Name | `qwen2.5:7b` |
 | `VAPID_PUBLIC_KEY` | Web Push VAPID Public Key | `""` (auto-generated if empty) |

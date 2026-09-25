@@ -321,7 +321,7 @@ def test_call_groq_http_fallback(mock_httpx_post: MagicMock) -> None:
     mock_resp.json.return_value = {"choices": [{"message": {"content": '{"postings": []}'}}]}
     mock_httpx_post.return_value = mock_resp
 
-    dummy_settings = Settings(groq_api_key="fake-key", groq_model="llama-3.3-70b-versatile")
+    dummy_settings = Settings(groq_api_key="fake-key", groq_model="openai/gpt-oss-20b")
     out = _call_groq("system prompt", "raw text", dummy_settings)
     assert out == '{"postings": []}'
 
