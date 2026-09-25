@@ -1,4 +1,4 @@
-import { ExtractionAPIResponse } from "../types/extraction";
+import { ExtractionAPIResponse, DrivePostingDraft } from "../types/extraction";
 import {
   ApplicationResponse,
   ApplicationStatus,
@@ -46,6 +46,23 @@ export async function ingestFile(file: File): Promise<ExtractionAPIResponse> {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || `Server error (${response.status})`);
+  }
+
+  return response.json();
+}
+
+export async function createDrive(payload: DrivePostingDraft): Promise<DriveDetail> {
+  const response = await fetch(`${API_BASE_URL}/drives`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Failed creating drive (${response.status})`);
   }
 
   return response.json();

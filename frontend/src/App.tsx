@@ -6,7 +6,7 @@ import { DashboardPage } from "./components/DashboardPage";
 import { ExtractionAPIResponse } from "./types/extraction";
 import { PrototypeView } from "./prototype/PrototypeView";
 import { ArrowLeft, Plus, Sparkles } from "lucide-react";
-
+import { createDrive } from "./services/api";
 function App() {
   const [showPrototype, setShowPrototype] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
@@ -148,9 +148,15 @@ function App() {
             <ConfirmationScreen
               initialResult={extractionResult}
               onReset={handleResetIngest}
-              onSaveConfirmedDraft={() => {
-                setIsIngesting(false);
-                setExtractionResult(null);
+              onSaveConfirmedDraft={async (postings) => {
+                try {
+                  await Promise.all(postings.map(p => createDrive(p)));
+                  setIsIngesting(false);
+                  setExtractionResult(null);
+                } catch (error) {
+                  console.error("Failed to save drives:", error);
+                  alert("Failed to save drives. Please try again.");
+                }
               }}
             />
           )
