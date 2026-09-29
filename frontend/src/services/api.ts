@@ -17,8 +17,24 @@ const API_BASE_URL =
     ? "http://localhost:8000"
     : "https://placement-tracker-yzdq.onrender.com");
 
+let getTokenFn: (() => Promise<string | null>) | null = null;
+export function setTokenGetter(fn: () => Promise<string | null>) {
+  getTokenFn = fn;
+}
+
+async function apiFetch(input: RequestInfo | URL, init?: RequestInit) {
+  const headers = new Headers(init?.headers);
+  if (getTokenFn) {
+    const token = await getTokenFn();
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+  }
+  return fetch(input, { ...init, headers });
+}
+
 export async function ingestText(text: string): Promise<ExtractionAPIResponse> {
-  const response = await fetch(`${API_BASE_URL}/ingest/text`, {
+  const response = await apiFetch(`${API_BASE_URL}/ingest/text`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -38,7 +54,7 @@ export async function ingestFile(file: File): Promise<ExtractionAPIResponse> {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${API_BASE_URL}/ingest/file`, {
+  const response = await apiFetch(`${API_BASE_URL}/ingest/file`, {
     method: "POST",
     body: formData,
   });
@@ -52,7 +68,7 @@ export async function ingestFile(file: File): Promise<ExtractionAPIResponse> {
 }
 
 export async function createDrive(payload: DrivePostingDraft): Promise<DriveDetail> {
-  const response = await fetch(`${API_BASE_URL}/drives`, {
+  const response = await apiFetch(`${API_BASE_URL}/drives`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -69,7 +85,7 @@ export async function createDrive(payload: DrivePostingDraft): Promise<DriveDeta
 }
 
 export async function fetchDashboardDrives(): Promise<DriveCard[]> {
-  const response = await fetch(`${API_BASE_URL}/drives`);
+  const response = await apiFetch(`${API_BASE_URL}/drives`);
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || `Failed fetching drives (${response.status})`);
@@ -83,7 +99,7 @@ export async function updateApplicationStatus(
   status: ApplicationStatus,
   notes?: string
 ): Promise<ApplicationResponse> {
-  const response = await fetch(`${API_BASE_URL}/applications/${applicationId}`, {
+  const response = await apiFetch(`${API_BASE_URL}/applications/${applicationId}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -100,7 +116,7 @@ export async function updateApplicationStatus(
 }
 
 export async function fetchDriveDetail(id: string): Promise<DriveDetail> {
-  const response = await fetch(`${API_BASE_URL}/drives/${id}`);
+  const response = await apiFetch(`${API_BASE_URL}/drives/${id}`);
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || `Drive not found (${response.status})`);
@@ -109,7 +125,7 @@ export async function fetchDriveDetail(id: string): Promise<DriveDetail> {
 }
 
 export async function fetchDriveTimeline(id: string): Promise<TimelineEvent[]> {
-  const response = await fetch(`${API_BASE_URL}/drives/${id}/timeline`);
+  const response = await apiFetch(`${API_BASE_URL}/drives/${id}/timeline`);
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || `Failed fetching timeline (${response.status})`);
@@ -119,7 +135,7 @@ export async function fetchDriveTimeline(id: string): Promise<TimelineEvent[]> {
 }
 
 export async function fetchDriveDocuments(id: string): Promise<DocumentItem[]> {
-  const response = await fetch(`${API_BASE_URL}/drives/${id}/documents`);
+  const response = await apiFetch(`${API_BASE_URL}/drives/${id}/documents`);
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || `Failed fetching documents (${response.status})`);
@@ -139,7 +155,7 @@ export async function proposeDriveUpdateText(
   id: string,
   text: string
 ): Promise<DriveUpdateDraft> {
-  const response = await fetch(`${API_BASE_URL}/drives/${id}/updates`, {
+  const response = await apiFetch(`${API_BASE_URL}/drives/${id}/updates`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -166,7 +182,7 @@ export async function proposeDriveUpdateFile(
     formData.append("text", text);
   }
 
-  const response = await fetch(`${API_BASE_URL}/drives/${id}/updates`, {
+  const response = await apiFetch(`${API_BASE_URL}/drives/${id}/updates`, {
     method: "POST",
     body: formData,
   });
@@ -184,7 +200,7 @@ export async function confirmDriveUpdate(
   updateId: string,
   payload: ConfirmUpdatePayload
 ): Promise<ConfirmUpdateResponse> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/drives/${id}/updates/${updateId}/confirm`,
     {
       method: "PATCH",
@@ -206,7 +222,7 @@ export async function confirmDriveUpdate(
 /* Alert System API Endpoints */
 
 export async function fetchVapidPublicKey(): Promise<string> {
-  const response = await fetch(`${API_BASE_URL}/push/vapid-public-key`);
+  const response = await apiFetch(`${API_BASE_URL}/push/vapid-public-key`);
   if (!response.ok) {
     throw new Error("Failed fetching VAPID public key");
   }
@@ -217,7 +233,7 @@ export async function fetchVapidPublicKey(): Promise<string> {
 export async function savePushSubscription(
   subscription: PushSubscriptionJSON | Record<string, unknown>
 ): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/push/subscribe`, {
+  const response = await apiFetch(`${API_BASE_URL}/push/subscribe`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(subscription),
@@ -228,7 +244,7 @@ export async function savePushSubscription(
 }
 
 export async function linkTelegramChat(chatId: string): Promise<string> {
-  const response = await fetch(`${API_BASE_URL}/telegram/link`, {
+  const response = await apiFetch(`${API_BASE_URL}/telegram/link`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ chat_id: chatId }),
@@ -242,7 +258,7 @@ export async function linkTelegramChat(chatId: string): Promise<string> {
 }
 
 export async function fetchTelegramStatus(): Promise<{ is_linked: boolean; chat_id: string | null }> {
-  const response = await fetch(`${API_BASE_URL}/telegram/status`);
+  const response = await apiFetch(`${API_BASE_URL}/telegram/status`);
   if (!response.ok) {
     return { is_linked: false, chat_id: null };
   }
@@ -250,7 +266,7 @@ export async function fetchTelegramStatus(): Promise<{ is_linked: boolean; chat_
 }
 
 export async function triggerOnboardingTest(): Promise<{ test_id: string; message: string }> {
-  const response = await fetch(`${API_BASE_URL}/push/onboarding-test`, {
+  const response = await apiFetch(`${API_BASE_URL}/push/onboarding-test`, {
     method: "POST",
   });
   if (!response.ok) {
@@ -264,7 +280,7 @@ export async function fetchOnboardingTestStatus(): Promise<{
   ack_received: boolean;
   show_oem_warning: boolean;
 }> {
-  const response = await fetch(`${API_BASE_URL}/push/onboarding-test/status`);
+  const response = await apiFetch(`${API_BASE_URL}/push/onboarding-test/status`);
   if (!response.ok) {
     return { has_tested: false, ack_received: false, show_oem_warning: false };
   }

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Show, SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/react";
 import { IngestInput } from "./components/IngestInput";
 import { ConfirmationScreen } from "./components/ConfirmationScreen";
 import { DriveDetailPage } from "./components/DriveDetailPage";
@@ -6,8 +7,27 @@ import { DashboardPage } from "./components/DashboardPage";
 import { ExtractionAPIResponse } from "./types/extraction";
 import { PrototypeView } from "./prototype/PrototypeView";
 import { ArrowLeft, Plus, Sparkles } from "lucide-react";
-import { createDrive } from "./services/api";
+import { createDrive, setTokenGetter } from "./services/api";
+import { setSupabaseAuth } from "./lib/supabase";
 function App() {
+  const { getToken } = useAuth();
+  useEffect(() => {
+    setTokenGetter(async () => {
+      try {
+        const token = await getToken();
+        return token;
+      } catch {
+        return null;
+      }
+    });
+
+    // Also fetch the custom Supabase token template if configured,
+    // or just pass the default token to Supabase if it accepts it.
+    // Assuming you have a template named "supabase":
+    getToken({ template: "supabase" })
+      .then(setSupabaseAuth)
+      .catch(() => setSupabaseAuth(null));
+  }, [getToken]);
   const [showPrototype, setShowPrototype] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -97,6 +117,18 @@ function App() {
 
           {/* Right Navigation Controls */}
           <div className="flex items-center gap-2 sm:gap-3">
+            <Show when="signed-out">
+              <SignInButton mode="modal">
+                <button className="text-xs font-bold uppercase tracking-[0.5px] text-[#262626] bg-[#f7f7f7] hover:bg-[#ebebeb] px-3 py-2 border border-[#e6e6e6] transition-colors cursor-pointer">Sign In</button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <button className="text-xs font-bold uppercase tracking-[0.5px] text-white bg-[#262626] hover:bg-[#1a1a1a] px-3 py-2 border border-[#262626] transition-colors cursor-pointer">Sign Up</button>
+              </SignUpButton>
+            </Show>
+            <Show when="signed-in">
+              <UserButton />
+            </Show>
+
             {/* Toggle Mock Showcase */}
             <button
               type="button"
