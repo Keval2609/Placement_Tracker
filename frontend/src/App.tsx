@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/react";
 import { IngestInput } from "./components/IngestInput";
 import { ConfirmationScreen } from "./components/ConfirmationScreen";
 import { DriveDetailPage } from "./components/DriveDetailPage";
@@ -97,6 +98,18 @@ function App() {
 
           {/* Right Navigation Controls */}
           <div className="flex items-center gap-2 sm:gap-3">
+            <Show when="signed-out">
+              <SignInButton mode="modal">
+                <button className="text-xs font-bold uppercase tracking-[0.5px] text-[#262626] bg-[#f7f7f7] hover:bg-[#ebebeb] px-3 py-2 border border-[#e6e6e6] transition-colors cursor-pointer">Sign In</button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <button className="text-xs font-bold uppercase tracking-[0.5px] text-white bg-[#262626] hover:bg-[#1a1a1a] px-3 py-2 border border-[#262626] transition-colors cursor-pointer">Sign Up</button>
+              </SignUpButton>
+            </Show>
+            <Show when="signed-in">
+              <UserButton />
+            </Show>
+
             {/* Toggle Mock Showcase */}
             <button
               type="button"
