@@ -1,44 +1,46 @@
 """FastAPI request dependencies (auth user resolution)."""
 
+import os
 from typing import Annotated
 
-from fastapi import Header
-
-DEFAULT_MOCK_USER_ID = "00000000-0000-0000-0000-000000000001"
-
-
-import os
 import httpx
 import jwt
-from jwt import PyJWKClient
-from fastapi import HTTPException
+from fastapi import Header, HTTPException
+
+DEFAULT_MOCK_USER_ID = "00000000-0000-0000-0000-000000000001"
 
 # Lazy-loaded JWKS client
 _jwk_client = None
 
+
 def get_jwk_client():
     global _jwk_client
+
     if _jwk_client is None:
         secret_key = os.environ.get("CLERK_SECRET_KEY")
         if not secret_key:
             raise ValueError("CLERK_SECRET_KEY is not set")
-        
-        # We fetch the JWKS manually once since it requires the secret key for the Clerk Backend API.
-        # Alternatively, you can use the Frontend API URL which is public.
+
         url = "https://api.clerk.com/v1/jwks"
-        response = httpx.get(url, headers={"Authorization": f"Bearer {secret_key}"})
+        response = httpx.get(
+            url,
+            headers={"Authorization": f"Bearer {secret_key}"},
+        )
         response.raise_for_status()
         jwks_data = response.json()
-        
+
         class StaticJWKClient:
             def __init__(self, jwks):
                 self.jwk_set = jwt.PyJWKSet.from_dict(jwks)
+
             def get_signing_key_from_jwt(self, token):
                 unverified = jwt.get_unverified_header(token)
                 return self.jwk_set.get(unverified.get("kid"))
-        
+
         _jwk_client = StaticJWKClient(jwks_data)
+
     return _jwk_client
+
 
 async def get_current_user_id(
     authorization: Annotated[str | None, Header()] = None,
@@ -49,7 +51,10 @@ async def get_current_user_id(
         return x_user_id
 
     if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing Authorization Bearer token")
+        raise HTTPException(
+            status_code=401,
+            detail="Missing Authorization Bearer token",
+        )
 
     token = authorization[7:].strip()
     if not token:
@@ -58,15 +63,23 @@ async def get_current_user_id(
     try:
         jwk_client = get_jwk_client()
         signing_key = jwk_client.get_signing_key_from_jwt(token)
-        
+
         payload = jwt.decode(
             token,
             signing_key.key,
             algorithms=["RS256"],
-            options={"verify_aud": False}
+            options={"verify_aud": False},
         )
         return str(payload.get("sub"))
-    except jwt.PyJWTError as e:
-        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
-    except Exception as e:
-        raise HTTPException(status_code=401, detail="Authentication failed")
+
+    except jwt.PyJWTError as exc:
+        raise HTTPException(
+            status_code=401,
+            detail=f"Invalid token: {exc}",
+        ) from exc
+
+    except Exception:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication failed",
+        ) from None
