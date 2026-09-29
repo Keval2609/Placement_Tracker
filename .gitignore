@@ -30,7 +30,10 @@ dist-ssr/
 .DS_Store
 doc/
 docs/
+.agents/
+skills-lock.json
 
 # Docker
 *.pid
 error.md
+

@@ -21,7 +21,11 @@ jobs:
             tr -d '[:space:]' |
             sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")"
 
-          if [[ -z "$supabase_url" || -z "$SUPABASE_ANON_KEY" ]]; then
+          supabase_anon_key="$(printf '%s' "$SUPABASE_ANON_KEY" |
+            tr -d '[:space:]' |
+            sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")"
+
+          if [[ -z "$supabase_url" || -z "$supabase_anon_key" ]]; then
             echo "::error::Supabase secrets are missing."
             exit 1
           fi
@@ -38,7 +42,8 @@ jobs:
               --output /dev/null \
               --write-out '%{http_code}' \
               "$supabase_url/rest/v1/" \
-              -H "apikey: $SUPABASE_ANON_KEY"
+              -H "apikey: $supabase_anon_key" \
+              -H "Authorization: Bearer $supabase_anon_key"
           )"
 
           echo "Supabase keepalive ping successful (HTTP $response)."
