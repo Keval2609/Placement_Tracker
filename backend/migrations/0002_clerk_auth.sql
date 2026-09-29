@@ -1,38 +1,4 @@
--- Update user_id references from UUID to TEXT for Clerk IDs
-
--- 1. Alter all tables that have user_id pointing to auth.users (Supabase)
--- Example: ALTER TABLE drives ALTER COLUMN user_id TYPE text;
--- In this schema, we just need to change the user_id columns in all tables.
--- You might have tables like "drives", "applications", "drive_updates", "timeline_events", "document_items"
--- You would need to drop the foreign keys first, alter the column type, and optionally restore foreign keys pointing to a new Clerk users table if one exists.
--- But since Clerk acts as the source of truth, typically you just remove the foreign key to auth.users.
-
-DO $$
-DECLARE
-    r RECORD;
-BEGIN
-    FOR r IN (
-        SELECT tablename 
-        FROM pg_tables 
-        WHERE schemaname = 'public'
-    ) LOOP
-        -- For each table, if it has a user_id column, try to change it to text
-        BEGIN
-            EXECUTE format('ALTER TABLE public.%I ALTER COLUMN user_id TYPE text;', r.tablename);
-        EXCEPTION
-            WHEN undefined_column THEN
-                -- Ignore tables without user_id
-            WHEN feature_not_supported THEN
-                -- Ignore views or other issues
-            WHEN others THEN
-                -- Log other errors but continue
-                RAISE NOTICE 'Skipping %: %', r.tablename, SQLERRM;
-        END;
-    END LOOP;
-END;
-$$;
-
--- 2. Create function to read Clerk ID from Supabase JWT
+-- 1. Create function to read Clerk ID from Supabase JWT
 CREATE OR REPLACE FUNCTION requesting_user_id()
 RETURNS text
 LANGUAGE sql STABLE
@@ -40,5 +6,62 @@ AS $$
   SELECT NULLIF(current_setting('request.jwt.claims', true)::json->>'sub', '')::text;
 $$;
 
--- 3. You should update your RLS policies to use requesting_user_id() instead of auth.uid()
--- E.g. CREATE POLICY "Users can only see their own rows" ON drives FOR SELECT USING (requesting_user_id() = user_id);
+-- 2. Drop all existing RLS policies FIRST so we can alter the columns they depend on
+DROP POLICY IF EXISTS "own_drives" ON drives;
+DROP POLICY IF EXISTS "own_drive_dates" ON drive_dates;
+DROP POLICY IF EXISTS "own_drive_updates" ON drive_updates;
+DROP POLICY IF EXISTS "own_drive_documents" ON drive_documents;
+DROP POLICY IF EXISTS "own_applications" ON applications;
+DROP POLICY IF EXISTS "own_ingestion_log" ON ingestion_log;
+DROP POLICY IF EXISTS "read_companies" ON companies;
+
+-- 3. Drop the foreign key constraint that binds drives to auth.users
+-- Since auth.users(id) is a UUID and Clerk uses TEXT (e.g. 'user_2n...'), 
+-- we must sever this link. The exact constraint name is typically drives_user_id_fkey.
+ALTER TABLE drives DROP CONSTRAINT IF EXISTS drives_user_id_fkey;
+
+-- 4. Change drives.user_id to TEXT now that the policies are dropped
+ALTER TABLE drives ALTER COLUMN user_id TYPE text;
+
+-- 5. Recreate policies with requesting_user_id()
+
+-- companies: shared reference data, readable by authenticated users (from Clerk).
+CREATE POLICY "read_companies" ON companies
+    FOR SELECT
+    USING (current_setting('request.jwt.claims', true)::json->>'role' = 'authenticated');
+
+-- drives
+CREATE POLICY "own_drives" ON drives
+    FOR ALL
+    USING (requesting_user_id() = user_id)
+    WITH CHECK (requesting_user_id() = user_id);
+
+-- drive_dates
+CREATE POLICY "own_drive_dates" ON drive_dates
+    FOR ALL
+    USING (EXISTS (SELECT 1 FROM drives d WHERE d.id = drive_dates.drive_id AND d.user_id = requesting_user_id()))
+    WITH CHECK (EXISTS (SELECT 1 FROM drives d WHERE d.id = drive_dates.drive_id AND d.user_id = requesting_user_id()));
+
+-- drive_updates
+CREATE POLICY "own_drive_updates" ON drive_updates
+    FOR ALL
+    USING (EXISTS (SELECT 1 FROM drives d WHERE d.id = drive_updates.drive_id AND d.user_id = requesting_user_id()))
+    WITH CHECK (EXISTS (SELECT 1 FROM drives d WHERE d.id = drive_updates.drive_id AND d.user_id = requesting_user_id()));
+
+-- drive_documents
+CREATE POLICY "own_drive_documents" ON drive_documents
+    FOR ALL
+    USING (EXISTS (SELECT 1 FROM drives d WHERE d.id = drive_documents.drive_id AND d.user_id = requesting_user_id()))
+    WITH CHECK (EXISTS (SELECT 1 FROM drives d WHERE d.id = drive_documents.drive_id AND d.user_id = requesting_user_id()));
+
+-- applications
+CREATE POLICY "own_applications" ON applications
+    FOR ALL
+    USING (EXISTS (SELECT 1 FROM drives d WHERE d.id = applications.drive_id AND d.user_id = requesting_user_id()))
+    WITH CHECK (EXISTS (SELECT 1 FROM drives d WHERE d.id = applications.drive_id AND d.user_id = requesting_user_id()));
+
+-- ingestion_log
+CREATE POLICY "own_ingestion_log" ON ingestion_log
+    FOR ALL
+    USING (EXISTS (SELECT 1 FROM drives d WHERE d.id = ingestion_log.drive_id AND d.user_id = requesting_user_id()))
+    WITH CHECK (EXISTS (SELECT 1 FROM drives d WHERE d.id = ingestion_log.drive_id AND d.user_id = requesting_user_id()));
