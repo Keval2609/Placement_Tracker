@@ -16,7 +16,7 @@ function App() {
       try {
         const token = await getToken();
         return token;
-      } catch (e) {
+      } catch {
         return null;
       }
     });
