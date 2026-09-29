@@ -12,3 +12,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+export const setSupabaseAuth = async (clerkToken: string | null) => {
+  if (clerkToken) {
+    await supabase.auth.setSession({ access_token: clerkToken, refresh_token: "" });
+  } else {
+    await supabase.auth.signOut();
+  }
+};
