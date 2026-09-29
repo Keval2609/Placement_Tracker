@@ -1,6 +1,8 @@
 import pytest
+
+from app.dependencies import DEFAULT_MOCK_USER_ID, get_current_user_id
 from app.main import app
-from app.dependencies import get_current_user_id, DEFAULT_MOCK_USER_ID
+
 
 async def mock_get_current_user_id() -> str:
     return DEFAULT_MOCK_USER_ID
