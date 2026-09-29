@@ -20,6 +20,8 @@ jobs:
           supabase_url="$(printf '%s' "$SUPABASE_URL" |
             tr -d '[:space:]' |
             sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")"
+          # Remove trailing slash if present
+          supabase_url="${supabase_url%/}"
 
           supabase_anon_key="$(printf '%s' "$SUPABASE_ANON_KEY" |
             tr -d '[:space:]' |
@@ -36,7 +38,7 @@ jobs:
           fi
 
           response="$(
-            curl --fail-with-body --silent --show-error \
+            curl --silent --show-error \
               --connect-timeout 15 \
               --max-time 30 \
               --output /dev/null \
@@ -46,4 +48,12 @@ jobs:
               -H "Authorization: Bearer $supabase_anon_key"
           )"
 
-          echo "Supabase keepalive ping successful (HTTP $response)."
+          if [[ "$response" == "200" ]]; then
+            echo "Supabase keepalive ping successful (HTTP 200)."
+          elif [[ "$response" == "401" || "$response" == "404" ]]; then
+            echo "::warning::Supabase returned HTTP $response. The project is awake, but your SUPABASE_ANON_KEY might be invalid or lacking permissions for the root endpoint."
+            echo "Supabase keepalive ping reached the server (HTTP $response)."
+          else
+            echo "::error::Supabase keepalive ping failed with HTTP $response"
+            exit 1
+          fi
