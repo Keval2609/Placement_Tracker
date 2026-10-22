@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { useAuth } from "@clerk/react";
 import { Loader2, AlertCircle, Sparkles, FolderArchive, Layers } from "lucide-react";
 import { DashboardFilterBar, DashboardViewMode } from "./DashboardFilterBar";
 import { DriveCardComponent } from "./DriveCardComponent";
@@ -18,6 +19,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onSelectDrive,
   onOpenIngest,
 }) => {
+  const { isLoaded, isSignedIn } = useAuth();
   const [drives, setDrives] = useState<DriveCard[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,8 +61,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   };
 
   useEffect(() => {
-    loadDrives();
-  }, []);
+    if (isLoaded && isSignedIn) {
+      loadDrives();
+    } else if (isLoaded && !isSignedIn) {
+      setIsLoading(false);
+    }
+  }, [isLoaded, isSignedIn]);
 
   // Filter Logic
   const filteredDrives = useMemo(() => {

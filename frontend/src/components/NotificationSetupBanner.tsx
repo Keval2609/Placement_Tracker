@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '@clerk/react';
 import {
   fetchOnboardingTestStatus,
   fetchTelegramStatus,
@@ -24,6 +25,7 @@ function urlBase64ToUint8Array(base64String: string) {
 }
 
 export const NotificationSetupBanner: React.FC = () => {
+  const { isLoaded, isSignedIn } = useAuth();
   const [pushEnabled, setPushEnabled] = useState<boolean>(false);
   const [telegramChatId, setTelegramChatId] = useState<string>('');
   const [isTelegramLinked, setIsTelegramLinked] = useState<boolean>(false);
@@ -46,8 +48,10 @@ export const NotificationSetupBanner: React.FC = () => {
       setPushEnabled(true);
     }
 
-    loadStatus();
-  }, []);
+    if (isLoaded && isSignedIn) {
+      loadStatus();
+    }
+  }, [isLoaded, isSignedIn]);
 
   const loadStatus = async () => {
     try {

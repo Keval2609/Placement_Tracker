@@ -1,33 +1,38 @@
 import { useEffect, useState } from "react";
-import { Show, SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/react";
+import { SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/react";
 import { IngestInput } from "./components/IngestInput";
 import { ConfirmationScreen } from "./components/ConfirmationScreen";
 import { DriveDetailPage } from "./components/DriveDetailPage";
 import { DashboardPage } from "./components/DashboardPage";
 import { ExtractionAPIResponse } from "./types/extraction";
 import { PrototypeView } from "./prototype/PrototypeView";
-import { ArrowLeft, Plus, Sparkles } from "lucide-react";
+import { ArrowLeft, Plus, Sparkles, LogIn, Loader2, ShieldCheck } from "lucide-react";
 import { createDrive, setTokenGetter } from "./services/api";
 import { setSupabaseAuth } from "./lib/supabase";
-function App() {
-  const { getToken } = useAuth();
-  useEffect(() => {
-    setTokenGetter(async () => {
-      try {
-        const token = await getToken();
-        return token;
-      } catch {
-        return null;
-      }
-    });
 
-    // Also fetch the custom Supabase token template if configured,
-    // or just pass the default token to Supabase if it accepts it.
-    // Assuming you have a template named "supabase":
-    getToken({ template: "supabase" })
-      .then(setSupabaseAuth)
-      .catch(() => setSupabaseAuth(null));
-  }, [getToken]);
+function App() {
+  const { isLoaded, isSignedIn, getToken } = useAuth();
+
+  // Set token getter synchronously so child components always have immediate access
+  setTokenGetter(async () => {
+    try {
+      const token = await getToken();
+      return token;
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    if (isSignedIn) {
+      getToken({ template: "supabase" })
+        .then(setSupabaseAuth)
+        .catch(() => setSupabaseAuth(null));
+    } else {
+      setSupabaseAuth(null);
+    }
+  }, [isSignedIn, getToken]);
+
   const [showPrototype, setShowPrototype] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -56,6 +61,22 @@ function App() {
     setExtractionResult(null);
     setIsIngesting(true);
   };
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white text-[#262626]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 bg-[#1a2129] flex items-center justify-center font-bold text-white text-xs tracking-wider border border-[#262e38]">
+            PT
+          </div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-[#6b6b6b] tracking-wider uppercase">
+            <Loader2 className="w-4 h-4 animate-spin text-[#1c69d4]" />
+            <span>Loading Portal...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (showPrototype) {
     return (
@@ -117,17 +138,22 @@ function App() {
 
           {/* Right Navigation Controls */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <Show when="signed-out">
-              <SignInButton mode="modal">
-                <button className="text-xs font-bold uppercase tracking-[0.5px] text-[#262626] bg-[#f7f7f7] hover:bg-[#ebebeb] px-3 py-2 border border-[#e6e6e6] transition-colors cursor-pointer">Sign In</button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <button className="text-xs font-bold uppercase tracking-[0.5px] text-white bg-[#262626] hover:bg-[#1a1a1a] px-3 py-2 border border-[#262626] transition-colors cursor-pointer">Sign Up</button>
-              </SignUpButton>
-            </Show>
-            <Show when="signed-in">
+            {!isSignedIn ? (
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <SignInButton mode="modal">
+                  <button className="text-xs font-bold uppercase tracking-[0.5px] text-[#262626] bg-[#f7f7f7] hover:bg-[#ebebeb] px-3 py-2 border border-[#e6e6e6] transition-colors cursor-pointer">
+                    Sign In
+                  </button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <button className="text-xs font-bold uppercase tracking-[0.5px] text-white bg-[#262626] hover:bg-[#1a1a1a] px-3 py-2 border border-[#262626] transition-colors cursor-pointer">
+                    Sign Up
+                  </button>
+                </SignUpButton>
+              </div>
+            ) : (
               <UserButton />
-            </Show>
+            )}
 
             {/* Toggle Mock Showcase */}
             <button
@@ -152,7 +178,7 @@ function App() {
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Dashboard</span>
               </button>
-            ) : (
+            ) : isSignedIn ? (
               <button
                 type="button"
                 onClick={handleOpenIngest}
@@ -161,6 +187,16 @@ function App() {
                 <Plus className="w-4 h-4" />
                 <span>Parse Notice</span>
               </button>
+            ) : (
+              <SignInButton mode="modal">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-[#1c69d4] hover:bg-[#0653b6] transition-colors cursor-pointer shadow-sm active:bg-[#0653b6]"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Parse Notice</span>
+                </button>
+              </SignInButton>
             )}
           </div>
         </div>
@@ -168,7 +204,44 @@ function App() {
 
       {/* Main Content Body */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        {activeDriveId ? (
+        {!isSignedIn ? (
+          <div className="max-w-2xl mx-auto my-12 p-8 sm:p-10 border border-[#e6e6e6] bg-[#fafafa] shadow-sm text-center">
+            <div className="w-12 h-12 bg-[#1a2129] text-white font-bold text-sm flex items-center justify-center mx-auto mb-4 border border-[#262e38]">
+              PT
+            </div>
+            <h2 className="text-xl font-bold tracking-tight text-[#1a1a1a] mb-2">
+              Welcome to Placement Tracker Portal
+            </h2>
+            <p className="text-sm font-light text-[#6b6b6b] max-w-md mx-auto mb-8">
+              Track recruitment drives, application pipelines, deadline reminders, and parse placement notices in real-time.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <SignInButton mode="modal">
+                <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-[#1c69d4] hover:bg-[#0653b6] transition-colors cursor-pointer shadow-sm">
+                  <LogIn className="w-4 h-4" />
+                  <span>Sign In to Your Account</span>
+                </button>
+              </SignInButton>
+              <button
+                type="button"
+                onClick={() => setShowPrototype(true)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-[#262626] bg-white hover:bg-[#f7f7f7] border border-[#cccccc] transition-colors cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-[#1c69d4]" />
+                <span>Explore Interactive Demo</span>
+              </button>
+            </div>
+            <div className="mt-8 pt-6 border-t border-[#ebebeb] flex items-center justify-center gap-6 text-xs text-[#8c8c8c]">
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-[#0066b1]" /> End-to-end Encrypted
+              </span>
+              <span>•</span>
+              <span>Clerk Authentication</span>
+              <span>•</span>
+              <span>Automated Deadlines</span>
+            </div>
+          </div>
+        ) : activeDriveId ? (
           <DriveDetailPage
             driveId={activeDriveId}
             onBackToDashboard={() => setActiveDriveId(null)}
@@ -182,7 +255,7 @@ function App() {
               onReset={handleResetIngest}
               onSaveConfirmedDraft={async (postings) => {
                 try {
-                  await Promise.all(postings.map(p => createDrive(p)));
+                  await Promise.all(postings.map((p) => createDrive(p)));
                   setIsIngesting(false);
                   setExtractionResult(null);
                 } catch (error) {
