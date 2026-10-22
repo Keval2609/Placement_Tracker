@@ -84,6 +84,112 @@ A production-grade monorepo for tracking college placement drives, automated dat
 
 ---
 
+## Database Schema & Architecture
+
+The application uses PostgreSQL on **Supabase** with Row-Level Security (RLS) enforcing tenant isolation anchored on Clerk user IDs.
+
+### Entity-Relationship Diagram
+
+```mermaid
+erDiagram
+    COMPANIES ||--o{ DRIVES : "categorizes"
+    DRIVES ||--o{ DRIVE_DATES : "contains"
+    DRIVES ||--o{ DRIVE_UPDATES : "logs"
+    DRIVES ||--o{ DRIVE_DOCUMENTS : "stores"
+    DRIVES ||--|| APPLICATIONS : "tracks"
+    DRIVES ||--o{ INGESTION_LOG : "audits"
+    DRIVE_UPDATES ||--o{ DRIVE_DOCUMENTS : "attaches"
+
+    COMPANIES {
+        uuid id PK
+        text name UK
+        text company_type "product|startup|service|psu|unknown"
+        text website
+        timestamptz created_at
+    }
+
+    DRIVES {
+        uuid id PK
+        text user_id "Clerk user ID (RLS tenant anchor)"
+        uuid company_id FK
+        text role_title
+        text eligibility_raw
+        real min_cgpa
+        text_array eligible_branches
+        text status "draft|confirmed"
+        timestamptz created_at
+    }
+
+    DRIVE_DATES {
+        uuid id PK
+        uuid drive_id FK
+        text date_type "application_deadline|oa|interview|ppt|result|joining|other"
+        text label
+        timestamptz date_iso
+        text date_raw "Original phrase preserved"
+        text source "ai_suggested|user_added"
+        boolean confirmed_by_user
+        boolean is_primary_deadline "Used for sorting and alert checks"
+        timestamptz created_at
+    }
+
+    DRIVE_UPDATES {
+        uuid id PK
+        uuid drive_id FK
+        text source_type "whatsapp_text|pdf|docx"
+        text raw_text
+        text summary_of_changes
+        timestamptz created_at
+    }
+
+    DRIVE_DOCUMENTS {
+        uuid id PK
+        uuid drive_id FK
+        uuid drive_update_id FK "Nullable: initial upload vs update"
+        text storage_path "Supabase Storage path"
+        text original_filename
+        timestamptz uploaded_at
+    }
+
+    APPLICATIONS {
+        uuid id PK
+        uuid drive_id FK,UK
+        text status "not_applied|applied|oa|interview|offer|rejected|withdrawn"
+        timestamptz applied_at "Set once on transition to applied"
+        text notes
+        timestamptz updated_at
+    }
+
+    INGESTION_LOG {
+        uuid id PK
+        uuid drive_id FK "Nullable if failed before drive creation"
+        text source_type
+        text status "success|partial|failed"
+        text error_message
+        timestamptz created_at
+    }
+```
+
+### Tables Overview
+
+| Table | Purpose | Security & RLS Policy |
+| --- | --- | --- |
+| `companies` | Global directory of hiring organizations and company categories (`product`, `startup`, `service`, `psu`). | Shared reference table. Readable by all authenticated users; writes managed by server service role. |
+| `drives` | Primary record for placement drives (role, CGPA cutoffs, eligible branches, and status). | RLS-isolated: `requesting_user_id() = user_id`. Only the drive owner can read, update, or delete. |
+| `drive_dates` | Timeline milestones and deadlines (`application_deadline`, `oa`, `interview`, `ppt`, etc.). | Scoped through parent drive: `EXISTS (SELECT 1 FROM drives WHERE id = drive_id AND user_id = requesting_user_id())`. |
+| `drive_updates` | Audit log of incremental notices or revised date announcements parsed for a drive. | Scoped through parent drive ownership. |
+| `drive_documents` | Metadata for uploaded PDF/DOCX notices stored in Supabase Storage. | Scoped through parent drive ownership. |
+| `applications` | Student recruitment pipeline tracking (`applied`, `oa`, `interview`, `offer`, `rejected`). | 1:1 relationship with `drives`. Owner-isolated with automated `applied_at` timestamps. |
+| `ingestion_log` | Diagnostic log tracking extraction attempts, input format, and parsing errors. | Scoped through parent drive when associated, or restricted to server service role for failed attempts. |
+
+### Security & Row-Level Security (RLS)
+
+- **Clerk Authentication Integration**: User authentication uses Clerk JWT tokens validated against Clerk's JWKS endpoint (`/v1/.well-known/jwks.json`).
+- **Postgres Helper Function**: Supabase inspects the Clerk JWT payload via `requesting_user_id()`, mapping claims (`sub`) to `drives.user_id`.
+- **Cascading Ownership**: Child tables enforce referential integrity and tenant scoping using `ON DELETE CASCADE` and subquery-based RLS policies.
+
+---
+
 ## Prerequisites
 
 - Docker + Docker Compose
