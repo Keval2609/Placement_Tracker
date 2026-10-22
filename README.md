@@ -150,34 +150,9 @@ npm run dev
 
 ## Environment Variables
 
-### Backend (`backend/.env`)
-
-| Variable | Purpose | Default |
-| --- | --- | --- |
-| `SUPABASE_URL` | Supabase project URL | `""` |
-| `SUPABASE_ANON_KEY` | Public anon key | `""` |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role key (**server-side only**) | `""` |
-| `CORS_ORIGINS` | Allowed frontend origins | `http://localhost:5173,https://drivetrack.page,https://www.drivetrack.page` |
-| `CLERK_SECRET_KEY` | Clerk production secret key (`sk_live_...`) | `""` |
-| `CLERK_PUBLISHABLE_KEY` | Clerk production publishable key (`pk_live_...`) | `""` |
-| `LLM_PROVIDER` | Active extraction LLM provider (`groq` or `ollama`) | `groq` |
-| `GROQ_API_KEY` | Groq API Key | `""` |
-| `GROQ_MODEL` | Groq Model ID | `openai/gpt-oss-20b` |
-| `OLLAMA_BASE_URL` | Local Ollama Base URL | `http://localhost:11434` |
-| `OLLAMA_MODEL` | Local Ollama Model Name | `qwen2.5:7b` |
-| `VAPID_PUBLIC_KEY` | Web Push VAPID Public Key | `""` (auto-generated if empty) |
-| `VAPID_PRIVATE_KEY` | Web Push VAPID Private Key | `""` (auto-generated if empty) |
-| `TELEGRAM_BOT_TOKEN` | Telegram Bot API Token for escalation fallback | `""` |
-
-### Frontend (`frontend/.env`)
-
-| Variable | Purpose | Default |
-| --- | --- | --- |
-| `VITE_API_BASE_URL` | FastAPI backend base URL | `https://placement-tracker-yzdq.onrender.com` |
-| `VITE_SUPABASE_URL` | Supabase project URL | `""` |
-| `VITE_SUPABASE_ANON_KEY` | Public anon key (safe to expose) | `""` |
-| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk production publishable key (`pk_live_...`) | `""` |
-| `VITE_SENTRY_DSN` | Sentry error tracking DSN (optional) | `""` |
+Configure application environments using the provided template files:
+- Backend: [`backend/.env.example`](backend/.env.example)
+- Frontend: [`frontend/.env.example`](frontend/.env.example)
 
 ---
 
