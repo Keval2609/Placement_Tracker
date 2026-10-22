@@ -36,7 +36,7 @@ class Settings(BaseSettings):
 
     # Comma-separated list of allowed CORS origins for the frontend.
     cors_origins: str = (
-        "http://localhost:5173,http://localhost:3000,https://placement-tracker-azure-chi.vercel.app"
+        "http://localhost:5173,https://drivetrack.page,https://www.drivetrack.page"
     )
 
     model_config = SettingsConfigDict(

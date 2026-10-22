@@ -155,7 +155,7 @@ npm run dev
 | `SUPABASE_URL` | Supabase project URL | `""` |
 | `SUPABASE_ANON_KEY` | Public anon key | `""` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key (**server-side only**) | `""` |
-| `CORS_ORIGINS` | Allowed frontend origins | `http://localhost:5173` |
+| `CORS_ORIGINS` | Allowed frontend origins | `http://localhost:5173,https://drivetrack.page,https://www.drivetrack.page` |
 | `LLM_PROVIDER` | Active extraction LLM provider (`groq` or `ollama`) | `groq` |
 | `GROQ_API_KEY` | Groq API Key | `""` |
 | `GROQ_MODEL` | Groq Model ID | `openai/gpt-oss-20b` |
