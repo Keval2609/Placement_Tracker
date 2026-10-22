@@ -5,6 +5,7 @@ import time
 from collections.abc import Callable
 
 from fastapi import Request, Response
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 logger = logging.getLogger("app.request")
@@ -53,4 +54,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 "user_id": user_id or "anonymous",
             }
             logger.exception("HTTP Request Unhandled Exception", extra=log_data)
-            raise exc
+            return JSONResponse(
+                status_code=500,
+                content={"detail": "Internal Server Error", "error": str(exc)},
+            )

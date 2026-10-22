@@ -703,33 +703,59 @@ def get_drive_detail(drive_id: str, user_id: str) -> DriveDetailResponse:
 
         dates_data = [d for d in _in_memory_dates if d["drive_id"] == drive_id]
 
-    dates_models = [
-        DriveDateSaved(
-            id=d.get("id", str(uuid.uuid4())),
-            date_type=d["date_type"],
-            label=d.get("label"),
-            date_iso=d["date_iso"],
-            date_raw=d.get("date_raw"),
-            source=d.get("source", "user_added"),
-            confirmed_by_user=d.get("confirmed_by_user", True),
-            is_primary_deadline=d.get("is_primary_deadline", False),
+    valid_date_types = {
+        "application_deadline",
+        "oa",
+        "interview",
+        "ppt",
+        "result",
+        "joining",
+        "other",
+    }
+    dates_models = []
+    for d in dates_data:
+        dtype = d.get("date_type", "other")
+        if dtype not in valid_date_types:
+            dtype = "other"
+        src = d.get("source")
+        if src not in ("ai_suggested", "user_added"):
+            src = "user_added"
+        dates_models.append(
+            DriveDateSaved(
+                id=str(d.get("id") or uuid.uuid4()),
+                date_type=dtype,
+                label=d.get("label"),
+                date_iso=str(d.get("date_iso") or datetime.now(KOLKATA_TZ).isoformat()),
+                date_raw=d.get("date_raw"),
+                source=src,
+                confirmed_by_user=bool(d.get("confirmed_by_user", True)),
+                is_primary_deadline=bool(d.get("is_primary_deadline", False)),
+            )
         )
-        for d in dates_data
-    ]
+
+    branches = drive_data.get("eligible_branches")
+    if isinstance(branches, str):
+        try:
+            import json
+            branches = json.loads(branches)
+        except Exception:
+            branches = [branches]
+    elif not isinstance(branches, list):
+        branches = []
 
     return DriveDetailResponse(
         id=drive_id,
-        company_id=drive_data["company_id"],
+        company_id=str(drive_data.get("company_id", "")),
         company_name=company_name,
         company_type=company_type,
         role_title=drive_data.get("role_title", "Position"),
         eligibility_raw=drive_data.get("eligibility_raw"),
-        min_cgpa=drive_data.get("min_cgpa"),
-        eligible_branches=drive_data.get("eligible_branches") or [],
+        min_cgpa=float(drive_data["min_cgpa"]) if drive_data.get("min_cgpa") is not None else None,
+        eligible_branches=branches,
         application_link=drive_data.get("application_link"),
         status=drive_data.get("status", "confirmed"),
         application_status=app_status,
-        created_at=drive_data.get("created_at", datetime.now(KOLKATA_TZ).isoformat()),
+        created_at=str(drive_data.get("created_at") or datetime.now(KOLKATA_TZ).isoformat()),
         dates=dates_models,
     )
 
