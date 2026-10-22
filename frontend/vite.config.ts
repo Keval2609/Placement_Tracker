@@ -2,7 +2,6 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
-// PWA is configured for Android (standalone display). No iOS-specific meta tags.
 export default defineConfig({
   plugins: [
     react(),
