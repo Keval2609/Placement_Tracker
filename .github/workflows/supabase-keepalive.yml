@@ -37,23 +37,38 @@ jobs:
             exit 1
           fi
 
+          # Ping the auth health endpoint which returns HTTP 200 for valid API keys
           response="$(
             curl --silent --show-error \
               --connect-timeout 15 \
               --max-time 30 \
               --output /dev/null \
               --write-out '%{http_code}' \
-              "$supabase_url/rest/v1/" \
-              -H "apikey: $supabase_anon_key" \
-              -H "Authorization: Bearer $supabase_anon_key"
+              "$supabase_url/auth/v1/health" \
+              -H "apikey: $supabase_anon_key"
           )"
 
           if [[ "$response" == "200" ]]; then
-            echo "Supabase keepalive ping successful (HTTP 200)."
-          elif [[ "$response" == "401" || "$response" == "404" ]]; then
-            echo "::warning::Supabase returned HTTP $response. The project is awake, but your SUPABASE_ANON_KEY might be invalid or lacking permissions for the root endpoint."
-            echo "Supabase keepalive ping reached the server (HTTP $response)."
+            echo "Supabase keepalive ping successful (HTTP 200). Project is awake."
           else
-            echo "::error::Supabase keepalive ping failed with HTTP $response"
-            exit 1
+            # Fallback ping to REST endpoint to guarantee compute activity
+            rest_response="$(
+              curl --silent --show-error \
+                --connect-timeout 15 \
+                --max-time 30 \
+                --output /dev/null \
+                --write-out '%{http_code}' \
+                "$supabase_url/rest/v1/" \
+                -H "apikey: $supabase_anon_key" \
+                -H "Authorization: Bearer $supabase_anon_key"
+            )"
+
+            if [[ "$rest_response" == "200" ]]; then
+              echo "Supabase keepalive ping successful via REST (HTTP 200)."
+            elif [[ "$rest_response" == "401" || "$rest_response" == "404" ]]; then
+              echo "Supabase keepalive ping reached the server (HTTP $rest_response). Project is awake."
+            else
+              echo "::error::Supabase keepalive ping failed with HTTP $rest_response"
+              exit 1
+            fi
           fi
