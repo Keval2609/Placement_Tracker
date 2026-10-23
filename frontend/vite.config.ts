@@ -41,13 +41,13 @@ export default defineConfig({
     headers: {
       "Content-Security-Policy": [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://challenges.cloudflare.com https://*.protect.clerk.com",
-        "connect-src 'self' ws: wss: http://localhost:* https://*.clerk.accounts.dev https://clerk-telemetry.com https://*.clerk-telemetry.com https://*.protect.clerk.com:* https://*.supabase.co wss://*.supabase.co https://placement-tracker-yzdq.onrender.com https://*.sentry.io https://*.ingest.sentry.io",
-        "img-src 'self' data: blob: https://img.clerk.com",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: http: https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://*.protect.clerk.com",
+        "connect-src 'self' ws: wss: http: https: https://*.clerk.accounts.dev https://*.clerk.com https://clerk-telemetry.com https://*.clerk-telemetry.com https://*.protect.clerk.com:* https://*.supabase.co wss://*.supabase.co https://placement-tracker-yzdq.onrender.com https://*.sentry.io https://*.ingest.sentry.io",
+        "img-src 'self' data: blob: https: https://img.clerk.com",
         "worker-src 'self' blob:",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "font-src 'self' https://fonts.gstatic.com data:",
-        "frame-src 'self' https://challenges.cloudflare.com https://*.protect.clerk.com",
+        "frame-src 'self' https://challenges.cloudflare.com https://*.protect.clerk.com https://*.clerk.accounts.dev https://*.clerk.com",
         "form-action 'self'",
       ].join("; "),
     },
