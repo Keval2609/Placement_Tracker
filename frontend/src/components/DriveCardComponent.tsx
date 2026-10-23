@@ -44,13 +44,21 @@ export const DriveCardComponent: React.FC<DriveCardComponentProps> = ({
   };
 
   const formatDaysLeft = () => {
+    const isPipelineActive = ["applied", "oa", "interview"].includes(currentStatus);
     if (drive.is_overdue) {
+      if (isPipelineActive) {
+        return {
+          label: "In Pipeline (Closed)",
+          style: "bg-[#f5f3ff] text-[#6d28d9] border-[#ddd6fe] font-medium",
+        };
+      }
       const absDays = Math.abs(drive.days_left);
       return {
         label: `Closed (${absDays} ${absDays === 1 ? "day" : "days"} ago)`,
         style: "bg-[#f7f7f7] text-[#6b6b6b] border-[#e6e6e6]",
       };
     }
+
     if (drive.days_left === 0) {
       return {
         label: "Closes Today",

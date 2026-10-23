@@ -96,6 +96,15 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
     setPostings(postings.filter((_, i) => i !== index));
   };
 
+  const handleConfirmAllDates = () => {
+    setPostings(
+      postings.map((p) => ({
+        ...p,
+        dates: p.dates.map((d) => ({ ...d, confirmed_by_user: true })),
+      }))
+    );
+  };
+
   const handleAddEmptyPosting = () => {
     setPostings([
       ...postings,
@@ -158,16 +167,28 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
         </button>
 
         <div className="flex items-center gap-2">
+          {unconfirmedDates.length > 0 && (
+            <button
+              type="button"
+              onClick={handleConfirmAllDates}
+              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.5px] px-3.5 py-1.5 bg-[#15803d] hover:bg-[#166534] text-white transition-colors cursor-pointer"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Confirm All ({unconfirmedDates.length}) Dates</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={handleAddEmptyPosting}
-            className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.5px] px-4 py-2 bg-white hover:bg-[#f7f7f7] text-[#262626] border border-[#cccccc] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.5px] px-3.5 py-1.5 bg-white hover:bg-[#f7f7f7] text-[#262626] border border-[#cccccc] transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4 text-[#1c69d4]" />
             <span>Add Another Posting</span>
           </button>
         </div>
       </div>
+
 
       {/* Trust & Verification Banner */}
       <div className="p-4 bg-[#eff6ff] border border-[#bfdbfe] flex items-start gap-3 text-xs text-[#1c69d4]">

@@ -101,9 +101,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     });
   }, [drives, searchQuery, selectedStatuses, selectedCompanyTypes, deadlineWindow]);
 
-  // Separate Active vs Overdue
-  const activeDrives = filteredDrives.filter((d) => !d.is_overdue);
-  const overdueDrives = filteredDrives.filter((d) => d.is_overdue);
+  // Separate Active vs Overdue:
+  // Drives where user has an active application in flight (applied, oa, interview)
+  // remain in the Active section past deadline until reaching a terminal state.
+  const isPipelineActive = (status: ApplicationStatus) =>
+    ["applied", "oa", "interview"].includes(status);
+
+  const activeDrives = filteredDrives.filter(
+    (d) => !d.is_overdue || isPipelineActive(d.application_status)
+  );
+  const overdueDrives = filteredDrives.filter(
+    (d) => d.is_overdue && !isPipelineActive(d.application_status)
+  );
+
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">

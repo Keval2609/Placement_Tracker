@@ -1003,14 +1003,24 @@ def list_drives_for_dashboard(user_id: str) -> DriveListResponse:
             )
         )
 
-    # Sort active drives (is_overdue=False) nearest deadline first, overdue at bottom
-    active_cards = [c for c in cards if not c.is_overdue]
-    overdue_cards = [c for c in cards if c.is_overdue]
+    # Sort active drives (not overdue OR active in pipeline) nearest deadline first,
+    # overdue drives placed at bottom
+    active_pipeline_statuses = {"applied", "oa", "interview"}
+
+    active_cards = [
+        c for c in cards
+        if not c.is_overdue or c.application_status in active_pipeline_statuses
+    ]
+    overdue_cards = [
+        c for c in cards
+        if c.is_overdue and c.application_status not in active_pipeline_statuses
+    ]
 
     active_cards.sort(key=lambda c: (c.days_left, c.primary_deadline_iso))
     overdue_cards.sort(key=lambda c: (c.days_left, c.primary_deadline_iso))
 
     return DriveListResponse(drives=[*active_cards, *overdue_cards])
+
 
 
 def update_application_status(
