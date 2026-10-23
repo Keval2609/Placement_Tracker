@@ -40,7 +40,10 @@ graph LR
 
 ## 🏆 Key Engineering Highlights
 
-*   **🛡️ Human-in-the-Loop AI Trust Gate (Zero Hallucinated Deadlines):** AI-extracted dates (`application_deadline`, `oa`, `interview`, etc.) render as amber *"AI suggested"* badges alongside verbatim source text. By design, there is **no "Confirm All" button**—both the UI and backend (`HTTP 422`) strictly block saving until the user manually verifies the primary deadline.
+*   **🛡️ Human-in-the-Loop AI Trust Gate:** AI-extracted dates (`application_deadline`, `oa`, `interview`, etc.) render as confidence badges alongside verbatim source text. Users can edit any field, confirm dates individually, or use the **1-click "Confirm All"** action, while the backend (`HTTP 422`) strictly verifies that at least one primary application deadline is confirmed.
+*   **💼 Dual-Track Ingestion (Campus AI vs. Off-Campus Direct Entry):** Switch seamlessly between **Campus Drive (AI Notice Parser)** for WhatsApp/circular parsing and **Off-Campus Job Application (Manual Entry)** for direct tracking. Off-campus entries bypass LLM parsing entirely and record status pipelines (`applied`, `oa`, `interview`, `offer`, `rejected`) and job descriptions directly.
+*   **📌 Intelligent Active Pipeline Retention:** Drives with active applications (`applied`, `oa`, `interview`) remain retained in the **Active Drives** dashboard section even after their initial application deadline has elapsed, designated with an *"In Pipeline (Closed)"* badge until reaching a terminal state (`Offer` or `Rejected`).
+*   **📋 Full-Fidelity Job Description & Specs Display:** The drive detail page features a dedicated **Job Description & Key Requirements** card with whitespace/markdown formatting preservation, 1-click clipboard copy, and quick specs breakdown (CGPA cutoff, eligible academic branches, application link).
 *   **🔔 Multi-Channel Alert & Telegram Escalation Engine:** Background `APScheduler` workers scan IST deadlines at **48h, 24h, and 6h** intervals. If a PWA Web Push notification goes unacknowledged for **> 10 minutes**, the escalation engine automatically fires a fallback alert via the **Telegram Bot API**.
 *   **📱 Android OEM Battery Killer Detection:** Mobile OS skins (Xiaomi/MIUI, Samsung, OnePlus, Oppo, Vivo) aggressively kill background service workers. DriveTrack inspects `navigator.userAgentData`, runs an onboarding push self-test, and renders brand-specific instructions (`dontkillmyapp.com`) if background delivery fails.
 *   **🔄 Diff-Oriented Drive Updates & Audit Timeline:** Placement dates change frequently. Uploading a follow-up circular runs an **LLM Diff Pipeline** against the existing drive state, proposing only new or modified dates for human confirmation before merging into a chronological history timeline.
@@ -52,9 +55,10 @@ graph LR
 
 | Module | Capabilities |
 | :--- | :--- |
-| **📊 Executive Dashboard** | Switch seamlessly between **Card Grid**, **Kanban Pipeline Funnel**, and **Dense Table** views with persistent `localStorage` filtering and real-time search. |
+| **📊 Executive Dashboard** | Switch seamlessly between **Card Grid**, **Kanban Pipeline Funnel**, and **Dense Table** views with persistent `localStorage` filtering, search, and intelligent overdue retention for active applications. |
+| **💼 Dual-Mode Ingestion** | Support for **On-Campus AI extraction** (Groq/Ollama parsing of WhatsApp texts and circulars) and **Off-Campus direct logging** with instant pipeline status assignment. |
+| **📝 Job Details & Criteria** | Full-text Job Description viewer with preserved formatting, 1-click clipboard copy, quick criteria specs (CGPA cutoff, eligible departments), and external portal links. |
 | **🎮 Zero-Setup Mock Mode** | Instant interactive showcase pre-loaded with realistic Tier-1 drives (Google, Microsoft, Goldman Sachs, Uber) for frictionless portfolio evaluation. |
-| **📄 Document Repository** | Parses `.pdf` (`pdfplumber`) and `.docx` (`python-docx`) tables up to 10MB; stores attachments in Supabase Storage with 5-minute signed download URLs. |
 | **🏷️ Smart Deduplication & Tagging** | Prevents duplicate entries via `HTTP 409` conflict checks on `(company, role, deadline)` and auto-classifies companies (`product`, `startup`, `service`, `psu`) using a zero-latency static lookup + LLM fallback. |
 
 ---
@@ -102,6 +106,7 @@ erDiagram
         uuid company_id FK
         text role_title
         text eligibility_raw
+        text job_description "Detailed role description & requirements"
         real min_cgpa
         text_array eligible_branches
         text status "draft|confirmed"
