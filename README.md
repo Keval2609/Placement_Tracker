@@ -1,211 +1,251 @@
-# Placement Drive Tracker
+<div align="center">
 
-A production-grade monorepo for tracking college placement drives, automated date extraction, interactive human confirmation, and deadline alerts.
+# 🎯 DriveTrack — AI Placement Drive Tracker
 
-- **`/backend`** — FastAPI (Python 3.11+) + Supabase + Groq/Ollama LLM Pipeline
-- **`/frontend`** — Vite + React + TypeScript + Tailwind (PWA)
-- **`/doc/deployment-guide.md`** — Production Deployment, CI/CD Workflows & Alert Scheduler Uptime Setup
+**Turn chaotic college placement WhatsApp messages and PDF circulars into structured, zero-miss deadline pipelines.**
+
+[![Live App](https://img.shields.io/badge/Live%20App-drivetrack.page-238636?logo=vercel&logoColor=white)](https://www.drivetrack.page)
+[![CI/CD](https://img.shields.io/github/actions/workflow/status/Keval2609/Placement_Tracker/ci.yml?branch=main&label=CI%2FCD&logo=githubactions&logoColor=white)](https://github.com/Keval2609/Placement_Tracker/actions)
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![React Vite](https://img.shields.io/badge/Frontend-React%2018%20%2B%20Vite-61DAFB?logo=react&logoColor=black)](https://vite.dev)
+[![Supabase](https://img.shields.io/badge/Database-Supabase-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
+[![Clerk](https://img.shields.io/badge/Auth-Clerk-6C47FF?logo=clerk&logoColor=white)](https://clerk.com)
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://www.python.org)
+
+[**🚀 Explore Live App (Includes 1-Click Mock Showcase)**](https://www.drivetrack.page) • [**⚙️ Production API**](https://placement-tracker-yzdq.onrender.com)
+
+</div>
+
+---
+## 💡 Why DriveTrack?
+
+Campus placement announcements arrive across fragmented WhatsApp forwards, 10-page PDFs, and last-minute schedule changes—leading to missed deadlines and spreadsheet fatigue. 
+
+**DriveTrack** solves this by combining **schema-constrained LLM extraction** with a **strict human-in-the-loop verification gate** and a **multi-channel escalation alert engine**, ensuring students never miss an application deadline or OA round.
 
 ---
 
-## Current Architecture & Features
+## ⚡ How It Works (The 30-Second Flow)
 
-### 🔔 Alert System, Escalation Engine & OEM Battery Warning (PRD 1.3.6 & Risk Mitigation #2)
-- **Web Push & VAPID Setup (`GET /push/vapid-public-key` & `POST /push/subscribe`)**: Auto-generates or loads VAPID keypairs (`pywebpush`). Registers PWA service worker push subscriptions for background notification delivery.
-- **Telegram Bot Linking (`POST /telegram/link`)**: Allows users to link their Telegram account `chat_id` for fallback delivery via Telegram Bot API (`https://api.telegram.org`).
-- **APScheduler Background Jobs**:
-  - `run_deadline_check_job`: Scans confirmed primary deadlines in IST (`Asia/Kolkata`) at **48h**, **24h**, and **6h** thresholds. Tracks fired thresholds per drive to prevent duplicate alerts.
-  - `run_escalation_job`: Periodic worker scanning for unacknowledged Web Push notifications > 10 minutes old. Automatically triggers Telegram fallback messages when push notifications are missed!
-- **Onboarding Delivery Self-Test (`POST /push/onboarding-test`)**: Triggers an onboarding test push notification for immediate client verification (`POST /push/ack`).
-- **OEM Battery Optimization Detection**: Detects Android OEM brands (`Samsung`, `Xiaomi`/`MIUI`, `Oppo`, `Vivo`, `OnePlus`, `Realme`, `Huawei`) via User-Agent Client Hints (`navigator.userAgentData`). Renders an in-app warning banner (*"Didn't get that? Your phone may be blocking background notifications"*) with brand-specific setup instructions and direct links to `dontkillmyapp.com`.
-
-### 🏠 Main Dashboard & Application Tracking (PRD Section 1.3.5)
-- **Executive KPI Hero Metrics**: High-contrast dark navy hero band presenting real-time summary statistics — *Total Opportunities Tracked*, *Urgent Deadlines (< 72h)* with action alerts, *Active In Pipeline*, and *Offers Secured* — with one-click category filtering.
-- **Multiple Visual Layouts**:
-  - **Card Grid View**: Crisp rectangular cards with dark monogram badges, compensation tags, 4-stage recruitment funnels (*Applied*, *OA Test*, *Interview*, *Offer*), and urgency countdown chips.
-  - **Pipeline Funnel View (Kanban)**: Visual columns (*Eligible / Not Applied*, *Applied*, *OA Scheduled*, *Interview Round*, *Offer Secured*) with one-click `Move Next` stage advancement.
-  - **Dense Table View**: High-density scanning table displaying company, role, package, CGPA, stage, and primary deadline countdown.
-- **Interactive Mock Showcase**: Dedicated demonstration mode populated with realistic Tier-1 campus placement drives (Google, Microsoft, Goldman Sachs, Uber, Cisco, TCS) for zero-setup exploration and manual verification.
-- **Closed / Overdue Section**: Overdue and past deadlines automatically sort into a visually distinct "Closed / Past Drives" section at the bottom of the dashboard.
-- **Persistent Filters (`localStorage`)**:
-  - **Company Type Multi-Select**: Filter by `product`, `startup`, `service`, `psu`, or `unknown`. Selections are persisted in `localStorage` under `pt_filter_company_types` to survive page reloads.
-  - **Application Status Multi-Select**: Filter by `not_applied`, `applied`, `oa`, `interview`, `offer`, `rejected`, or `withdrawn`.
-  - **Deadline Window Selector**: Filter by `next_7_days`, `next_30_days`, or `all`.
-  - **Real-Time Text Search**: Instant search by company name, role title, branch, and package.
-- **Inline Status Updating (`PATCH /applications/{id}`)**:
-  - Direct status update dropdown on each card with unrestricted state transitions (allowing users to roll back or undo accidental changes).
-  - **Set-Once `applied_at` Timestamp**: Automatically sets `applied_at` when status transitions to `applied` for the first time, leaving `applied_at` untouched on subsequent status changes (e.g. `applied → interview`).
-- **Drive Navigation**: Tapping any drive card navigates directly to its detail page (`/drives/{id}`).
-
-### 🎨 Design System & Aesthetics
-- **Canvas & Contrast**: Pure white base canvas (`#ffffff`) framed by an executive dark navy hero band (`#1a2129`) with elevated metric tiles (`#262e38`).
-- **Engineered Precision Geometry**: Crisp 0px rectangular radius across buttons, cards, filters, and inputs for high density and modern clarity.
-- **Editorial Typographic Contrast**: High-contrast pairings using Inter 700 Bold for display headlines and Inter 300 Light for readable body copy.
-- **Signature Divider**: 4px horizontal accent tricolor stripe running across the top header rule.
-- **Hairlines**: Clean 1px `#e6e6e6` dividers and `#cccccc` interactive element borders.
-
-### 🤖 AI Extraction Pipeline (PRD Section 3.1 & 3.3)
-- **Raw Text Ingestion (`POST /ingest/text`)**: Parses unstructured WhatsApp placement messages and extracts job postings with dates typed as `application_deadline`, `oa`, `interview`, `ppt`, `result`, `joining`, `other`. Resolves relative dates anchored in IST (`Asia/Kolkata`).
-- **Document Ingestion (`POST /ingest/file`)**: Accepts multipart `.pdf` (via `pdfplumber`) and `.docx` (via `python-docx`) uploads up to 10MB, flattens table structures with `" | "` separators, and extracts structured posting drafts.
-- **PII Safety Guard (`PII_SAFE_PROVIDERS`)**: Strictly limits extraction providers to `groq` and `ollama`. Automatically blocks unapproved providers (e.g. Gemini) to protect personal student data.
-- **Schema-Constrained Decoding**: Enforces strict JSON schemas using Groq's `response_format` and Ollama's `format` parameter.
-- **Retry & Graceful Fallback**: Retries once on provider/validation errors, then degrades to a 200 OK empty draft (`{"postings": []}`) so the frontend can fall back to a manual-entry form instead of crashing with a 500.
-- **Ingestion Audit Log**: Every ingestion attempt records source type (`whatsapp_text`, `pdf`, `docx`) and status (`success`, `partial`, `failed`) into the Supabase `ingestion_log` table.
-
-### 💾 Confirmed Drive Save & Backend Logic (`POST /drives`)
-- **Server-Side Deadline Enforcement (HTTP 422)**: Re-validates that at least one `application_deadline` date has `confirmed_by_user=true`. Directly rejects unconfirmed or missing deadline requests server-side even if bypassed by client calls.
-- **Deduplication Check (HTTP 409)**: Matches on `(company_id, role_title, primary_deadline_date)`. If an existing drive matches, responds with `409 Conflict` containing `existing_drive_id` so the user can view the existing drive instead of creating duplicates.
-- **Company-Type Classification & Tagging**: Automatically tags companies as `product`, `startup`, `service`, `psu`, or `unknown`. Ships with a static lookup list of 35+ well-known Indian companies (e.g. TCS, Infosys, Swiggy, Zomato, Razorpay, Google, ISRO) for fast zero-latency tagging, falling back to LLM classification for unknown company names.
-- **Multi-Table Database Persistence**: Writes records atomically across `companies` (if new), `drives`, `drive_dates` (normalizing `is_primary_deadline=true` on exactly one primary deadline), `applications` (default status `not_applied`), and `drive_documents`.
-- **Document Attachment Storage**: Uploads attached PDF/DOCX files to Supabase Storage bucket `drive-documents` with `drive_update_id = NULL`.
-
-### 🔄 Post-Save Updates & Timeline (`POST /drives/{id}/updates` & `PATCH /drives/{id}/updates/{update_id}/confirm`)
-- **Diff-Oriented Update Extraction (`POST /drives/{id}/updates`)**: Accepts follow-up raw text or uploaded documents (`.pdf`/`.docx`). Automatically generates a compact summary of the drive's existing state on record (`existing_drive_summary`) and runs the LLM Diff Prompt (PRD Section 3.2) to extract only new or changed fields (`UpdateResult` draft) without modifying the database directly.
-- **Human Confirmation Gate**: Proposed update diffs (`new_dates` and `field_changes`) are returned as a draft for user confirmation before any database mutations occur.
-- **Confirm & Merge Endpoint (`PATCH /drives/{id}/updates/{update_id}/confirm`)**: Merges confirmed update additions by writing a `drive_updates` audit record, appending new `drive_dates` rows, applying confirmed field modifications to `drives`, and uploading follow-up document attachments to Supabase Storage linked to `drive_documents.drive_update_id`.
-
-### 📊 Drive Detail Page, Timeline View & Document Repository (PRD Section 1.3.4)
-- **Drive Detail Header (`GET /drives/{id}`)**: Displays company name, company-type badge (`product`, `startup`, `service`, `psu`, `unknown`), role title, eligibility criteria, application link, application status badge, and all confirmed dates (highlighting the primary deadline in red).
-- **Chronological History Timeline (`GET /drives/{id}/timeline`)**: Displays a read-only timeline combining the initial creation event ("Initial capture") and every subsequent `drive_updates` row in chronological order, with `source_type` icons (`whatsapp_text`, `pdf`, `docx`) and change summaries.
-- **Signed Document Repository (`GET /drives/{id}/documents`)**: Lists all attached circular files across initial capture and follow-up updates, complete with server-generated 5-minute short-expiry signed URLs for secure downloads.
-- **Integrated "Add Update" Modal**: Allows users to paste follow-up text or upload circular files directly from the drive detail page, rendering proposed diffs using the `DateRow` confirmation component and updating the header's current dates immediately upon confirmation.
-
-### 🛡️ Draft Confirmation Screen & Trust Gate (PRD 1.3.3 & Risk Mitigation #4)
-- **Interactive Draft Cards**: Renders AI extraction results into editable cards for company details, role title, CGPA cutoffs, branches, application links, and dates.
-- **Amber vs. Green Date Badges**:
-  - Unconfirmed AI suggestions display an amber badge: `"AI suggested — tap to confirm or edit"`.
-  - Confirmed dates display a green badge: `"Confirmed"`.
-  - Verbatim original date text (`date_raw`) is shown as a caption under each picker for context.
-- **Strict Human Confirmation Gate**: The Save button is strictly disabled with a visible explanation until at least one `application_deadline` is confirmed **and** every other AI-suggested date is reviewed/dismissed.
-- **No Bulk-Confirm (By Design)**: Zero "Confirm All" or bulk-confirm controls exist anywhere in the application, preventing autopilot rubber-stamping of AI guesses.
-- **Manual Date Entry**: Users can add missed dates manually via an embedded form (`+ Add Date Manually`), which marks them as user-confirmed.
+```mermaid
+graph LR
+    A[📱 WhatsApp Text / PDF / DOCX] -->|FastAPI + Groq/Ollama| B(🤖 Schema-Constrained AI Draft)
+    B -->|Mandatory Human Verification| C{🛡️ Trust Gate}
+    C -->|Confirmed & Deduplicated| D[(🗄️ Supabase RLS DB)]
+    D -->|48h / 24h / 6h Checks| E[🔔 Web Push Notification]
+    E -->|Unacknowledged > 10m| F[✈️ Telegram Bot Escalation]
+```
 
 ---
 
-## Prerequisites
+## 🏆 Key Engineering Highlights
 
-- Docker + Docker Compose
-- Node.js 20+
-- Python 3.11+ (for running the backend outside Docker)
+*   **🛡️ Human-in-the-Loop AI Trust Gate (Zero Hallucinated Deadlines):** AI-extracted dates (`application_deadline`, `oa`, `interview`, etc.) render as amber *"AI suggested"* badges alongside verbatim source text. By design, there is **no "Confirm All" button**—both the UI and backend (`HTTP 422`) strictly block saving until the user manually verifies the primary deadline.
+*   **🔔 Multi-Channel Alert & Telegram Escalation Engine:** Background `APScheduler` workers scan IST deadlines at **48h, 24h, and 6h** intervals. If a PWA Web Push notification goes unacknowledged for **> 10 minutes**, the escalation engine automatically fires a fallback alert via the **Telegram Bot API**.
+*   **📱 Android OEM Battery Killer Detection:** Mobile OS skins (Xiaomi/MIUI, Samsung, OnePlus, Oppo, Vivo) aggressively kill background service workers. DriveTrack inspects `navigator.userAgentData`, runs an onboarding push self-test, and renders brand-specific instructions (`dontkillmyapp.com`) if background delivery fails.
+*   **🔄 Diff-Oriented Drive Updates & Audit Timeline:** Placement dates change frequently. Uploading a follow-up circular runs an **LLM Diff Pipeline** against the existing drive state, proposing only new or modified dates for human confirmation before merging into a chronological history timeline.
+*   **🔒 Privacy-First Ingestion & Multi-Tenant RLS:** Enforces a strict `PII_SAFE_PROVIDERS` guard (restricting extraction to Groq/Ollama), graceful fallback to manual entry on LLM failure, and PostgreSQL Row-Level Security (RLS) anchored on Clerk JWTs.
 
 ---
 
-## Quick Start (Backend + DB)
+## ✨ Core Product Features
 
-### 1. Environment Setup
+| Module | Capabilities |
+| :--- | :--- |
+| **📊 Executive Dashboard** | Switch seamlessly between **Card Grid**, **Kanban Pipeline Funnel**, and **Dense Table** views with persistent `localStorage` filtering and real-time search. |
+| **🎮 Zero-Setup Mock Mode** | Instant interactive showcase pre-loaded with realistic Tier-1 drives (Google, Microsoft, Goldman Sachs, Uber) for frictionless portfolio evaluation. |
+| **📄 Document Repository** | Parses `.pdf` (`pdfplumber`) and `.docx` (`python-docx`) tables up to 10MB; stores attachments in Supabase Storage with 5-minute signed download URLs. |
+| **🏷️ Smart Deduplication & Tagging** | Prevents duplicate entries via `HTTP 409` conflict checks on `(company, role, deadline)` and auto-classifies companies (`product`, `startup`, `service`, `psu`) using a zero-latency static lookup + LLM fallback. |
 
-Create `backend/.env` from `backend/.env.example`:
+---
+
+## 🛠️ Tech Stack
+
+*   **Frontend:** React 18, TypeScript, Vite, Tailwind CSS, PWA Service Workers (Web Push / VAPID)
+*   **Backend:** Python 3.11+, FastAPI, Pydantic, APScheduler, `pdfplumber`, `python-docx`
+*   **AI Pipeline:** Groq API / Ollama (Schema-constrained JSON decoding, IST relative date resolution)
+*   **Database & Auth:** Supabase (PostgreSQL + Storage + RLS), Clerk Authentication (JWKS validation)
+*   **DevOps:** Docker Compose, GitHub Actions CI/CD (`pytest`, `ruff`, `eslint`), Render & Vercel
+
+---
+
+## 🗄️ Database Architecture & Security
+
+The database uses **Supabase PostgreSQL** with Row-Level Security (RLS) isolating tenant data via a custom `requesting_user_id()` Postgres function mapped to Clerk JWT `sub` claims.
+
+<details>
+<summary><b>📐 Click to expand Entity-Relationship Diagram (Mermaid) & RLS Table</b></summary>
+
+<br>
+
+```mermaid
+erDiagram
+    COMPANIES ||--o{ DRIVES : "categorizes"
+    DRIVES ||--o{ DRIVE_DATES : "contains"
+    DRIVES ||--o{ DRIVE_UPDATES : "logs"
+    DRIVES ||--o{ DRIVE_DOCUMENTS : "stores"
+    DRIVES ||--|| APPLICATIONS : "tracks"
+    DRIVES ||--o{ INGESTION_LOG : "audits"
+    DRIVE_UPDATES ||--o{ DRIVE_DOCUMENTS : "attaches"
+
+    COMPANIES {
+        uuid id PK
+        text name UK
+        text company_type "product|startup|service|psu|unknown"
+        text website
+        timestamptz created_at
+    }
+
+    DRIVES {
+        uuid id PK
+        text user_id "Clerk user ID (RLS tenant anchor)"
+        uuid company_id FK
+        text role_title
+        text eligibility_raw
+        real min_cgpa
+        text_array eligible_branches
+        text status "draft|confirmed"
+        timestamptz created_at
+    }
+
+    DRIVE_DATES {
+        uuid id PK
+        uuid drive_id FK
+        text date_type "application_deadline|oa|interview|ppt|result|joining|other"
+        text label
+        timestamptz date_iso
+        text date_raw "Original phrase preserved"
+        text source "ai_suggested|user_added"
+        boolean confirmed_by_user
+        boolean is_primary_deadline "Used for sorting and alert checks"
+        timestamptz created_at
+    }
+
+    DRIVE_UPDATES {
+        uuid id PK
+        uuid drive_id FK
+        text source_type "whatsapp_text|pdf|docx"
+        text raw_text
+        text summary_of_changes
+        timestamptz created_at
+    }
+
+    DRIVE_DOCUMENTS {
+        uuid id PK
+        uuid drive_id FK
+        uuid drive_update_id FK "Nullable: initial upload vs update"
+        text storage_path "Supabase Storage path"
+        text original_filename
+        timestamptz uploaded_at
+    }
+
+    APPLICATIONS {
+        uuid id PK
+        uuid drive_id FK,UK
+        text status "not_applied|applied|oa|interview|offer|rejected|withdrawn"
+        timestamptz applied_at "Set once on transition to applied"
+        text notes
+        timestamptz updated_at
+    }
+
+    INGESTION_LOG {
+        uuid id PK
+        uuid drive_id FK "Nullable if failed before drive creation"
+        text source_type
+        text status "success|partial|failed"
+        text error_message
+        timestamptz created_at
+    }
+```
+
+| Table | Purpose | Security & RLS Policy |
+| --- | --- | --- |
+| `companies` | Global directory of hiring organizations (`product`, `startup`, `service`, `psu`). | Readable by authenticated users; writes restricted to service role. |
+| `drives` | Primary record for placement drives (role, CGPA cutoffs, branches, status). | RLS-isolated: `requesting_user_id() = user_id`. |
+| `drive_dates` | Timeline milestones (`application_deadline`, `oa`, `interview`, `ppt`, etc.). | Scoped through parent `drives` ownership. |
+| `drive_updates` | Audit log of incremental notices or revised date announcements. | Scoped through parent `drives` ownership. |
+| `drive_documents` | Metadata for uploaded PDF/DOCX notices stored in Supabase Storage. | Scoped through parent `drives` ownership. |
+| `applications` | Student recruitment pipeline tracking with set-once `applied_at` timestamp. | 1:1 with `drives`; owner-isolated. |
+| `ingestion_log` | Diagnostic log tracking extraction attempts, input format, and errors. | Scoped through parent drive or restricted to service role. |
+
+</details>
+
+---
+
+## 🚀 Quick Start & Local Development
+
+<details>
+<summary><b>💻 Click to expand Local Setup, Docker, Testing & API Reference</b></summary>
+
+<br>
+
+### Prerequisites
+*   Docker + Docker Compose
+*   Node.js 20+ & Python 3.11+
+
+### 1. Backend & Database Setup
 
 ```bash
 cd backend
 cp .env.example .env
+# Fill in SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, GROQ_API_KEY, CLERK_SECRET_KEY, CLERK_PUBLISHABLE_KEY and optional TELEGRAM_BOT_TOKEN
 ```
 
-Fill in your configuration:
-- `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-- `GROQ_API_KEY` (Get a key from [console.groq.com](https://console.groq.com))
-- `TELEGRAM_BOT_TOKEN` (Optional Telegram Bot Token for escalation fallback)
-
-### 2. Local Backend Run
-
-```bash
-# Install dependencies
-pip install -e .[dev]
-
-# Start API server
-uvicorn app.main:app --reload
-```
-
-Or via Docker Compose:
-
+Run via **Docker Compose** (Recommended):
 ```bash
 docker compose up --build
 ```
 
-### 3. Verify Health & Extraction Endpoints
-
+Or run locally via **Uvicorn**:
 ```bash
-# Health check
-curl http://localhost:8000/health
-# {"status":"ok"}
-
-# Get public VAPID key
-curl http://localhost:8000/push/vapid-public-key
+pip install -e .[dev]
+uvicorn app.main:app --reload
 ```
 
----
-
-## Frontend Setup
+### 2. Frontend Setup
 
 ```bash
 cd frontend
-cp .env.example .env      # Fill in API Base URL + Supabase keys
+cp .env.example .env      # Configure API Base URL + Supabase/Clerk keys
 npm install
 npm run dev
 ```
 
----
-
-## Environment Variables
-
-### Backend (`backend/.env`)
-
-| Variable | Purpose | Default |
-| --- | --- | --- |
-| `SUPABASE_URL` | Supabase project URL | `""` |
-| `SUPABASE_ANON_KEY` | Public anon key | `""` |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role key (**server-side only**) | `""` |
-| `CORS_ORIGINS` | Allowed frontend origins | `http://localhost:5173,https://drivetrack.page,https://www.drivetrack.page` |
-| `LLM_PROVIDER` | Active extraction LLM provider (`groq` or `ollama`) | `groq` |
-| `GROQ_API_KEY` | Groq API Key | `""` |
-| `GROQ_MODEL` | Groq Model ID | `openai/gpt-oss-20b` |
-| `OLLAMA_BASE_URL` | Local Ollama Base URL | `http://localhost:11434` |
-| `OLLAMA_MODEL` | Local Ollama Model Name | `qwen2.5:7b` |
-| `VAPID_PUBLIC_KEY` | Web Push VAPID Public Key | `""` (auto-generated if empty) |
-| `VAPID_PRIVATE_KEY` | Web Push VAPID Private Key | `""` (auto-generated if empty) |
-| `TELEGRAM_BOT_TOKEN` | Telegram Bot API Token for escalation fallback | `""` |
-
-### Frontend (`frontend/.env`)
-
-| Variable | Purpose | Default |
-| --- | --- | --- |
-| `VITE_API_BASE_URL` | FastAPI backend base URL | `http://localhost:8000` |
-| `VITE_SUPABASE_URL` | Supabase project URL | `""` |
-| `VITE_SUPABASE_ANON_KEY` | Public anon key (safe to expose) | `""` |
-
----
-
-## Testing & Quality Assurance
-
-### Backend Tests
-Run pytest test suite (includes Pydantic models, PII guard, parsers, and endpoint tests):
+### 3. Testing & Quality Assurance
 
 ```bash
-cd backend
-pytest
-ruff check .
+# Backend Test Suite & Linter
+cd backend && pytest && ruff check .
+
+# Frontend Typecheck, Lint & Production Build
+cd frontend && npm run lint && npm run build
 ```
 
-### Frontend Build & Lint
-Verify TypeScript compilation, PWA generation, and ESLint checks:
+### 4. Core API Reference
 
-```bash
-cd frontend
-npm run lint
-npm run build
-```
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :---: |
+| `POST` | `/ingest/text` | Parse raw placement message and extract structured draft via LLM | Yes (Clerk) |
+| `POST` | `/ingest/file` | Extract draft from uploaded `.pdf` or `.docx` circular (up to 10MB) | Yes (Clerk) |
+| `GET` | `/drives` | List user's tracked placement drives with status and deadlines | Yes (Clerk) |
+| `POST` | `/drives` | Validate & persist confirmed drive (enforces human verification) | Yes (Clerk) |
+| `GET` | `/drives/{id}` | Fetch full drive profile, company info, and confirmed timeline | Yes (Clerk) |
+| `POST` | `/drives/{id}/updates` | Ingest follow-up circular and propose update diff against existing state | Yes (Clerk) |
+| `PATCH` | `/drives/{id}/updates/{uid}/confirm` | Merge confirmed diff additions into timeline and update alerts | Yes (Clerk) |
+| `GET` | `/drives/{id}/timeline` | Retrieve chronological update history and change diff summaries | Yes (Clerk) |
+| `GET` | `/drives/{id}/documents` | List attached circulars with 5-minute signed download URLs | Yes (Clerk) |
+| `PATCH` | `/applications/{id}` | Update recruitment funnel stage (`applied`, `oa`, `interview`, `offer`) | Yes (Clerk) |
+| `GET` | `/push/vapid-public-key` | Retrieve VAPID public key for Web Push subscription | No |
+| `POST` | `/push/subscribe` | Register service worker push subscription for deadline alerts | Yes (Clerk) |
+| `POST` | `/push/ack` | Acknowledge alert receipt to cancel pending Telegram escalation | Yes (Clerk) |
+| `POST` | `/telegram/link` | Link Telegram chat ID for fallback escalation notifications | Yes (Clerk) |
+| `GET` | `/health` | API service liveness check | No |
+| `GET` | `/health/scheduler` | APScheduler heartbeat monitor for alert background jobs | No |
+
+</details>
 
 ---
 
-## Database
+## 📄 License
 
-`backend/migrations/0001_init.sql` contains the Postgres schema (`companies`, `drives`, `drive_dates`, `drive_updates`, `drive_documents`, `applications`, `ingestion_log`) with Row-Level Security (RLS) policies for Supabase and local Postgres development.
-
----
-
-## CI/CD Pipeline
-
-GitHub Actions (`.github/workflows/ci.yml`) runs on push and pull requests:
-
-- **backend**: `ruff` lint + `pytest`
-- **frontend**: `eslint` + `vite build`
+Distributed under the **Apache 2.0 License**. See [`LICENSE`](LICENSE) for details.
