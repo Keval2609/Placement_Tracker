@@ -67,7 +67,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({ timeline }) =>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-[#262626]">
-                      {isInitial ? "Initial Notice Ingestion" : `Round / Criteria Update #${index}`}
+                      {isInitial ? "Drive Registration & Initial Notice" : `Round / Criteria Update #${index}`}
                     </span>
                     <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-white border border-[#e6e6e6] text-[#6b6b6b] uppercase font-bold tracking-wider">
                       {icon}
@@ -81,7 +81,9 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({ timeline }) =>
                 </div>
 
                 <p className="text-xs text-[#3c3c3c] font-light leading-relaxed">
-                  {event.summary_of_changes}
+                  {isInitial && (!event.summary_of_changes || event.summary_of_changes.toLowerCase() === "initial capture")
+                    ? "Drive registered and circular details recorded in portal."
+                    : event.summary_of_changes}
                 </p>
 
                 {event.raw_text && (

@@ -78,6 +78,8 @@ async def create_drive(
                 "company_name": form.get("company_name"),
                 "role_title": form.get("role_title"),
                 "eligibility_raw": form.get("eligibility_raw"),
+                "job_description": form.get("job_description"),
+                "application_status": form.get("application_status"),
                 "min_cgpa": float(form.get("min_cgpa")) if form.get("min_cgpa") else None,
                 "application_link": form.get("application_link"),
             }

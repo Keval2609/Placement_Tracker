@@ -185,7 +185,7 @@ function App() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-[#1c69d4] hover:bg-[#0653b6] transition-colors cursor-pointer shadow-sm active:bg-[#0653b6]"
               >
                 <Plus className="w-4 h-4" />
-                <span>Parse Notice</span>
+                <span>Add Application / Drive</span>
               </button>
             ) : (
               <SignInButton mode="modal">
@@ -194,7 +194,7 @@ function App() {
                   className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-[#1c69d4] hover:bg-[#0653b6] transition-colors cursor-pointer shadow-sm active:bg-[#0653b6]"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>Parse Notice</span>
+                  <span>Add Application / Drive</span>
                 </button>
               </SignInButton>
             )}
@@ -248,7 +248,17 @@ function App() {
           />
         ) : isIngesting ? (
           !extractionResult ? (
-            <IngestInput onExtractionSuccess={(data) => setExtractionResult(data)} />
+            <IngestInput
+              onExtractionSuccess={(data) => setExtractionResult(data)}
+              onDirectSaveSuccess={() => {
+                setIsIngesting(false);
+                setExtractionResult(null);
+              }}
+              onCancel={() => {
+                setIsIngesting(false);
+                setExtractionResult(null);
+              }}
+            />
           ) : (
             <ConfirmationScreen
               initialResult={extractionResult}

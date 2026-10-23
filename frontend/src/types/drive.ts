@@ -55,6 +55,7 @@ export interface DriveDetail {
   company_type: CompanyType;
   role_title: string;
   eligibility_raw?: string | null;
+  job_description?: string | null;
   min_cgpa?: number | null;
   eligible_branches: string[];
   application_link?: string | null;

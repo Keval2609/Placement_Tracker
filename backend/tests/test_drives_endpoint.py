@@ -197,3 +197,36 @@ def test_create_drive_with_file_attachment() -> None:
     resp_json = response.json()
     assert resp_json["company_name"] == "Infosys"
     assert resp_json["company_type"] == "service"
+
+
+# ---------------------------------------------------------------------------
+# 6. Off-Campus Manual Entry Test
+# ---------------------------------------------------------------------------
+
+def test_create_off_campus_manual_entry() -> None:
+    """Manual off-campus entry with job description and application status."""
+    payload = {
+        "company_name": "Stripe",
+        "role_title": "Backend Engineer",
+        "job_description": "Payments infrastructure, distributed systems, Python/Go.",
+        "application_status": "applied",
+        "application_link": "https://stripe.com/jobs/123",
+        "dates": [],
+    }
+
+    response = client.post("/drives", json=payload)
+    assert response.status_code == 201
+    drive_id = response.json()["id"]
+
+    detail_resp = client.get(f"/drives/{drive_id}")
+    assert detail_resp.status_code == 200
+    detail = detail_resp.json()
+
+    assert detail["role_title"] == "Backend Engineer"
+    assert detail["job_description"] == "Payments infrastructure, distributed systems, Python/Go."
+    assert detail["eligibility_raw"] == "Payments infrastructure, distributed systems, Python/Go."
+    assert detail["application_status"] == "applied"
+    assert len(detail["dates"]) >= 1
+    assert detail["dates"][0]["date_type"] == "application_deadline"
+    assert detail["dates"][0]["confirmed_by_user"] is True
+

@@ -17,16 +17,21 @@ export interface DetectedDateDraft {
   date_raw: string;
   source: DateSource;
   confirmed_by_user: boolean;
+  is_primary_deadline?: boolean;
 }
 
+import { ApplicationStatus } from "./drive";
+
 export interface DrivePostingDraft {
-  id: string;
+  id?: string;
   company_name: string;
   role_title: string;
   eligibility_raw?: string | null;
+  job_description?: string | null;
   min_cgpa?: number | null;
-  eligible_branches: string[];
+  eligible_branches?: string[];
   application_link?: string | null;
+  application_status?: ApplicationStatus;
   dates: DetectedDateDraft[];
 }
 

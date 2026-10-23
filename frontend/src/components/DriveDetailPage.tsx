@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 import { DriveDetailHeader } from "./DriveDetailHeader";
+import { JobDescriptionCard } from "./JobDescriptionCard";
 import { TimelineSection } from "./TimelineSection";
 import { DocumentsSection } from "./DocumentsSection";
 import { AddUpdateModal } from "./AddUpdateModal";
@@ -103,6 +104,12 @@ export const DriveDetailPage: React.FC<DriveDetailPageProps> = ({
 
       {/* Header View */}
       <DriveDetailHeader
+        drive={drive}
+        onOpenAddUpdate={() => setIsAddUpdateOpen(true)}
+      />
+
+      {/* Job Details & Description Card */}
+      <JobDescriptionCard
         drive={drive}
         onOpenAddUpdate={() => setIsAddUpdateOpen(true)}
       />

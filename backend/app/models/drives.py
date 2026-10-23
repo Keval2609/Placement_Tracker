@@ -31,9 +31,11 @@ class CreateDriveRequest(BaseModel):
     company_name: str
     role_title: str
     eligibility_raw: str | None = None
+    job_description: str | None = None
     min_cgpa: float | None = None
     eligible_branches: list[str] = Field(default_factory=list)
     application_link: str | None = None
+    application_status: str | None = None
     dates: list[ConfirmedDateItem] = Field(default_factory=list)
 
 
@@ -92,6 +94,7 @@ class DriveDetailResponse(BaseModel):
     company_type: str
     role_title: str
     eligibility_raw: str | None = None
+    job_description: str | None = None
     min_cgpa: float | None = None
     eligible_branches: list[str] = Field(default_factory=list)
     application_link: str | None = None
