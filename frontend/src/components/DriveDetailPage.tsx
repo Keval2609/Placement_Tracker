@@ -3,14 +3,9 @@ import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 import { DriveDetailHeader } from "./DriveDetailHeader";
 import { JobDescriptionCard } from "./JobDescriptionCard";
 import { TimelineSection } from "./TimelineSection";
-import { DocumentsSection } from "./DocumentsSection";
 import { AddUpdateModal } from "./AddUpdateModal";
-import { DriveDetail, TimelineEvent, DocumentItem } from "../types/drive";
-import {
-  fetchDriveDetail,
-  fetchDriveTimeline,
-  fetchDriveDocuments,
-} from "../services/api";
+import { DriveDetail, TimelineEvent } from "../types/drive";
+import { fetchDriveDetail, fetchDriveTimeline } from "../services/api";
 
 interface DriveDetailPageProps {
   driveId: string;
@@ -23,7 +18,6 @@ export const DriveDetailPage: React.FC<DriveDetailPageProps> = ({
 }) => {
   const [drive, setDrive] = useState<DriveDetail | null>(null);
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
-  const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,15 +28,13 @@ export const DriveDetailPage: React.FC<DriveDetailPageProps> = ({
     setError(null);
 
     try {
-      const [driveData, timelineData, docsData] = await Promise.all([
+      const [driveData, timelineData] = await Promise.all([
         fetchDriveDetail(driveId),
         fetchDriveTimeline(driveId),
-        fetchDriveDocuments(driveId),
       ]);
 
       setDrive(driveData);
       setTimeline(timelineData);
-      setDocuments(docsData);
     } catch (err: unknown) {
       setError((err as Error).message || "Failed to load drive details.");
     } finally {
@@ -116,9 +108,6 @@ export const DriveDetailPage: React.FC<DriveDetailPageProps> = ({
 
       {/* Timeline View */}
       <TimelineSection timeline={timeline} />
-
-      {/* Attached Documents View */}
-      <DocumentsSection documents={documents} />
 
       {/* Add Update Modal */}
       <AddUpdateModal
