@@ -1,51 +1,43 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@clerk/react";
 import { Loader2, AlertCircle, Sparkles, FolderArchive, Layers } from "lucide-react";
-import { DashboardFilterBar, DashboardViewMode } from "./DashboardFilterBar";
+import { DashboardFilterBar, DashboardViewMode, DeadlineFilterType } from "./DashboardFilterBar";
 import { DriveCardComponent } from "./DriveCardComponent";
 import { DashboardFunnelView } from "./DashboardFunnelView";
 import { DashboardTableView } from "./DashboardTableView";
 import { DashboardMetricsStrip } from "./DashboardMetricsStrip";
-import { NotificationSetupBanner } from "./NotificationSetupBanner";
-import { ApplicationStatus, CompanyType, DeadlineWindow, DriveCard } from "../types/drive";
+import { DriveDetailModal } from "./DriveDetailModal";
+import { ApplicationStatus, DriveCard } from "../types/drive";
 import { fetchDashboardDrives } from "../services/api";
 
 interface DashboardPageProps {
-  onSelectDrive: (driveId: string) => void;
+  onSelectDrive?: (driveId: string) => void;
   onOpenIngest: () => void;
+  globalSearchQuery?: string;
+  onDriveCountChange?: (activeCount: number, urgentCount: number) => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   onSelectDrive,
   onOpenIngest,
+  globalSearchQuery = "",
+  onDriveCountChange,
 }) => {
   const { isLoaded, isSignedIn } = useAuth();
   const [drives, setDrives] = useState<DriveCard[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Selected modal drive (Modal-First Drive Inspection)
+  const [modalDriveId, setModalDriveId] = useState<string | null>(null);
+
   // View Mode: Cards / Pipeline Funnel / Table
   const [viewMode, setViewMode] = useState<DashboardViewMode>("grid");
-  const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Filters State
-  const [selectedStatuses, setSelectedStatuses] = useState<ApplicationStatus[]>([
-    "not_applied",
-    "applied",
-    "oa",
-    "interview",
-    "offer",
-    "rejected",
-    "withdrawn",
-  ]);
-  const [selectedCompanyTypes, setSelectedCompanyTypes] = useState<CompanyType[]>([
-    "product",
-    "startup",
-    "service",
-    "psu",
-    "unknown",
-  ]);
-  const [deadlineWindow, setDeadlineWindow] = useState<DeadlineWindow>("all");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [selectedCompanyType, setSelectedCompanyType] = useState<string>("all");
+  const [deadlineFilter, setDeadlineFilter] = useState<DeadlineFilterType>("all");
 
   const loadDrives = async () => {
     setIsLoading(true);
@@ -68,42 +60,61 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     }
   }, [isLoaded, isSignedIn]);
 
+  // Keep parent navbar updated with live counts
+  useEffect(() => {
+    const active = drives.filter((d) => !d.is_overdue).length;
+    const urgent = drives.filter((d) => !d.is_overdue && d.days_left <= 3).length;
+    if (onDriveCountChange) {
+      onDriveCountChange(active, urgent);
+    }
+  }, [drives, onDriveCountChange]);
+
   // Filter Logic
   const filteredDrives = useMemo(() => {
     return drives.filter((drive) => {
-      // 1. Text Search Filter
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
+      // 1. Text Search Filter (Matches Company, Role, Branches, CTC)
+      if (globalSearchQuery.trim()) {
+        const q = globalSearchQuery.toLowerCase();
         const matchName = drive.company_name.toLowerCase().includes(q);
         const matchRole = drive.role_title.toLowerCase().includes(q);
-        if (!matchName && !matchRole) return false;
+        const matchType = drive.company_type.toLowerCase().includes(q);
+        const matchCtc = (drive.ctc_display || "").toLowerCase().includes(q);
+        if (!matchName && !matchRole && !matchType && !matchCtc) {
+          return false;
+        }
       }
 
       // 2. Status Filter
-      if (!selectedStatuses.includes(drive.application_status)) {
+      if (selectedStatus !== "all" && drive.application_status !== selectedStatus) {
         return false;
       }
 
       // 3. Company Type Filter
-      if (!selectedCompanyTypes.includes(drive.company_type)) {
+      if (selectedCompanyType !== "all" && drive.company_type !== selectedCompanyType) {
         return false;
       }
 
       // 4. Deadline Window Filter
-      if (deadlineWindow === "next_7_days" && drive.days_left > 7) {
-        return false;
-      }
-      if (deadlineWindow === "next_30_days" && drive.days_left > 30) {
-        return false;
+      if (deadlineFilter === "urgent_72h") {
+        if (drive.is_overdue || drive.days_left > 3) return false;
+      } else if (deadlineFilter === "next_7d") {
+        if (drive.is_overdue || drive.days_left > 7) return false;
+      } else if (deadlineFilter === "next_30d") {
+        if (drive.is_overdue || drive.days_left > 30) return false;
       }
 
       return true;
     });
-  }, [drives, searchQuery, selectedStatuses, selectedCompanyTypes, deadlineWindow]);
+  }, [drives, globalSearchQuery, selectedStatus, selectedCompanyType, deadlineFilter]);
 
-  // Separate Active vs Overdue:
-  // Drives where user has an active application in flight (applied, oa, interview)
-  // remain in the Active section past deadline until reaching a terminal state.
+  const handleResetFilters = () => {
+    setSelectedStatus("all");
+    setSelectedCompanyType("all");
+    setDeadlineFilter("all");
+  };
+
+  // Retention: Drives where candidate is actively in pipeline (applied, oa, interview)
+  // remain in the Active section past deadline until reaching offer or rejected
   const isPipelineActive = (status: ApplicationStatus) =>
     ["applied", "oa", "interview"].includes(status);
 
@@ -114,6 +125,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     (d) => d.is_overdue && !isPipelineActive(d.application_status)
   );
 
+  const handleDriveCardClick = (id: string) => {
+    setModalDriveId(id);
+    if (onSelectDrive) onSelectDrive(id);
+  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -121,34 +136,32 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       <DashboardMetricsStrip
         drives={drives}
         onFilterUrgent={() => {
-          setDeadlineWindow("next_7_days");
-          setSelectedStatuses(["not_applied", "applied", "oa", "interview"]);
+          setDeadlineFilter("urgent_72h");
+          setSelectedStatus("all");
         }}
         onFilterActivePipeline={() => {
-          setSelectedStatuses(["oa", "interview"]);
+          setSelectedStatus("oa");
+          setDeadlineFilter("all");
         }}
         onFilterOffers={() => {
-          setSelectedStatuses(["offer"]);
+          setSelectedStatus("offer");
+          setDeadlineFilter("all");
         }}
       />
 
-      {/* Multi-Channel Alerts & Notification Banner */}
-      <NotificationSetupBanner />
-
       {/* Filter Toolbar */}
       <DashboardFilterBar
-        selectedStatuses={selectedStatuses}
-        onStatusesChange={setSelectedStatuses}
-        selectedCompanyTypes={selectedCompanyTypes}
-        onCompanyTypesChange={setSelectedCompanyTypes}
-        deadlineWindow={deadlineWindow}
-        onDeadlineWindowChange={setDeadlineWindow}
+        selectedStatus={selectedStatus}
+        onStatusChange={setSelectedStatus}
+        selectedCompanyType={selectedCompanyType}
+        onCompanyTypeChange={setSelectedCompanyType}
+        deadlineFilter={deadlineFilter}
+        onDeadlineFilterChange={setDeadlineFilter}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
         totalCount={drives.length}
         filteredCount={filteredDrives.length}
+        onResetFilters={handleResetFilters}
       />
 
       {/* Error Banner */}
@@ -173,7 +186,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <div className="space-y-1">
             <h3 className="text-base font-bold text-[#262626]">No Placement Drives Recorded Yet</h3>
             <p className="text-xs font-light text-[#6b6b6b] max-w-sm mx-auto">
-              Paste a WhatsApp placement notice or upload a circular file to extract and track your first drive.
+              Paste a WhatsApp placement notice, upload a circular file, or add an off-campus job to track your first drive.
             </p>
           </div>
           <button
@@ -182,7 +195,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1c69d4] hover:bg-[#0653b6] text-white text-xs font-bold uppercase tracking-[0.5px] transition-colors cursor-pointer"
           >
             <Sparkles className="w-4 h-4" />
-            <span>Parse Placement Circular</span>
+            <span>Add Application / Drive</span>
           </button>
         </div>
       ) : (
@@ -191,13 +204,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           {viewMode === "funnel" ? (
             <DashboardFunnelView
               drives={filteredDrives}
-              onSelectDrive={onSelectDrive}
+              onSelectDrive={handleDriveCardClick}
               onStatusUpdated={loadDrives}
             />
           ) : viewMode === "table" ? (
             <DashboardTableView
               drives={filteredDrives}
-              onSelectDrive={onSelectDrive}
+              onSelectDrive={handleDriveCardClick}
             />
           ) : (
             <div className="space-y-8">
@@ -218,7 +231,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       <DriveCardComponent
                         key={drive.id}
                         drive={drive}
-                        onSelectDrive={onSelectDrive}
+                        onSelectDrive={handleDriveCardClick}
                         onStatusUpdated={loadDrives}
                       />
                     ))}
@@ -239,7 +252,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       <DriveCardComponent
                         key={drive.id}
                         drive={drive}
-                        onSelectDrive={onSelectDrive}
+                        onSelectDrive={handleDriveCardClick}
                         onStatusUpdated={loadDrives}
                       />
                     ))}
@@ -250,6 +263,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           )}
         </div>
       )}
+
+      {/* Modal-First Drive Detail Overlay */}
+      <DriveDetailModal
+        driveId={modalDriveId}
+        onClose={() => setModalDriveId(null)}
+        onStatusUpdated={loadDrives}
+      />
     </div>
   );
 };
