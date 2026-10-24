@@ -166,6 +166,23 @@ def save_drive(
     settings = get_settings()
     now_iso = datetime.now(KOLKATA_TZ).isoformat()
 
+    has_confirmed_deadline = any(
+        d.date_type == "application_deadline" and d.confirmed_by_user for d in payload.dates
+    )
+    if not has_confirmed_deadline and (payload.application_status or payload.job_description):
+        default_deadline_iso = payload.dates[0].date_iso if payload.dates else now_iso
+        payload.dates = [
+            ConfirmedDateItem(
+                date_type="application_deadline",
+                label="Application Deadline",
+                date_iso=default_deadline_iso,
+                date_raw="Direct Entry",
+                source="user_added",
+                confirmed_by_user=True,
+                is_primary_deadline=True,
+            )
+        ] + [d for d in payload.dates if d.date_type != "application_deadline"]
+
     payload.dates = validate_and_normalize_deadlines(payload.dates)
     primary_date_iso = _get_primary_deadline_date_iso(payload.dates)
     primary_date_str = primary_date_iso.split("T")[0]
@@ -284,12 +301,14 @@ def save_drive(
         )
 
     drive_id = str(uuid.uuid4())
+    desc = payload.job_description or payload.eligibility_raw
     drive_row = {
         "id": drive_id,
         "user_id": user_id,
         "company_id": company_id,
         "role_title": role_title_clean,
-        "eligibility_raw": payload.eligibility_raw,
+        "eligibility_raw": desc,
+        "job_description": desc,
         "min_cgpa": payload.min_cgpa,
         "eligible_branches": payload.eligible_branches,
         "status": "confirmed",
@@ -313,11 +332,12 @@ def save_drive(
     ]
 
     app_id = str(uuid.uuid4())
+    app_status = payload.application_status or "not_applied"
     app_row = {
         "id": app_id,
         "drive_id": drive_id,
-        "status": "not_applied",
-        "applied_at": None,
+        "status": app_status,
+        "applied_at": now_iso if app_status != "not_applied" else None,
         "notes": payload.application_link if payload.application_link else None,
         "updated_at": now_iso,
     }
@@ -351,7 +371,16 @@ def save_drive(
     if use_supabase:
         try:
             supabase = get_service_client()
-            supabase.table("drives").insert(drive_row).execute()
+            try:
+                supabase.table("drives").insert(drive_row).execute()
+            except Exception as insert_err:
+                if "job_description" in drive_row:
+                    drive_row_compat = {
+                        k: v for k, v in drive_row.items() if k != "job_description"
+                    }
+                    supabase.table("drives").insert(drive_row_compat).execute()
+                else:
+                    raise insert_err
             supabase.table("drive_dates").insert(date_rows).execute()
             supabase.table("applications").insert(app_row).execute()
             if doc_row:
@@ -743,13 +772,15 @@ def get_drive_detail(drive_id: str, user_id: str) -> DriveDetailResponse:
     elif not isinstance(branches, list):
         branches = []
 
+    desc_val = drive_data.get("job_description") or drive_data.get("eligibility_raw")
     return DriveDetailResponse(
         id=drive_id,
         company_id=str(drive_data.get("company_id", "")),
         company_name=company_name,
         company_type=company_type,
         role_title=drive_data.get("role_title", "Position"),
-        eligibility_raw=drive_data.get("eligibility_raw"),
+        eligibility_raw=desc_val,
+        job_description=desc_val,
         min_cgpa=float(drive_data["min_cgpa"]) if drive_data.get("min_cgpa") is not None else None,
         eligible_branches=branches,
         application_link=drive_data.get("application_link"),
