@@ -1,5 +1,5 @@
 import React from "react";
-import { Briefcase, AlertTriangle, GitPullRequest, Trophy, ArrowRight } from "lucide-react";
+import { Briefcase, AlertTriangle, GitPullRequest, Trophy, ArrowUpRight } from "lucide-react";
 import { DriveCard } from "../types/drive";
 
 interface DashboardMetricsStripProps {
@@ -22,98 +22,103 @@ export const DashboardMetricsStrip: React.FC<DashboardMetricsStripProps> = ({
 
   const cards = [
     {
-      title: "Total Opportunities",
+      title: "Total Drives Tracked",
       value: totalDrives,
-      subtext: "Campus Placement Drives",
+      subtext: "Across Tier-1 & Off-Campus",
       icon: Briefcase,
-      accentColor: "text-[#1c69d4]",
-      badge: null,
+      textColor: "text-white",
       onClick: undefined,
+      highlight: false,
     },
     {
-      title: "Urgent Action (< 72h)",
+      title: "Urgent Deadlines (< 72h)",
       value: urgentDrives.length,
-      subtext: urgentDrives.length > 0 ? `${urgentDrives.slice(0, 2).map((d) => d.company_name).join(", ")}` : "No pending urgency",
+      subtext:
+        urgentDrives.length > 0
+          ? `${urgentDrives.slice(0, 3).map((d) => d.company_name).join(", ")}`
+          : "No pending urgency",
       icon: AlertTriangle,
-      accentColor: "text-[#f59e0b]",
-      badge: urgentDrives.length > 0 ? "ACTION NEEDED" : null,
+      textColor: "text-amber-400",
       onClick: onFilterUrgent,
+      highlight: urgentDrives.length > 0,
     },
     {
       title: "Active In Pipeline",
       value: inPipeline.length,
       subtext: "OA & Technical Interviews",
       icon: GitPullRequest,
-      accentColor: "text-[#1c69d4]",
-      badge: null,
+      textColor: "text-[#1c69d4]",
       onClick: onFilterActivePipeline,
+      highlight: false,
     },
     {
       title: "Offers & Selections",
       value: offers.length,
-      subtext: offers.length > 0 ? `${offers.map((d) => d.company_name).join(", ")}` : "In selection process",
+      subtext:
+        offers.length > 0
+          ? `${offers.map((d) => d.company_name).join(", ")} 🎉`
+          : "In selection rounds",
       icon: Trophy,
-      accentColor: "text-[#22c55e]",
-      badge: offers.length > 0 ? "OFFER SECURED" : null,
+      textColor: "text-[#22c55e]",
       onClick: onFilterOffers,
+      highlight: offers.length > 0,
     },
   ];
 
   return (
-    <div className="bg-[#1a2129] border border-[#262e38] p-6 sm:p-7 text-white shadow-sm space-y-4">
-      {/* Hero band heading */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#262e38] pb-4">
-        <div>
-          <span className="text-[11px] uppercase tracking-[1.5px] font-bold text-[#1c69d4] block">
-            Executive Overview
-          </span>
-          <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-            Placement Performance & Pipeline
-          </h2>
-        </div>
-        <p className="text-xs font-light text-[#bbbbbb] max-w-sm text-right hidden sm:block">
-          Real-time candidate tracking across active campus recruitment stages and upcoming deadlines.
-        </p>
+    <div className="bg-[#1a2129] border border-[#262e38] p-4 sm:p-5 text-white shadow-sm">
+      {/* BMW Hero Band Header Label */}
+      <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
+        <span className="text-[11px] font-bold uppercase tracking-[1.5px] text-[#bbbbbb]">
+          Executive Recruitment Overview
+        </span>
+        <span className="text-[11px] font-light text-[#bbbbbb]">
+          Real-Time Candidate Pipeline
+        </span>
       </div>
 
-      {/* 4-Up Metric Card Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         {cards.map((card, idx) => {
           const Icon = card.icon;
           return (
             <div
               key={idx}
               onClick={card.onClick}
-              className={`bg-[#262e38] border border-[#333d4b] p-4.5 transition-colors ${
-                card.onClick ? "hover:border-[#1c69d4] cursor-pointer group" : ""
+              className={`group bg-[#262e38] border border-white/10 p-4 transition-all duration-200 hover:border-[#1c69d4] ${
+                card.onClick ? "cursor-pointer" : ""
               }`}
             >
               <div className="flex items-start justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-[1px] text-[#bbbbbb]">
-                  {card.title}
-                </span>
-                <Icon className={`w-4 h-4 ${card.accentColor}`} />
-              </div>
-
-              <div className="mt-2.5 flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-white tracking-tight">
-                  {card.value}
-                </span>
-                {card.badge && (
-                  <span className="text-[10px] uppercase font-bold tracking-[1px] px-1.5 py-0.5 bg-[#1c69d4]/20 text-[#1c69d4] border border-[#1c69d4]/30">
-                    {card.badge}
+                <div className="space-y-1">
+                  <span className="text-[11px] font-bold text-[#bbbbbb] uppercase tracking-[1.5px] block">
+                    {card.title}
                   </span>
-                )}
-              </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold text-white tracking-tight">
+                      {card.value}
+                    </span>
+                    {card.highlight && (
+                      <span className="text-[10px] px-1.5 py-0.5 bg-[#e22718]/20 text-[#e22718] font-bold uppercase tracking-wider border border-[#e22718]/30 animate-pulse">
+                        Action Needed
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] font-light text-[#bbbbbb] truncate max-w-[190px]">
+                    {card.subtext}
+                  </p>
+                </div>
 
-              <p className="mt-1 text-xs font-light text-[#bbbbbb] truncate">
-                {card.subtext}
-              </p>
+                <div
+                  className={`w-9 h-9 bg-[#1a2129] border border-white/10 flex items-center justify-center ${card.textColor}`}
+                >
+                  <Icon className="w-4 h-4" />
+                </div>
+              </div>
 
               {card.onClick && (
-                <div className="mt-3 pt-2 border-t border-[#333d4b] flex items-center justify-between text-[11px] font-bold tracking-[1px] uppercase text-[#1c69d4] group-hover:text-white transition-colors">
-                  <span>Filter Group</span>
-                  <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[11px] font-bold uppercase tracking-[1px] text-[#bbbbbb] group-hover:text-white transition-colors">
+                  <span>Filter by category</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 text-[#1c69d4]" />
                 </div>
               )}
             </div>

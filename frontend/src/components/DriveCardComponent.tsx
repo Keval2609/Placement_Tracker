@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Clock, ChevronRight, Loader2, CalendarCheck } from "lucide-react";
+import { Clock, ChevronRight, Loader2, CalendarCheck, MapPin } from "lucide-react";
 import { ApplicationStatus, DriveCard } from "../types/drive";
 import { updateApplicationStatus } from "../services/api";
 
@@ -114,14 +114,14 @@ export const DriveCardComponent: React.FC<DriveCardComponentProps> = ({
       onClick={() => onSelectDrive(drive.id)}
       className={`group relative overflow-hidden bg-white border transition-all duration-200 cursor-pointer space-y-4 p-5 ${
         drive.is_overdue
-          ? "border-[#e6e6e6] opacity-80 hover:opacity-100 hover:border-[#cccccc]"
+          ? "border-[#e6e6e6] opacity-85 hover:opacity-100 hover:border-[#cccccc]"
           : "border-[#e6e6e6] hover:border-[#1c69d4]"
       }`}
     >
       {/* Top Header Row */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3.5">
-          {/* BMW Dark Navy Monogram Avatar */}
+          {/* Monogram Avatar */}
           <div className="w-11 h-11 bg-[#1a2129] border border-[#262e38] flex items-center justify-center font-bold text-white text-sm shrink-0">
             {drive.company_name.slice(0, 2).toUpperCase()}
           </div>
@@ -139,22 +139,33 @@ export const DriveCardComponent: React.FC<DriveCardComponentProps> = ({
             <p className="text-xs text-[#3c3c3c] font-light line-clamp-1">
               {drive.role_title}
             </p>
+
+            <div className="flex items-center gap-2 text-[11px] text-[#6b6b6b]">
+              <span className="flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-[#9a9a9a]" />
+                {drive.location || "Campus / Remote"}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Days Left Chip */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Right Stack: CTC + Days Left */}
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          <span className="px-2.5 py-0.5 bg-[#eff6ff] text-[#1c69d4] border border-[#bfdbfe] font-bold text-xs tracking-tight">
+            {drive.ctc_display || "Not Disclosed"}
+          </span>
+
           <span
-            className={`text-xs px-2.5 py-1 border inline-flex items-center gap-1.5 ${daysChip.style}`}
+            className={`text-xs px-2.5 py-0.5 border inline-flex items-center gap-1.5 ${daysChip.style}`}
           >
-            <Clock className="w-3.5 h-3.5" />
+            <Clock className="w-3 h-3" />
             <span>{daysChip.label}</span>
           </span>
         </div>
       </div>
 
       {/* Recruitment Funnel Stepper */}
-      <div className="pt-2">
+      <div className="pt-1">
         <div className="text-[10px] font-bold text-[#6b6b6b] uppercase tracking-[1.5px] mb-2 flex items-center justify-between">
           <span>Recruitment Funnel</span>
           <span className={`px-2 py-0.5 text-[10px] border ${statusBadge.style}`}>
