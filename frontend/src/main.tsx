@@ -3,6 +3,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import * as Sentry from "@sentry/react";
 import App from "./App";
+import { ThemeProvider } from "./lib/theme";
 import "./index.css";
 
 const dsn = import.meta.env.VITE_SENTRY_DSN;
@@ -22,8 +23,10 @@ if (!PUBLISHABLE_KEY) {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
-      <App />
-    </ClerkProvider>
+    <ThemeProvider>
+      <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
+        <App />
+      </ClerkProvider>
+    </ThemeProvider>
   </StrictMode>,
 );

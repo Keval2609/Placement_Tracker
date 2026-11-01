@@ -23,24 +23,24 @@ export const PrototypeDriveCard: React.FC<PrototypeDriveCardProps> = ({
     if (drive.is_overdue) {
       return {
         label: "Closed / Ended",
-        style: "bg-[#f7f7f7] text-[#6b6b6b] border-[#e6e6e6]",
+        style: "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700",
       };
     }
     if (drive.days_left === 0) {
       return {
         label: "Closes Today",
-        style: "bg-[#fef2f2] text-[#dc2626] border-[#fecaca] font-bold animate-pulse",
+        style: "bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900 font-bold animate-pulse",
       };
     }
     if (drive.days_left <= 2) {
       return {
         label: `${drive.days_left}d left`,
-        style: "bg-[#fffbeb] text-[#b45309] border-[#fde68a] font-bold",
+        style: "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900 font-bold",
       };
     }
     return {
       label: `${drive.days_left} days left`,
-      style: "bg-[#eff6ff] text-[#1c69d4] border-[#bfdbfe] font-medium",
+      style: "bg-blue-50 dark:bg-blue-950/40 text-[#1c69d4] dark:text-blue-400 border-blue-200 dark:border-blue-900 font-medium",
     };
   };
 
@@ -49,17 +49,17 @@ export const PrototypeDriveCard: React.FC<PrototypeDriveCardProps> = ({
   const getStatusBadge = () => {
     switch (drive.application_status) {
       case "offer":
-        return { label: "Offer Accepted 🎉", style: "bg-[#ecfdf5] text-[#15803d] border-[#bbf7d0]" };
+        return { label: "Offer Accepted 🎉", style: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 font-semibold" };
       case "interview":
-        return { label: "Interview Round", style: "bg-[#f5f3ff] text-[#6d28d9] border-[#ddd6fe]" };
+        return { label: "Interview Round", style: "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 font-semibold" };
       case "oa":
-        return { label: "OA Test Scheduled", style: "bg-[#eff6ff] text-[#1c69d4] border-[#bfdbfe]" };
+        return { label: "OA Test Scheduled", style: "bg-blue-50 dark:bg-blue-950/40 text-[#1c69d4] dark:text-blue-400 border-blue-200 dark:border-blue-900 font-semibold" };
       case "applied":
-        return { label: "Applied", style: "bg-[#eff6ff] text-[#1c69d4] border-[#bfdbfe]" };
+        return { label: "Applied", style: "bg-blue-50 dark:bg-blue-950/40 text-[#1c69d4] dark:text-blue-400 border-blue-200 dark:border-blue-900 font-semibold" };
       case "rejected":
-        return { label: "Not Selected", style: "bg-[#fef2f2] text-[#dc2626] border-[#fecaca]" };
+        return { label: "Not Selected", style: "bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900 font-medium" };
       default:
-        return { label: "Not Applied", style: "bg-[#f7f7f7] text-[#6b6b6b] border-[#e6e6e6]" };
+        return { label: "Not Applied", style: "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700 font-medium" };
     }
   };
 
@@ -68,51 +68,51 @@ export const PrototypeDriveCard: React.FC<PrototypeDriveCardProps> = ({
   return (
     <div
       onClick={() => onSelect(drive)}
-      className="group relative overflow-hidden bg-white border border-[#e6e6e6] hover:border-[#1c69d4] p-5 transition-all duration-200 cursor-pointer space-y-4"
+      className="group relative overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:border-[#1c69d4] dark:hover:border-blue-500 p-5 rounded-md transition-all duration-200 cursor-pointer space-y-4 shadow-xs hover:shadow-sm"
     >
-      {/* Top row: Company Avatar + Name/Role + CTC Pill */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3.5">
+      {/* Top row: Company Avatar + Name/Role + CTC Pill (Defensive flex layout) */}
+      <div className="flex items-start justify-between gap-3 min-w-0">
+        <div className="flex items-start gap-3 min-w-0 flex-1">
           {/* BMW Dark Navy Monogram Avatar */}
-          <div className="w-11 h-11 bg-[#1a2129] border border-[#262e38] flex items-center justify-center font-bold text-white text-sm shrink-0">
+          <div className="w-11 h-11 bg-[#1a2129] border border-[#262e38] rounded-md flex items-center justify-center font-bold text-white text-sm shrink-0">
             {drive.company_name.slice(0, 2).toUpperCase()}
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1 min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-base font-bold text-[#262626] group-hover:text-[#1c69d4] transition-colors tracking-tight">
+              <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100 group-hover:text-[#1c69d4] dark:group-hover:text-blue-400 transition-colors tracking-tight truncate">
                 {drive.company_name}
               </h3>
-              <span className="text-[10px] font-bold uppercase tracking-[1px] px-2 py-0.5 bg-[#f7f7f7] text-[#6b6b6b] border border-[#e6e6e6]">
+              <span className="text-[10px] font-bold uppercase tracking-[1px] px-2 py-0.5 rounded-sm bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700">
                 {drive.company_type}
               </span>
             </div>
 
-            <p className="text-xs text-[#3c3c3c] font-light line-clamp-1">
+            <p className="text-xs text-neutral-700 dark:text-neutral-300 font-light truncate">
               {drive.role_title}
             </p>
 
-            <div className="flex items-center gap-3 text-[11px] text-[#6b6b6b]">
+            <div className="flex items-center gap-3 text-[11px] text-neutral-600 dark:text-neutral-400">
               <span className="flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-[#9a9a9a]" />
-                {drive.location}
+                <MapPin className="w-3 h-3 text-neutral-400 dark:text-neutral-500" />
+                <span className="truncate">{drive.location}</span>
               </span>
-              <span className="text-[#cccccc]">•</span>
-              <span className="flex items-center gap-1 text-[#6b6b6b]">
-                <GraduationCap className="w-3 h-3 text-[#1c69d4]" />
+              <span className="text-neutral-300 dark:text-neutral-700">•</span>
+              <span className="flex items-center gap-1 text-neutral-600 dark:text-neutral-400 shrink-0">
+                <GraduationCap className="w-3 h-3 text-[#1c69d4] dark:text-blue-400" />
                 CGPA ≥ {drive.min_cgpa ?? "N/A"}
               </span>
             </div>
           </div>
         </div>
 
-        {/* CTC Tag */}
-        <div className="text-right shrink-0">
-          <div className="inline-block px-3 py-1 bg-[#eff6ff] border border-[#bfdbfe] text-[#1c69d4] font-bold text-sm tracking-tight">
+        {/* CTC Tag - Defensive bounded width to avoid overflowing */}
+        <div className="text-right shrink-0 max-w-[42%]">
+          <div className="inline-block px-2.5 py-1 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 text-[#1c69d4] dark:text-blue-400 font-bold text-xs sm:text-sm tracking-tight rounded-md whitespace-nowrap">
             {drive.ctc_display}
           </div>
           {drive.base_salary && (
-            <p className="text-[10px] text-[#6b6b6b] mt-1 font-mono">
+            <p className="text-[10px] text-neutral-500 dark:text-neutral-400 mt-1 font-mono truncate" title={drive.base_salary}>
               {drive.base_salary}
             </p>
           )}
@@ -121,9 +121,9 @@ export const PrototypeDriveCard: React.FC<PrototypeDriveCardProps> = ({
 
       {/* Recruitment Stage Stepper Tracker */}
       <div className="pt-2">
-        <div className="text-[10px] font-bold text-[#6b6b6b] uppercase tracking-[1.5px] mb-2 flex items-center justify-between">
+        <div className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-[1.5px] mb-2 flex items-center justify-between">
           <span>Hiring Funnel Progress</span>
-          <span className={`px-2 py-0.5 text-[10px] border ${statusBadge.style}`}>
+          <span className={`px-2 py-0.5 text-[10px] border rounded-sm ${statusBadge.style}`}>
             {statusBadge.label}
           </span>
         </div>
@@ -148,21 +148,21 @@ export const PrototypeDriveCard: React.FC<PrototypeDriveCardProps> = ({
             return (
               <div key={step} className="space-y-1">
                 <div
-                  className={`h-1.5 transition-all ${
+                  className={`h-1.5 rounded-full transition-all ${
                     isCompleted
-                      ? "bg-[#22c55e]"
+                      ? "bg-emerald-500 dark:bg-emerald-400"
                       : isCurrent
-                      ? "bg-[#1c69d4]"
-                      : "bg-[#e6e6e6]"
+                      ? "bg-[#1c69d4] dark:bg-blue-500"
+                      : "bg-neutral-200 dark:bg-neutral-800"
                   }`}
                 />
                 <span
                   className={`text-[9px] block truncate text-center uppercase tracking-wider ${
                     isCurrent
-                      ? "text-[#1c69d4] font-bold"
+                      ? "text-[#1c69d4] dark:text-blue-400 font-bold"
                       : isCompleted
-                      ? "text-[#22c55e] font-medium"
-                      : "text-[#9a9a9a] font-light"
+                      ? "text-emerald-600 dark:text-emerald-400 font-medium"
+                      : "text-neutral-400 dark:text-neutral-500 font-light"
                   }`}
                 >
                   {step}
@@ -174,31 +174,31 @@ export const PrototypeDriveCard: React.FC<PrototypeDriveCardProps> = ({
       </div>
 
       {/* Eligible Branches & Deadline info */}
-      <div className="pt-3 border-t border-[#e6e6e6] flex flex-wrap items-center justify-between gap-2.5 text-xs">
+      <div className="pt-3 border-t border-neutral-200 dark:border-neutral-800 flex flex-wrap items-center justify-between gap-2.5 text-xs">
         {/* Branches tags */}
         <div className="flex items-center gap-1.5 flex-wrap">
           {drive.eligible_branches.map((b) => (
             <span
               key={b}
-              className="text-[10px] font-mono px-2 py-0.5 bg-[#f7f7f7] text-[#6b6b6b] border border-[#e6e6e6]"
+              className="text-[10px] font-mono px-2 py-0.5 rounded-sm bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700"
             >
               {b}
             </span>
           ))}
           {drive.documents.length > 0 && (
-            <span className="text-[10px] text-[#6b6b6b] inline-flex items-center gap-1 ml-1">
-              <FileText className="w-3 h-3 text-[#9a9a9a]" />
+            <span className="text-[10px] text-neutral-500 dark:text-neutral-400 inline-flex items-center gap-1 ml-1">
+              <FileText className="w-3 h-3 text-neutral-400 dark:text-neutral-500" />
               {drive.documents.length} files
             </span>
           )}
         </div>
 
         {/* Quick status selector & Deadline urgency */}
-        <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-2.5 flex-wrap" onClick={(e) => e.stopPropagation()}>
           <select
             value={drive.application_status}
             onChange={(e) => onStatusChange(drive.id, e.target.value as PrototypeDrive["application_status"])}
-            className="text-xs font-semibold px-2 py-1 bg-white border border-[#cccccc] text-[#262626] focus:outline-none focus:border-[#1c69d4] cursor-pointer"
+            className="text-xs font-semibold px-2 py-1 rounded-sm bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:border-[#1c69d4] dark:focus:border-blue-400 cursor-pointer"
           >
             <option value="not_applied">Not Applied</option>
             <option value="applied">Applied</option>
@@ -208,12 +208,12 @@ export const PrototypeDriveCard: React.FC<PrototypeDriveCardProps> = ({
             <option value="rejected">Rejected</option>
           </select>
 
-          <span className={`px-2.5 py-1 text-xs border inline-flex items-center gap-1.5 ${urgency.style}`}>
-            <Clock className="w-3 h-3" />
-            <span>{urgency.label}</span>
+          <span className={`px-2 py-0.5 text-xs border rounded-sm inline-flex items-center gap-1.5 ${urgency.style}`}>
+            <Clock className="w-3 h-3 shrink-0" />
+            <span className="whitespace-nowrap">{urgency.label}</span>
           </span>
 
-          <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[1.5px] text-[#1c69d4] group-hover:text-[#0653b6] transition-colors">
+          <span className="inline-flex items-center gap-0.5 text-xs font-bold uppercase tracking-[1.5px] text-[#1c69d4] dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
             View <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
           </span>
         </div>

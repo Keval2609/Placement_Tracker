@@ -94,16 +94,16 @@ export const PrototypeView: React.FC<PrototypeViewProps> = ({ onExitPrototype })
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#262626] font-sans selection:bg-[#1c69d4] selection:text-white pb-16">
+    <div className="min-h-screen bg-white dark:bg-neutral-950 text-neutral-800 dark:text-neutral-100 font-sans selection:bg-bmw-primary selection:text-white pb-16 transition-colors duration-150">
       {/* Top Notification Bar */}
-      <div className="bg-[#f7f7f7] border-b border-[#e6e6e6] px-4 py-2.5 text-xs text-[#262626]">
+      <div className="bg-neutral-50 dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 px-4 py-2.5 text-xs text-neutral-800 dark:text-neutral-200">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-[#1c69d4]" />
-            <span className="font-bold uppercase tracking-[1px] text-[#262626]">
+            <span className="w-2 h-2 bg-bmw-primary rounded-full" />
+            <span className="font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
               DEMO SHOWCASE PREVIEW
             </span>
-            <span className="text-[#6b6b6b] font-light hidden sm:inline">
+            <span className="text-neutral-500 dark:text-neutral-400 font-normal hidden sm:inline">
               — Interactive Prototype Showcase (Cards, Funnel Pipeline, Quick Filters, AI Parser & Detail Views)
             </span>
           </div>
@@ -112,7 +112,7 @@ export const PrototypeView: React.FC<PrototypeViewProps> = ({ onExitPrototype })
             <button
               type="button"
               onClick={onExitPrototype}
-              className="px-3 py-1 bg-white hover:bg-[#fafafa] text-[#262626] text-[11px] font-bold uppercase tracking-[0.5px] transition-colors cursor-pointer border border-[#cccccc]"
+              className="px-3 py-1 bg-white dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border border-neutral-300 dark:border-neutral-700 rounded-md"
             >
               Back to Live Dashboard
             </button>
@@ -181,20 +181,20 @@ export const PrototypeView: React.FC<PrototypeViewProps> = ({ onExitPrototype })
           <div className="space-y-8">
             {/* Active Drives */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between text-xs font-bold text-[#262626] uppercase tracking-[1.5px]">
+              <div className="flex items-center justify-between text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-[1.5px]">
                 <span>Active Placement Drives ({activeDrives.length})</span>
-                <span className="text-[11px] font-mono text-[#6b6b6b]">Sorted by closest deadline</span>
+                <span className="text-[11px] font-mono text-neutral-500 dark:text-neutral-400">Sorted by closest deadline</span>
               </div>
 
               {activeDrives.length === 0 ? (
-                <div className="p-12 text-center bg-[#fafafa] border border-[#e6e6e6] space-y-3">
-                  <p className="text-xs text-[#6b6b6b] font-light">
+                <div className="p-12 text-center bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg space-y-3">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 font-light">
                     No active placement drives match the chosen filters.
                   </p>
                   <button
                     type="button"
                     onClick={handleResetFilters}
-                    className="px-4 py-2 bg-[#1c69d4] hover:bg-[#0653b6] text-white text-xs font-bold uppercase tracking-[0.5px]"
+                    className="px-4 py-2 bg-[#1c69d4] hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-[0.5px] rounded-md transition-colors"
                   >
                     Reset Filters
                   </button>
@@ -215,8 +215,8 @@ export const PrototypeView: React.FC<PrototypeViewProps> = ({ onExitPrototype })
 
             {/* Closed / Archived Drives */}
             {closedDrives.length > 0 && (
-              <div className="space-y-4 pt-6 border-t border-[#e6e6e6]">
-                <div className="flex items-center justify-between text-xs font-bold text-[#6b6b6b] uppercase tracking-[1.5px]">
+              <div className="space-y-4 pt-6 border-t border-neutral-200 dark:border-neutral-800">
+                <div className="flex items-center justify-between text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-[1.5px]">
                   <span>Closed & Concluded Drives ({closedDrives.length})</span>
                 </div>
 

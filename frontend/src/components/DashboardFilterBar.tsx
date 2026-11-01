@@ -1,5 +1,6 @@
 import React from "react";
 import { LayoutGrid, Columns3, Table, X, SlidersHorizontal } from "lucide-react";
+import { cn } from "../lib/utils";
 
 export type DashboardViewMode = "grid" | "funnel" | "table";
 
@@ -54,23 +55,30 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = ({
   ];
 
   return (
-    <div className="bg-[#f7f7f7] border border-[#e6e6e6] p-4 space-y-3.5">
+    <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-4 space-y-3.5 rounded-lg shadow-xs">
       {/* Top row: Stage Chips & View Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Status Stage Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+        <div
+          role="tablist"
+          aria-label="Filter drives by recruitment stage"
+          className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none"
+        >
           {statuses.map((st) => {
             const isActive = selectedStatus === st.id;
             return (
               <button
                 key={st.id}
+                role="tab"
+                aria-selected={isActive}
                 type="button"
                 onClick={() => onStatusChange(st.id)}
-                className={`px-3 py-1.5 text-xs font-bold uppercase tracking-[0.5px] whitespace-nowrap transition-all cursor-pointer ${
+                className={cn(
+                  "px-3 py-1.5 text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer min-h-[34px] rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary",
                   isActive
-                    ? "bg-[#262626] text-white border border-[#262626]"
-                    : "bg-white text-[#262626] border border-[#cccccc] hover:border-[#262626]"
-                }`}
+                    ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 border border-neutral-900 dark:border-neutral-100 shadow-xs"
+                    : "bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-700/60"
+                )}
               >
                 {st.label}
               </button>
@@ -79,15 +87,21 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = ({
         </div>
 
         {/* View Mode Switcher (Grid / Funnel / Table) */}
-        <div className="flex items-center bg-white border border-[#cccccc] p-0.5 shrink-0">
+        <div
+          role="group"
+          aria-label="Layout view mode"
+          className="flex items-center bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 p-0.5 rounded-md shrink-0"
+        >
           <button
             type="button"
+            aria-pressed={viewMode === "grid"}
             onClick={() => onViewModeChange("grid")}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold uppercase tracking-[0.5px] transition-all cursor-pointer ${
+            className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer min-h-[32px] rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary",
               viewMode === "grid"
-                ? "bg-[#262626] text-white"
-                : "text-[#6b6b6b] hover:text-[#262626]"
-            }`}
+                ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
+                : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+            )}
             title="Card Grid View"
           >
             <LayoutGrid className="w-3.5 h-3.5" />
@@ -95,12 +109,14 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = ({
           </button>
           <button
             type="button"
+            aria-pressed={viewMode === "funnel"}
             onClick={() => onViewModeChange("funnel")}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold uppercase tracking-[0.5px] transition-all cursor-pointer ${
+            className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer min-h-[32px] rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary",
               viewMode === "funnel"
-                ? "bg-[#262626] text-white"
-                : "text-[#6b6b6b] hover:text-[#262626]"
-            }`}
+                ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
+                : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+            )}
             title="Pipeline Funnel / Kanban View"
           >
             <Columns3 className="w-3.5 h-3.5" />
@@ -108,12 +124,14 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = ({
           </button>
           <button
             type="button"
+            aria-pressed={viewMode === "table"}
             onClick={() => onViewModeChange("table")}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold uppercase tracking-[0.5px] transition-all cursor-pointer ${
+            className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer min-h-[32px] rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary",
               viewMode === "table"
-                ? "bg-[#262626] text-white"
-                : "text-[#6b6b6b] hover:text-[#262626]"
-            }`}
+                ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
+                : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+            )}
             title="Dense Table View"
           >
             <Table className="w-3.5 h-3.5" />
@@ -123,25 +141,31 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = ({
       </div>
 
       {/* Second row: Company Type + Deadline Filter + Reset */}
-      <div className="pt-2 border-t border-[#e6e6e6] flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="pt-2 border-t border-neutral-200 dark:border-neutral-800 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5 text-[#6b6b6b] font-bold uppercase tracking-[1px] mr-1">
-            <SlidersHorizontal className="w-3.5 h-3.5 text-[#1c69d4]" />
+          <div className="flex items-center gap-1.5 text-neutral-700 dark:text-neutral-300 font-bold uppercase tracking-wider mr-1">
+            <SlidersHorizontal className="w-3.5 h-3.5 text-bmw-primary" />
             <span>Filters:</span>
           </div>
 
           {/* Company Type filter */}
-          <div className="inline-flex bg-white border border-[#cccccc] p-0.5">
+          <div
+            role="group"
+            aria-label="Filter by company type"
+            className="inline-flex bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 p-0.5 rounded-md"
+          >
             {companyTypes.map((t) => (
               <button
                 key={t.id}
                 type="button"
+                aria-pressed={selectedCompanyType === t.id}
                 onClick={() => onCompanyTypeChange(t.id)}
-                className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.5px] transition-colors cursor-pointer ${
+                className={cn(
+                  "px-2.5 py-1 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer min-h-[30px] rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary",
                   selectedCompanyType === t.id
-                    ? "bg-[#262626] text-white"
-                    : "text-[#6b6b6b] hover:text-[#262626]"
-                }`}
+                    ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
+                    : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                )}
               >
                 {t.label}
               </button>
@@ -149,37 +173,47 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = ({
           </div>
 
           {/* Deadline Window Buttons */}
-          <div className="inline-flex bg-white border border-[#cccccc] p-0.5">
+          <div
+            role="group"
+            aria-label="Filter by deadline timeframe"
+            className="inline-flex bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 p-0.5 rounded-md"
+          >
             <button
               type="button"
+              aria-pressed={deadlineFilter === "urgent_72h"}
               onClick={() => onDeadlineFilterChange("urgent_72h")}
-              className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.5px] transition-colors cursor-pointer ${
+              className={cn(
+                "px-2.5 py-1 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer min-h-[30px] rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary",
                 deadlineFilter === "urgent_72h"
-                  ? "bg-[#e22718] text-white"
-                  : "text-[#6b6b6b] hover:text-[#262626]"
-              }`}
+                  ? "bg-red-600 text-white"
+                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+              )}
             >
               Urgent (&lt;72h)
             </button>
             <button
               type="button"
+              aria-pressed={deadlineFilter === "next_7d"}
               onClick={() => onDeadlineFilterChange("next_7d")}
-              className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.5px] transition-colors cursor-pointer ${
+              className={cn(
+                "px-2.5 py-1 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer min-h-[30px] rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary",
                 deadlineFilter === "next_7d"
-                  ? "bg-[#262626] text-white"
-                  : "text-[#6b6b6b] hover:text-[#262626]"
-              }`}
+                  ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
+                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+              )}
             >
               Next 7 Days
             </button>
             <button
               type="button"
+              aria-pressed={deadlineFilter === "all"}
               onClick={() => onDeadlineFilterChange("all")}
-              className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.5px] transition-colors cursor-pointer ${
+              className={cn(
+                "px-2.5 py-1 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer min-h-[30px] rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary",
                 deadlineFilter === "all"
-                  ? "bg-[#262626] text-white"
-                  : "text-[#6b6b6b] hover:text-[#262626]"
-              }`}
+                  ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
+                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+              )}
             >
               All
             </button>
@@ -188,17 +222,18 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = ({
 
         {/* Results count & Clear */}
         <div className="flex items-center gap-2 ml-auto">
-          <span className="text-[11px] text-[#6b6b6b] font-mono">
-            Showing <strong className="text-[#262626]">{filteredCount}</strong> of {totalCount} drives
+          <span className="text-xs text-neutral-600 dark:text-neutral-400 font-mono font-medium">
+            Showing <strong className="text-neutral-900 dark:text-white">{filteredCount}</strong> of {totalCount} drives
           </span>
 
           {isFiltered && (
             <button
               type="button"
+              aria-label="Reset all applied filters"
               onClick={onResetFilters}
-              className="inline-flex items-center gap-1 text-[11px] text-[#1c69d4] hover:text-[#0653b6] font-bold uppercase tracking-[1px] ml-1 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs text-bmw-primary dark:text-blue-400 hover:text-bmw-primary-active font-bold uppercase tracking-wider ml-1 transition-colors cursor-pointer focus-visible:outline-none focus-visible:underline"
             >
-              <X className="w-3 h-3" />
+              <X className="w-3.5 h-3.5" />
               Reset Filters
             </button>
           )}

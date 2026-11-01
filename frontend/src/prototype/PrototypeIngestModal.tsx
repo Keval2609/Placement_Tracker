@@ -2,20 +2,39 @@ import React, { useState } from "react";
 import {
   X,
   Sparkles,
-  MessageSquareText,
   FileUp,
-  CheckCircle2,
+  MessageSquareText,
   Loader2,
+  CheckCircle2,
   ArrowRight,
   Zap
 } from "lucide-react";
-import { SAMPLE_WHATSAPP_NOTICE, PrototypeDrive } from "./mockData";
+import { PrototypeDrive } from "./mockData";
 
 interface PrototypeIngestModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onDriveCreated: (newDrive: PrototypeDrive) => void;
+  onDriveCreated: (drive: PrototypeDrive) => void;
 }
+
+const SAMPLE_WHATSAPP_NOTICE = `*CAMPUS RECRUITMENT DRIVE 2026: GOOGLE INDIA*
+Dear Final Year Students,
+Google India has announced the campus hiring for Software Development Engineer (SDE-1).
+
+*Roles & Responsibilities:*
+- Design and implement distributed software systems.
+- Optimize high-scale web infrastructure.
+
+*Eligibility Criteria:*
+- Eligible Branches: CSE, IT, ECE
+- Minimum CGPA required: >= 8.0
+- No active backlogs allowed.
+
+*Package (CTC):* INR 34.50 LPA (18L Base + Stocks + Relocation)
+*Location:* Bangalore / Hyderabad
+
+*Last Date to Register:* 09 Sep 2026, 11:59 PM (Strict Deadline)
+Register on the university portal: https://forms.gle/GooglePlacement2026Drive`;
 
 export const PrototypeIngestModal: React.FC<PrototypeIngestModalProps> = ({
   isOpen,
@@ -106,43 +125,43 @@ export const PrototypeIngestModal: React.FC<PrototypeIngestModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-sm">
       <div
-        className="relative w-full max-w-2xl bg-white border border-[#e6e6e6] shadow-2xl p-6 sm:p-8 space-y-5"
+        className="relative w-full max-w-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-2xl p-6 sm:p-8 space-y-5 text-neutral-800 dark:text-neutral-100 transition-colors"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 bg-[#f7f7f7] border border-[#e6e6e6] text-[#6b6b6b] hover:text-[#262626] transition-colors cursor-pointer"
+          className="absolute top-5 right-5 p-2 rounded-md bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Modal Header */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#1a2129] flex items-center justify-center text-white">
-            <Sparkles className="w-5 h-5 text-[#1c69d4]" />
+          <div className="w-10 h-10 bg-[#1a2129] rounded-md flex items-center justify-center text-white">
+            <Sparkles className="w-5 h-5 text-[#1c69d4] dark:text-blue-400" />
           </div>
           <div>
-            <h2 className="text-lg font-bold uppercase tracking-[1px] text-[#262626]">
+            <h2 className="text-lg font-bold uppercase tracking-[1px] text-neutral-900 dark:text-white">
               AI Placement Notice Parser
             </h2>
-            <p className="text-xs font-light text-[#6b6b6b]">
+            <p className="text-xs font-light text-neutral-600 dark:text-neutral-400">
               Extract company, role, package, eligibility, and deadline from raw text or circular files.
             </p>
           </div>
         </div>
 
         {/* Tab Selection */}
-        <div className="flex items-center justify-between gap-2 border-b border-[#e6e6e6] pb-3">
-          <div className="flex bg-[#f7f7f7] border border-[#cccccc]">
+        <div className="flex items-center justify-between gap-2 border-b border-neutral-200 dark:border-neutral-800 pb-3">
+          <div className="flex bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-md p-0.5">
             <button
               type="button"
               onClick={() => setActiveTab("text")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.5px] transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.5px] rounded-sm transition-all ${
                 activeTab === "text"
-                  ? "bg-[#1c69d4] text-white"
-                  : "text-[#6b6b6b] hover:text-[#262626]"
+                  ? "bg-[#1c69d4] text-white shadow-xs"
+                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               }`}
             >
               <MessageSquareText className="w-3.5 h-3.5" />
@@ -151,10 +170,10 @@ export const PrototypeIngestModal: React.FC<PrototypeIngestModalProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab("file")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.5px] transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.5px] rounded-sm transition-all ${
                 activeTab === "file"
-                  ? "bg-[#1c69d4] text-white"
-                  : "text-[#6b6b6b] hover:text-[#262626]"
+                  ? "bg-[#1c69d4] text-white shadow-xs"
+                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               }`}
             >
               <FileUp className="w-3.5 h-3.5" />
@@ -166,7 +185,7 @@ export const PrototypeIngestModal: React.FC<PrototypeIngestModalProps> = ({
             <button
               type="button"
               onClick={handleLoadSample}
-              className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[0.5px] text-[#1c69d4] hover:text-[#0653b6] transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[0.5px] text-[#1c69d4] dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors cursor-pointer"
             >
               <Zap className="w-3.5 h-3.5" />
               <span>Load WhatsApp Sample</span>
@@ -182,14 +201,14 @@ export const PrototypeIngestModal: React.FC<PrototypeIngestModalProps> = ({
               placeholder="Paste raw WhatsApp placement announcement or email text here..."
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              className="w-full p-3.5 bg-white border border-[#cccccc] text-xs text-[#262626] placeholder-[#9a9a9a] focus:outline-none focus:border-[#1c69d4] font-sans leading-relaxed"
+              className="w-full p-3.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-[#1c69d4] font-sans leading-relaxed"
             />
             <div className="flex justify-end">
               <button
                 type="button"
                 onClick={handleExtract}
                 disabled={!inputText.trim() || isAnalyzing}
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-[#1c69d4] hover:bg-[#0653b6] disabled:opacity-50 transition-colors cursor-pointer shadow-sm"
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-[#1c69d4] hover:bg-blue-700 disabled:opacity-50 rounded-md transition-colors cursor-pointer shadow-sm"
               >
                 {isAnalyzing ? (
                   <>
@@ -206,13 +225,13 @@ export const PrototypeIngestModal: React.FC<PrototypeIngestModalProps> = ({
             </div>
           </div>
         ) : (
-          <div className="border-2 border-dashed border-[#cccccc] p-8 text-center space-y-3 hover:border-[#1c69d4] transition-colors cursor-pointer bg-[#fafafa]">
-            <FileUp className="w-8 h-8 text-[#1c69d4] mx-auto" />
+          <div className="border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg p-8 text-center space-y-3 hover:border-[#1c69d4] dark:hover:border-blue-400 transition-colors cursor-pointer bg-neutral-50 dark:bg-neutral-800/40">
+            <FileUp className="w-8 h-8 text-[#1c69d4] dark:text-blue-400 mx-auto" />
             <div>
-              <p className="text-xs font-bold text-[#262626]">
+              <p className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
                 Drag and drop your placement PDF or DOCX file
               </p>
-              <p className="text-[11px] font-light text-[#6b6b6b] mt-0.5">
+              <p className="text-[11px] font-light text-neutral-500 dark:text-neutral-400 mt-0.5">
                 Supports official TPO brochures, eligibility lists, and job circulars up to 10MB
               </p>
             </div>
@@ -221,34 +240,34 @@ export const PrototypeIngestModal: React.FC<PrototypeIngestModalProps> = ({
 
         {/* Extracted Preview Review */}
         {extractedPreview && (
-          <div className="p-4 bg-[#eff6ff] border border-[#bfdbfe] space-y-3">
+          <div className="p-4 bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-lg space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-[0.5px] text-[#1c69d4] flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-[#22c55e]" />
+              <span className="text-xs font-bold uppercase tracking-[0.5px] text-[#1c69d4] dark:text-blue-400 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                 Parsed Information
               </span>
-              <span className="text-[10px] font-mono text-[#6b6b6b]">
+              <span className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">
                 Confidence: High (98%)
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-2.5 text-xs">
-              <div className="p-2.5 bg-white border border-[#bfdbfe]">
-                <span className="text-[10px] uppercase font-bold text-[#6b6b6b] block">Company & Role</span>
-                <span className="font-bold text-[#262626] block mt-0.5">
+              <div className="p-2.5 bg-white dark:bg-neutral-850 rounded-md border border-blue-200 dark:border-blue-900">
+                <span className="text-[10px] uppercase font-bold text-neutral-500 dark:text-neutral-400 block">Company & Role</span>
+                <span className="font-bold text-neutral-900 dark:text-white block mt-0.5">
                   {extractedPreview.company_name}
                 </span>
-                <span className="text-[11px] font-light text-[#3c3c3c] truncate block">
+                <span className="text-[11px] font-light text-neutral-600 dark:text-neutral-300 truncate block">
                   {extractedPreview.role_title}
                 </span>
               </div>
 
-              <div className="p-2.5 bg-white border border-[#bfdbfe]">
-                <span className="text-[10px] uppercase font-bold text-[#6b6b6b] block">Package & Deadline</span>
-                <span className="font-bold text-[#1c69d4] font-mono block mt-0.5">
+              <div className="p-2.5 bg-white dark:bg-neutral-850 rounded-md border border-blue-200 dark:border-blue-900">
+                <span className="text-[10px] uppercase font-bold text-neutral-500 dark:text-neutral-400 block">Package & Deadline</span>
+                <span className="font-bold text-[#1c69d4] dark:text-blue-400 font-mono block mt-0.5">
                   {extractedPreview.ctc_display}
                 </span>
-                <span className="text-[11px] font-bold text-[#dc2626] block">
+                <span className="text-[11px] font-bold text-red-600 dark:text-red-400 block">
                   {extractedPreview.deadline}
                 </span>
               </div>
@@ -256,9 +275,9 @@ export const PrototypeIngestModal: React.FC<PrototypeIngestModalProps> = ({
 
             <div className="flex items-center justify-between pt-1">
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-[#6b6b6b]">Branches:</span>
+                <span className="text-[10px] text-neutral-500 dark:text-neutral-400">Branches:</span>
                 {extractedPreview.branches.map((b) => (
-                  <span key={b} className="text-[10px] font-mono px-1.5 py-0.2 bg-white border border-[#bfdbfe] text-[#262626]">
+                  <span key={b} className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm bg-white dark:bg-neutral-800 border border-blue-200 dark:border-blue-900 text-neutral-800 dark:text-neutral-200">
                     {b}
                   </span>
                 ))}
@@ -267,7 +286,7 @@ export const PrototypeIngestModal: React.FC<PrototypeIngestModalProps> = ({
               <button
                 type="button"
                 onClick={handleSaveToTracker}
-                className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold uppercase tracking-[0.5px] text-white bg-[#1c69d4] hover:bg-[#0653b6] transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold uppercase tracking-[0.5px] text-white bg-[#1c69d4] hover:bg-blue-700 rounded-md transition-colors cursor-pointer"
               >
                 <span>Add to Tracker</span>
                 <ArrowRight className="w-3.5 h-3.5" />

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Clock, ChevronRight, Loader2, CalendarCheck, MapPin } from "lucide-react";
 import { ApplicationStatus, DriveCard } from "../types/drive";
 import { updateApplicationStatus } from "../services/api";
+import { cn } from "../lib/utils";
 
 interface DriveCardComponentProps {
   drive: DriveCard;
@@ -49,31 +50,31 @@ export const DriveCardComponent: React.FC<DriveCardComponentProps> = ({
       if (isPipelineActive) {
         return {
           label: "In Pipeline (Closed)",
-          style: "bg-[#f5f3ff] text-[#6d28d9] border-[#ddd6fe] font-medium",
+          style: "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 font-semibold",
         };
       }
       const absDays = Math.abs(drive.days_left);
       return {
         label: `Closed (${absDays} ${absDays === 1 ? "day" : "days"} ago)`,
-        style: "bg-[#f7f7f7] text-[#6b6b6b] border-[#e6e6e6]",
+        style: "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700 font-medium",
       };
     }
 
     if (drive.days_left === 0) {
       return {
         label: "Closes Today",
-        style: "bg-[#fef2f2] text-[#dc2626] border-[#fecaca] font-bold animate-pulse",
+        style: "bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900 font-bold motion-safe:animate-pulse",
       };
     }
     if (drive.days_left <= 2) {
       return {
         label: `${drive.days_left}d left`,
-        style: "bg-[#fffbeb] text-[#b45309] border-[#fde68a] font-bold",
+        style: "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900 font-bold",
       };
     }
     return {
       label: `${drive.days_left} ${drive.days_left === 1 ? "day" : "days"} left`,
-      style: "bg-[#eff6ff] text-[#1c69d4] border-[#bfdbfe] font-medium",
+      style: "bg-blue-50 dark:bg-blue-950/40 text-bmw-primary dark:text-blue-400 border-blue-200 dark:border-blue-900 font-semibold",
     };
   };
 
@@ -91,19 +92,19 @@ export const DriveCardComponent: React.FC<DriveCardComponentProps> = ({
   const getStatusBadge = () => {
     switch (currentStatus) {
       case "offer":
-        return { label: "Offer Accepted 🎉", style: "bg-[#ecfdf5] text-[#15803d] border-[#bbf7d0]" };
+        return { label: "Offer Accepted 🎉", style: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 font-semibold" };
       case "interview":
-        return { label: "Interview Round", style: "bg-[#f5f3ff] text-[#6d28d9] border-[#ddd6fe]" };
+        return { label: "Interview Round", style: "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 font-semibold" };
       case "oa":
-        return { label: "OA Test Scheduled", style: "bg-[#eff6ff] text-[#1c69d4] border-[#bfdbfe]" };
+        return { label: "OA Test Scheduled", style: "bg-blue-50 dark:bg-blue-950/40 text-bmw-primary dark:text-blue-400 border-blue-200 dark:border-blue-900 font-semibold" };
       case "applied":
-        return { label: "Applied", style: "bg-[#eff6ff] text-[#1c69d4] border-[#bfdbfe]" };
+        return { label: "Applied", style: "bg-blue-50 dark:bg-blue-950/40 text-bmw-primary dark:text-blue-400 border-blue-200 dark:border-blue-900 font-semibold" };
       case "rejected":
-        return { label: "Not Selected", style: "bg-[#fef2f2] text-[#dc2626] border-[#fecaca]" };
+        return { label: "Not Selected", style: "bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900 font-medium" };
       case "withdrawn":
-        return { label: "Withdrawn", style: "bg-[#f7f7f7] text-[#6b6b6b] border-[#e6e6e6]" };
+        return { label: "Withdrawn", style: "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700 font-medium" };
       default:
-        return { label: "Not Applied", style: "bg-[#f7f7f7] text-[#6b6b6b] border-[#e6e6e6]" };
+        return { label: "Not Applied", style: "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700 font-medium" };
     }
   };
 
@@ -111,64 +112,77 @@ export const DriveCardComponent: React.FC<DriveCardComponentProps> = ({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-label={`View placement drive details for ${drive.company_name}, ${drive.role_title}`}
       onClick={() => onSelectDrive(drive.id)}
-      className={`group relative overflow-hidden bg-white border transition-all duration-200 cursor-pointer space-y-4 p-5 ${
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelectDrive(drive.id);
+        }
+      }}
+      className={cn(
+        "group relative overflow-hidden bg-white dark:bg-neutral-900 border transition-all duration-200 cursor-pointer space-y-4 p-5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary focus-visible:ring-offset-2",
         drive.is_overdue
-          ? "border-[#e6e6e6] opacity-85 hover:opacity-100 hover:border-[#cccccc]"
-          : "border-[#e6e6e6] hover:border-[#1c69d4]"
-      }`}
+          ? "border-neutral-200 dark:border-neutral-800 opacity-90 hover:opacity-100 hover:border-neutral-400 dark:hover:border-neutral-700"
+          : "border-neutral-200 dark:border-neutral-800 hover:border-bmw-primary dark:hover:border-bmw-primary shadow-xs hover:shadow-sm"
+      )}
     >
       {/* Top Header Row */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3.5">
+      <div className="flex items-start justify-between gap-3 min-w-0">
+        <div className="flex items-start gap-3.5 min-w-0 flex-1">
           {/* Monogram Avatar */}
-          <div className="w-11 h-11 bg-[#1a2129] border border-[#262e38] flex items-center justify-center font-bold text-white text-sm shrink-0">
+          <div className="w-11 h-11 bg-bmw-surface-dark border border-neutral-800 rounded-md flex items-center justify-center font-bold text-white text-sm shrink-0">
             {drive.company_name.slice(0, 2).toUpperCase()}
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1 min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-base font-bold text-[#262626] group-hover:text-[#1c69d4] transition-colors tracking-tight">
+              <h3 className="text-base font-bold text-bmw-body-strong dark:text-white group-hover:text-bmw-primary transition-colors tracking-tight truncate">
                 {drive.company_name}
               </h3>
-              <span className="text-[10px] font-bold uppercase tracking-[1px] px-2 py-0.5 bg-[#f7f7f7] text-[#6b6b6b] border border-[#e6e6e6]">
+              <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-sm bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700">
                 {drive.company_type}
               </span>
             </div>
 
-            <p className="text-xs text-[#3c3c3c] font-light line-clamp-1">
+            <p className="text-xs text-neutral-700 dark:text-neutral-300 font-medium truncate">
               {drive.role_title}
             </p>
 
-            <div className="flex items-center gap-2 text-[11px] text-[#6b6b6b]">
-              <span className="flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-[#9a9a9a]" />
-                {drive.location || "Campus / Remote"}
+            <div className="flex items-center gap-2 text-[11px] text-neutral-600 dark:text-neutral-400">
+              <span className="flex items-center gap-1 font-medium truncate">
+                <MapPin className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+                <span className="truncate">{drive.location || "Campus / Remote"}</span>
               </span>
             </div>
           </div>
         </div>
 
         {/* Right Stack: CTC + Days Left */}
-        <div className="flex flex-col items-end gap-1.5 shrink-0">
-          <span className="px-2.5 py-0.5 bg-[#eff6ff] text-[#1c69d4] border border-[#bfdbfe] font-bold text-xs tracking-tight">
+        <div className="flex flex-col items-end gap-1.5 shrink-0 max-w-[42%]">
+          <span className="px-2.5 py-0.5 bg-blue-50 dark:bg-blue-950/40 text-bmw-primary dark:text-blue-400 border border-blue-200 dark:border-blue-900 font-bold text-xs rounded-sm tracking-tight truncate">
             {drive.ctc_display || "Not Disclosed"}
           </span>
 
           <span
-            className={`text-xs px-2.5 py-0.5 border inline-flex items-center gap-1.5 ${daysChip.style}`}
+            className={cn(
+              "text-xs px-2.5 py-0.5 border rounded-sm inline-flex items-center gap-1.5",
+              daysChip.style
+            )}
           >
-            <Clock className="w-3 h-3" />
-            <span>{daysChip.label}</span>
+            <Clock className="w-3 h-3 shrink-0" />
+            <span className="whitespace-nowrap">{daysChip.label}</span>
           </span>
         </div>
       </div>
 
       {/* Recruitment Funnel Stepper */}
       <div className="pt-1">
-        <div className="text-[10px] font-bold text-[#6b6b6b] uppercase tracking-[1.5px] mb-2 flex items-center justify-between">
+        <div className="text-[11px] font-bold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider mb-2 flex items-center justify-between">
           <span>Recruitment Funnel</span>
-          <span className={`px-2 py-0.5 text-[10px] border ${statusBadge.style}`}>
+          <span className={cn("px-2 py-0.5 text-[11px] border rounded-sm", statusBadge.style)}>
             {statusBadge.label}
           </span>
         </div>
@@ -192,22 +206,24 @@ export const DriveCardComponent: React.FC<DriveCardComponentProps> = ({
             return (
               <div key={step} className="space-y-1">
                 <div
-                  className={`h-1.5 transition-all ${
+                  className={cn(
+                    "h-1.5 rounded-full transition-all",
                     isCompleted
-                      ? "bg-[#22c55e]"
+                      ? "bg-emerald-500"
                       : isCurrent
-                      ? "bg-[#1c69d4]"
-                      : "bg-[#e6e6e6]"
-                  }`}
+                      ? "bg-bmw-primary"
+                      : "bg-neutral-200 dark:bg-neutral-800"
+                  )}
                 />
                 <span
-                  className={`text-[9px] block truncate text-center uppercase tracking-wider ${
+                  className={cn(
+                    "text-[11px] block truncate text-center uppercase tracking-wider",
                     isCurrent
-                      ? "text-[#1c69d4] font-bold"
+                      ? "text-bmw-primary dark:text-blue-400 font-bold"
                       : isCompleted
-                      ? "text-[#22c55e] font-medium"
-                      : "text-[#9a9a9a] font-light"
-                  }`}
+                      ? "text-emerald-700 dark:text-emerald-400 font-semibold"
+                      : "text-neutral-500 dark:text-neutral-400 font-medium"
+                  )}
                 >
                   {step}
                 </span>
@@ -218,36 +234,40 @@ export const DriveCardComponent: React.FC<DriveCardComponentProps> = ({
       </div>
 
       {/* Bottom Controls & Status Row */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#e6e6e6] text-xs">
-        <div className="text-[#6b6b6b] font-mono text-[11px] flex items-center gap-1.5">
-          <CalendarCheck className="w-3.5 h-3.5 text-[#9a9a9a]" />
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-neutral-200 dark:border-neutral-800 text-xs">
+        <div className="text-neutral-600 dark:text-neutral-400 font-mono text-[11px] flex items-center gap-1.5">
+          <CalendarCheck className="w-3.5 h-3.5 text-neutral-500" />
           <span>Deadline: {formatDate(drive.primary_deadline_iso)}</span>
         </div>
 
         {/* Inline Application Status Dropdown */}
         <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center gap-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-[#6b6b6b]">Stage:</label>
+            <label htmlFor={`status-select-${drive.id}`} className="text-[11px] font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400">
+              Stage:
+            </label>
             <div className="relative">
               <select
+                id={`status-select-${drive.id}`}
+                aria-label={`Update recruitment stage for ${drive.company_name}`}
                 value={currentStatus}
                 onChange={handleStatusChange}
                 disabled={isUpdatingStatus}
-                className="text-xs font-semibold px-2.5 py-1 bg-white border border-[#cccccc] text-[#262626] focus:outline-none focus:border-[#1c69d4] cursor-pointer disabled:opacity-50 transition-colors"
+                className="text-xs font-semibold px-2.5 py-1.5 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-bmw-primary focus:border-bmw-primary cursor-pointer disabled:opacity-50 transition-colors"
               >
                 {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.id} value={opt.id} className="bg-white text-[#262626]">
+                  <option key={opt.id} value={opt.id} className="bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">
                     {opt.label}
                   </option>
                 ))}
               </select>
               {isUpdatingStatus && (
-                <Loader2 className="w-3 h-3 animate-spin text-[#1c69d4] absolute right-2 top-2" />
+                <Loader2 className="w-3 h-3 animate-spin text-bmw-primary absolute right-2 top-2" />
               )}
             </div>
           </div>
 
-          <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[1.5px] text-[#1c69d4] group-hover:text-[#0653b6] transition-colors">
+          <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-bmw-primary group-hover:text-bmw-primary-active transition-colors">
             View <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
           </span>
         </div>

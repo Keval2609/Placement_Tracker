@@ -174,25 +174,25 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
       {/* Loading State */}
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-20 text-[#6b6b6b] gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-[#1c69d4]" />
+        <div className="flex flex-col items-center justify-center py-20 text-neutral-500 dark:text-neutral-400 gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-bmw-primary dark:text-blue-400" />
           <span className="text-xs font-light">Fetching placement drives...</span>
         </div>
       ) : drives.length === 0 ? (
-        <div className="bg-[#fafafa] border border-[#e6e6e6] p-12 text-center space-y-4">
-          <div className="w-14 h-14 bg-[#1a2129] text-white flex items-center justify-center mx-auto border border-[#262e38]">
-            <Layers className="w-7 h-7" />
+        <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-12 text-center rounded-xl space-y-4">
+          <div className="w-14 h-14 bg-[#1a2129] rounded-lg text-white flex items-center justify-center mx-auto border border-[#262e38]">
+            <Layers className="w-7 h-7 text-bmw-primary dark:text-blue-400" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-base font-bold text-[#262626]">No Placement Drives Recorded Yet</h3>
-            <p className="text-xs font-light text-[#6b6b6b] max-w-sm mx-auto">
+            <h3 className="text-base font-bold text-neutral-900 dark:text-white">No Placement Drives Recorded Yet</h3>
+            <p className="text-xs font-light text-neutral-600 dark:text-neutral-400 max-w-sm mx-auto">
               Paste a WhatsApp placement notice, upload a circular file, or add an off-campus job to track your first drive.
             </p>
           </div>
           <button
             type="button"
             onClick={onOpenIngest}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1c69d4] hover:bg-[#0653b6] text-white text-xs font-bold uppercase tracking-[0.5px] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-bmw-primary hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-[0.5px] rounded-md transition-colors cursor-pointer shadow-xs"
           >
             <Sparkles className="w-4 h-4" />
             <span>Add Application / Drive</span>
@@ -216,13 +216,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             <div className="space-y-8">
               {/* Active Drives Section */}
               <div className="space-y-3.5">
-                <div className="flex items-center justify-between text-xs font-bold text-[#262626] uppercase tracking-[1.5px]">
+                <div className="flex items-center justify-between text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-[1.5px]">
                   <span>Active Placement Drives ({activeDrives.length})</span>
-                  <span className="text-[#6b6b6b] font-mono text-[11px]">Sorted nearest deadline first</span>
+                  <span className="text-neutral-500 dark:text-neutral-400 font-mono text-[11px]">Sorted nearest deadline first</span>
                 </div>
 
                 {activeDrives.length === 0 ? (
-                  <div className="text-xs text-[#6b6b6b] italic bg-[#fafafa] p-8 text-center border border-[#e6e6e6]">
+                  <div className="text-xs text-neutral-500 dark:text-neutral-400 italic bg-neutral-50 dark:bg-neutral-900 p-8 text-center border border-neutral-200 dark:border-neutral-800 rounded-lg">
                     No active drives match your current filter selection.
                   </div>
                 ) : (
@@ -241,9 +241,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
               {/* Overdue / Closed Drives Section */}
               {overdueDrives.length > 0 && (
-                <div className="space-y-3.5 pt-6 border-t border-[#e6e6e6]">
-                  <div className="flex items-center gap-2 text-xs font-bold text-[#6b6b6b] uppercase tracking-[1.5px]">
-                    <FolderArchive className="w-4 h-4 text-[#dc2626]" />
+                <div className="space-y-3.5 pt-6 border-t border-neutral-200 dark:border-neutral-800">
+                  <div className="flex items-center gap-2 text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-[1.5px]">
+                    <FolderArchive className="w-4 h-4 text-red-600 dark:text-red-400" />
                     <span>Closed / Past Drives ({overdueDrives.length})</span>
                   </div>
 
