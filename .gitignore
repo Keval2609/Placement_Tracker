@@ -32,6 +32,7 @@ doc/
 docs/
 .agents/
 skills-lock.json
+.playwright-mcp/
 
 # Docker
 *.pid

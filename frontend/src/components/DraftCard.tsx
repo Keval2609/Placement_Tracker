@@ -59,11 +59,11 @@ export const DraftCard: React.FC<DraftCardProps> = ({
     try {
       const isoStr = new Date(newDateVal).toISOString();
       const newDateObj: DetectedDateDraft = {
-        id: `user_date_${Date.now()}_${Math.random()}`,
+        id: `manual_${Date.now()}`,
         date_type: newDateType,
-        label: newDateLabel.trim() || null,
+        label: newDateLabel.trim() || undefined,
+        date_raw: "Manually entered",
         date_iso: isoStr,
-        date_raw: "User added",
         source: "user_added",
         confirmed_by_user: true,
       };
@@ -83,20 +83,20 @@ export const DraftCard: React.FC<DraftCardProps> = ({
   };
 
   return (
-    <div className="bg-white border border-[#e6e6e6] p-5 space-y-5">
+    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-5 space-y-5 shadow-xs transition-colors">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#e6e6e6]">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-neutral-200 dark:border-neutral-800">
         <div className="flex items-center gap-2">
-          <span className="bg-[#f7f7f7] text-[#262626] border border-[#e6e6e6] text-xs font-bold uppercase tracking-[1px] px-2.5 py-1">
+          <span className="bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-700 text-xs font-bold uppercase tracking-[1px] px-2.5 py-1 rounded-sm">
             Posting #{postingIndex + 1}
           </span>
           {unconfirmedCount > 0 ? (
-            <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-[#b45309] bg-[#fffbeb] border border-[#fde68a] px-2.5 py-0.5">
+            <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 px-2.5 py-0.5 rounded-sm">
               <AlertCircle className="w-3.5 h-3.5" />
               {unconfirmedCount} date(s) need review
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-[#15803d] bg-[#ecfdf5] border border-[#bbf7d0] px-2.5 py-0.5">
+            <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-2.5 py-0.5 rounded-sm">
               All dates reviewed
             </span>
           )}
@@ -105,7 +105,7 @@ export const DraftCard: React.FC<DraftCardProps> = ({
         <button
           type="button"
           onClick={onRemove}
-          className="text-xs text-[#dc2626] hover:underline font-bold uppercase tracking-[0.5px]"
+          className="text-xs text-red-600 dark:text-red-400 hover:underline font-bold uppercase tracking-[0.5px]"
         >
           Remove Posting
         </button>
@@ -114,8 +114,8 @@ export const DraftCard: React.FC<DraftCardProps> = ({
       {/* Primary Job Details Form */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-bold uppercase tracking-[1px] text-[#262626] mb-1 flex items-center gap-1.5">
-            <Building2 className="w-3.5 h-3.5 text-[#1c69d4]" />
+          <label className="block text-xs font-bold uppercase tracking-[1px] text-neutral-800 dark:text-neutral-200 mb-1 flex items-center gap-1.5">
+            <Building2 className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
             Company Name *
           </label>
           <input
@@ -123,14 +123,14 @@ export const DraftCard: React.FC<DraftCardProps> = ({
             value={posting.company_name}
             onChange={(e) => handleFieldChange("company_name", e.target.value)}
             placeholder="e.g. Google India"
-            className="w-full text-xs px-3 py-2 bg-white border border-[#cccccc] text-[#262626] focus:outline-none focus:border-[#1c69d4]"
+            className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400"
             required
           />
         </div>
 
         <div>
-          <label className="block text-xs font-bold uppercase tracking-[1px] text-[#262626] mb-1 flex items-center gap-1.5">
-            <Briefcase className="w-3.5 h-3.5 text-[#1c69d4]" />
+          <label className="block text-xs font-bold uppercase tracking-[1px] text-neutral-800 dark:text-neutral-200 mb-1 flex items-center gap-1.5">
+            <Briefcase className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
             Role Title *
           </label>
           <input
@@ -138,14 +138,14 @@ export const DraftCard: React.FC<DraftCardProps> = ({
             value={posting.role_title}
             onChange={(e) => handleFieldChange("role_title", e.target.value)}
             placeholder="e.g. Software Engineer / SDE Intern"
-            className="w-full text-xs px-3 py-2 bg-white border border-[#cccccc] text-[#262626] focus:outline-none focus:border-[#1c69d4]"
+            className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400"
             required
           />
         </div>
 
         <div>
-          <label className="block text-xs font-bold uppercase tracking-[1px] text-[#262626] mb-1 flex items-center gap-1.5">
-            <GraduationCap className="w-3.5 h-3.5 text-[#1c69d4]" />
+          <label className="block text-xs font-bold uppercase tracking-[1px] text-neutral-800 dark:text-neutral-200 mb-1 flex items-center gap-1.5">
+            <GraduationCap className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
             Min CGPA Cutoff
           </label>
           <input
@@ -161,13 +161,13 @@ export const DraftCard: React.FC<DraftCardProps> = ({
               )
             }
             placeholder="e.g. 7.5"
-            className="w-full text-xs px-3 py-2 bg-white border border-[#cccccc] text-[#262626] focus:outline-none focus:border-[#1c69d4]"
+            className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-bold uppercase tracking-[1px] text-[#262626] mb-1 flex items-center gap-1.5">
-            <LinkIcon className="w-3.5 h-3.5 text-[#1c69d4]" />
+          <label className="block text-xs font-bold uppercase tracking-[1px] text-neutral-800 dark:text-neutral-200 mb-1 flex items-center gap-1.5">
+            <LinkIcon className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
             Application Link
           </label>
           <input
@@ -177,13 +177,13 @@ export const DraftCard: React.FC<DraftCardProps> = ({
               handleFieldChange("application_link", e.target.value || null)
             }
             placeholder="https://..."
-            className="w-full text-xs px-3 py-2 bg-white border border-[#cccccc] text-[#262626] focus:outline-none focus:border-[#1c69d4]"
+            className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400"
           />
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-xs font-bold uppercase tracking-[1px] text-[#262626] mb-1 flex items-center gap-1.5">
-            <FileText className="w-3.5 h-3.5 text-[#1c69d4]" />
+          <label className="block text-xs font-bold uppercase tracking-[1px] text-neutral-800 dark:text-neutral-200 mb-1 flex items-center gap-1.5">
+            <FileText className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
             Eligibility Summary
           </label>
           <input
@@ -193,7 +193,7 @@ export const DraftCard: React.FC<DraftCardProps> = ({
               handleFieldChange("eligibility_raw", e.target.value || null)
             }
             placeholder="e.g. 7.5 CGPA and above, CSE/IT branches only"
-            className="w-full text-xs px-3 py-2 bg-white border border-[#cccccc] text-[#262626] focus:outline-none focus:border-[#1c69d4]"
+            className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400"
           />
         </div>
       </div>
@@ -201,13 +201,13 @@ export const DraftCard: React.FC<DraftCardProps> = ({
       {/* Dates Section */}
       <div className="space-y-3 pt-2">
         <div className="flex items-center justify-between">
-          <h4 className="text-xs font-bold uppercase tracking-[1.5px] text-[#262626]">
+          <h4 className="text-xs font-bold uppercase tracking-[1.5px] text-neutral-900 dark:text-white">
             Detected Dates ({posting.dates.length})
           </h4>
           <button
             type="button"
             onClick={() => setShowAddDateForm(!showAddDateForm)}
-            className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[0.5px] text-[#1c69d4] hover:text-[#0653b6] transition-colors"
+            className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[0.5px] text-bmw-primary dark:text-blue-400 hover:underline transition-colors"
           >
             <Plus className="w-3.5 h-3.5" /> Add Date Manually
           </button>
@@ -217,18 +217,18 @@ export const DraftCard: React.FC<DraftCardProps> = ({
         {showAddDateForm && (
           <form
             onSubmit={handleAddDateSubmit}
-            className="p-4 bg-[#fafafa] border border-[#cccccc] space-y-3"
+            className="p-4 rounded-lg bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-300 dark:border-neutral-700 space-y-3"
           >
-            <div className="text-xs font-bold uppercase tracking-[1px] text-[#262626]">
+            <div className="text-xs font-bold uppercase tracking-[1px] text-neutral-900 dark:text-white">
               Add New Confirmed Date
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#6b6b6b] mb-1">Type</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400 mb-1">Type</label>
                 <select
                   value={newDateType}
                   onChange={(e) => setNewDateType(e.target.value as DateType)}
-                  className="w-full text-xs px-2.5 py-1.5 bg-white border border-[#cccccc] text-[#262626] focus:outline-none focus:border-[#1c69d4]"
+                  className="w-full text-xs px-2.5 py-1.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary"
                 >
                   <option value="application_deadline">Application Deadline</option>
                   <option value="oa">Online Assessment (OA)</option>
@@ -241,18 +241,18 @@ export const DraftCard: React.FC<DraftCardProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#6b6b6b] mb-1">Label</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400 mb-1">Label</label>
                 <input
                   type="text"
                   value={newDateLabel}
                   onChange={(e) => setNewDateLabel(e.target.value)}
                   placeholder="e.g. Round 1 OA"
-                  className="w-full text-xs px-2.5 py-1.5 bg-white border border-[#cccccc] text-[#262626] focus:outline-none focus:border-[#1c69d4]"
+                  className="w-full text-xs px-2.5 py-1.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#6b6b6b] mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400 mb-1">
                   Date & Time *
                 </label>
                 <input
@@ -260,7 +260,7 @@ export const DraftCard: React.FC<DraftCardProps> = ({
                   value={newDateVal}
                   onChange={(e) => setNewDateVal(e.target.value)}
                   required
-                  className="w-full text-xs px-2.5 py-1.5 bg-white border border-[#cccccc] text-[#262626] focus:outline-none focus:border-[#1c69d4]"
+                  className="w-full text-xs px-2.5 py-1.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary"
                 />
               </div>
             </div>
@@ -269,13 +269,13 @@ export const DraftCard: React.FC<DraftCardProps> = ({
               <button
                 type="button"
                 onClick={() => setShowAddDateForm(false)}
-                className="px-3 py-1.5 text-xs font-bold uppercase tracking-[0.5px] text-[#6b6b6b] hover:text-[#262626]"
+                className="px-3 py-1.5 text-xs font-bold uppercase tracking-[0.5px] text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white rounded-md"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-1.5 text-xs font-bold uppercase tracking-[0.5px] bg-[#1c69d4] hover:bg-[#0653b6] text-white transition-colors"
+                className="px-4 py-1.5 text-xs font-bold uppercase tracking-[0.5px] bg-bmw-primary hover:bg-blue-700 text-white rounded-md transition-colors"
               >
                 Add Date
               </button>
@@ -285,7 +285,7 @@ export const DraftCard: React.FC<DraftCardProps> = ({
 
         {/* Date Rows */}
         {posting.dates.length === 0 ? (
-          <div className="p-4 text-center text-xs text-[#6b6b6b] italic border border-dashed border-[#cccccc] bg-[#fafafa]">
+          <div className="p-4 text-center text-xs text-neutral-500 dark:text-neutral-400 italic border border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-850">
             No dates detected. Use "+ Add Date Manually" above to set a deadline.
           </div>
         ) : (

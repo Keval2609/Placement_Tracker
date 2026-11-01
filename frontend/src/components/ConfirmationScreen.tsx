@@ -70,46 +70,46 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
     (p) => p.company_name.trim() !== "" && p.role_title.trim() !== ""
   );
 
-  // Determine Save button disabled state and reason
-  let disableSaveReason: string | null = null;
-
-  if (postings.length === 0) {
-    disableSaveReason = "At least one posting is required to save.";
-  } else if (!allPostingsHaveNames) {
-    disableSaveReason = "Fill in Company Name and Role Title for all postings.";
-  } else if (!hasConfirmedDeadline) {
-    disableSaveReason =
-      "Confirm at least one Application Deadline date to enable save.";
+  let disableSaveReason = "";
+  if (!allPostingsHaveNames) {
+    disableSaveReason = "All postings must have a company name and role title.";
   } else if (unconfirmedDates.length > 0) {
-    disableSaveReason = `Review and confirm or dismiss remaining AI-suggested dates (${unconfirmedDates.length} unconfirmed).`;
+    disableSaveReason = `Please confirm or dismiss all dates (${unconfirmedDates.length} remaining).`;
+  } else if (!hasConfirmedDeadline) {
+    disableSaveReason = "At least one confirmed 'Application Deadline' is required to save.";
   }
 
-  const isSaveEnabled = disableSaveReason === null;
+  const isSaveEnabled = disableSaveReason === "";
 
   const handlePostingUpdate = (index: number, updated: DrivePostingDraft) => {
-    const next = [...postings];
-    next[index] = updated;
-    setPostings(next);
+    setPostings((prev) => {
+      const next = [...prev];
+      next[index] = updated;
+      return next;
+    });
   };
 
   const handlePostingRemove = (index: number) => {
-    setPostings(postings.filter((_, i) => i !== index));
+    setPostings((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleConfirmAllDates = () => {
-    setPostings(
-      postings.map((p) => ({
-        ...p,
-        dates: p.dates.map((d) => ({ ...d, confirmed_by_user: true })),
+    setPostings((prev) =>
+      prev.map((posting) => ({
+        ...posting,
+        dates: posting.dates.map((d) => ({
+          ...d,
+          confirmed_by_user: true,
+        })),
       }))
     );
   };
 
   const handleAddEmptyPosting = () => {
-    setPostings([
-      ...postings,
+    setPostings((prev) => [
+      ...prev,
       {
-        id: `draft_${Date.now()}_${postings.length}`,
+        id: `draft_${Date.now()}_${prev.length}`,
         company_name: "",
         role_title: "",
         eligibility_raw: "",
@@ -129,14 +129,14 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
 
   if (savedSuccess) {
     return (
-      <div className="bg-white border border-[#bbf7d0] p-8 text-center space-y-4 max-w-xl mx-auto">
-        <div className="w-16 h-16 bg-[#ecfdf5] border border-[#bbf7d0] text-[#15803d] flex items-center justify-center mx-auto">
+      <div className="bg-white dark:bg-neutral-900 border border-emerald-300 dark:border-emerald-800 rounded-xl p-8 text-center space-y-4 max-w-xl mx-auto shadow-sm">
+        <div className="w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
           <CheckCircle2 className="w-8 h-8" />
         </div>
-        <h3 className="text-xl font-bold text-[#262626] tracking-tight">
+        <h3 className="text-xl font-bold text-neutral-900 dark:text-white tracking-tight">
           Draft Confirmed & Validated
         </h3>
-        <p className="text-xs font-light text-[#6b6b6b] max-w-md mx-auto leading-relaxed">
+        <p className="text-xs font-light text-neutral-600 dark:text-neutral-400 max-w-md mx-auto leading-relaxed">
           All dates and criteria have been human-verified and prepared for tracking.
         </p>
 
@@ -144,7 +144,7 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
           <button
             type="button"
             onClick={onReset}
-            className="px-6 py-2.5 bg-[#1c69d4] hover:bg-[#0653b6] text-white text-xs font-bold uppercase tracking-[0.5px] transition-all"
+            className="px-6 py-2.5 bg-bmw-primary hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-[0.5px] rounded-md transition-all cursor-pointer shadow-xs"
           >
             Ingest Another Notice
           </button>
@@ -156,13 +156,13 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Top Controls Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-white border border-[#e6e6e6]">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-xs">
         <button
           type="button"
           onClick={onReset}
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#f7f7f7] border border-[#e6e6e6] text-xs font-bold uppercase tracking-[0.5px] text-[#262626] hover:bg-[#ebebeb] transition-colors cursor-pointer"
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs font-bold uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4 text-[#1c69d4]" />
+          <ArrowLeft className="w-4 h-4 text-bmw-primary dark:text-blue-400" />
           <span>Start Over</span>
         </button>
 
@@ -171,7 +171,7 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
             <button
               type="button"
               onClick={handleConfirmAllDates}
-              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.5px] px-3.5 py-1.5 bg-[#15803d] hover:bg-[#166534] text-white transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.5px] px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition-colors cursor-pointer shadow-xs"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>Confirm All ({unconfirmedDates.length}) Dates</span>
@@ -181,21 +181,20 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
           <button
             type="button"
             onClick={handleAddEmptyPosting}
-            className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.5px] px-3.5 py-1.5 bg-white hover:bg-[#f7f7f7] text-[#262626] border border-[#cccccc] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.5px] px-3.5 py-1.5 bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 border border-neutral-300 dark:border-neutral-700 rounded-md transition-colors cursor-pointer"
           >
-            <Plus className="w-4 h-4 text-[#1c69d4]" />
+            <Plus className="w-4 h-4 text-bmw-primary dark:text-blue-400" />
             <span>Add Another Posting</span>
           </button>
         </div>
       </div>
 
-
       {/* Trust & Verification Banner */}
-      <div className="p-4 bg-[#eff6ff] border border-[#bfdbfe] flex items-start gap-3 text-xs text-[#1c69d4]">
-        <ShieldCheck className="w-5 h-5 text-[#1c69d4] shrink-0 mt-0.5" />
+      <div className="p-4 bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-lg flex items-start gap-3 text-xs text-bmw-primary dark:text-blue-400">
+        <ShieldCheck className="w-5 h-5 text-bmw-primary dark:text-blue-400 shrink-0 mt-0.5" />
         <div>
-          <span className="font-bold text-[#262626] block uppercase tracking-[0.5px]">Human-in-the-Loop Confirmation Gate</span>
-          <span className="text-[#3c3c3c] font-light">Each AI-extracted date requires explicit confirmation or dismissal before saving to protect against missed deadlines.</span>
+          <span className="font-bold text-neutral-900 dark:text-white block uppercase tracking-[0.5px]">Human-in-the-Loop Confirmation Gate</span>
+          <span className="text-neutral-700 dark:text-neutral-300 font-light">Each AI-extracted date requires explicit confirmation or dismissal before saving to protect against missed deadlines.</span>
         </div>
       </div>
 
@@ -213,17 +212,17 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
       </div>
 
       {/* Bottom Save Action Bar */}
-      <div className="sticky bottom-4 z-20 bg-white border border-[#e6e6e6] p-4.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
+      <div className="sticky bottom-4 z-20 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
         {/* Status / Reason Banner */}
         <div className="w-full sm:w-auto">
           {!isSaveEnabled ? (
-            <div className="inline-flex items-center gap-2 text-xs text-[#b45309] bg-[#fffbeb] border border-[#fde68a] px-3.5 py-1.5 font-bold uppercase tracking-[0.5px]">
-              <AlertTriangle className="w-4 h-4 shrink-0 text-[#b45309]" />
+            <div className="inline-flex items-center gap-2 text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 px-3.5 py-1.5 rounded-md font-bold uppercase tracking-[0.5px]">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-amber-700 dark:text-amber-400" />
               <span>{disableSaveReason}</span>
             </div>
           ) : (
-            <div className="inline-flex items-center gap-2 text-xs text-[#15803d] bg-[#ecfdf5] border border-[#bbf7d0] px-3.5 py-1.5 font-bold uppercase tracking-[0.5px]">
-              <CheckCircle2 className="w-4 h-4 shrink-0 text-[#15803d]" />
+            <div className="inline-flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-3.5 py-1.5 rounded-md font-bold uppercase tracking-[0.5px]">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
               <span>All dates confirmed. Ready to save.</span>
             </div>
           )}
@@ -234,7 +233,7 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
           type="button"
           onClick={handleSave}
           disabled={!isSaveEnabled}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#1c69d4] hover:bg-[#0653b6] disabled:opacity-40 disabled:hover:bg-[#1c69d4] disabled:cursor-not-allowed text-white text-xs font-bold uppercase tracking-[0.5px] transition-all cursor-pointer shadow-sm"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-bmw-primary hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-bmw-primary disabled:cursor-not-allowed text-white text-xs font-bold uppercase tracking-[0.5px] rounded-md transition-all cursor-pointer shadow-xs"
         >
           <Save className="w-4 h-4" />
           <span>Save Confirmed Drive(s)</span>
