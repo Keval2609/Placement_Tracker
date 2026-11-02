@@ -4,7 +4,8 @@ import {
   Clock,
   ChevronRight,
   GraduationCap,
-  FileText
+  FileText,
+  Plus
 } from "lucide-react";
 import { PrototypeDrive } from "./mockData";
 
@@ -12,12 +13,14 @@ interface PrototypeDriveCardProps {
   drive: PrototypeDrive;
   onSelect: (drive: PrototypeDrive) => void;
   onStatusChange: (driveId: string, status: PrototypeDrive["application_status"]) => void;
+  onAddUpdate?: (driveId: string) => void;
 }
 
 export const PrototypeDriveCard: React.FC<PrototypeDriveCardProps> = ({
   drive,
   onSelect,
   onStatusChange,
+  onAddUpdate,
 }) => {
   const getUrgencyChip = () => {
     const isPipelineActive = ["applied", "oa", "interview"].includes(drive.application_status);
@@ -231,6 +234,22 @@ export const PrototypeDriveCard: React.FC<PrototypeDriveCardProps> = ({
             <Clock className="w-3 h-3 shrink-0" />
             <span className="whitespace-nowrap">{urgency.label}</span>
           </span>
+
+          {onAddUpdate && (
+            <button
+              type="button"
+              aria-label={`Add update notice for ${drive.company_name}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddUpdate(drive.id);
+              }}
+              className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 hover:text-bmw-primary dark:hover:text-blue-400 px-2 py-1 rounded-sm border border-neutral-200 dark:border-neutral-700 hover:border-bmw-primary dark:hover:border-blue-400 bg-neutral-50 dark:bg-neutral-800 transition-colors cursor-pointer"
+              title="Add update notice"
+            >
+              <Plus className="w-3 h-3 text-bmw-primary dark:text-blue-400" />
+              <span>Update</span>
+            </button>
+          )}
 
           <span className="inline-flex items-center gap-0.5 text-xs font-bold uppercase tracking-[1.5px] text-[#1c69d4] dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
             View <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Clock, ChevronRight, Loader2, CalendarCheck, MapPin } from "lucide-react";
+import { Clock, ChevronRight, Loader2, CalendarCheck, MapPin, Plus } from "lucide-react";
 import { ApplicationStatus, DriveCard } from "../types/drive";
 import { updateApplicationStatus } from "../services/api";
 import { cn } from "../lib/utils";
@@ -8,6 +8,7 @@ interface DriveCardComponentProps {
   drive: DriveCard;
   onSelectDrive: (driveId: string) => void;
   onStatusUpdated?: () => void;
+  onAddUpdate?: (driveId: string) => void;
 }
 
 const STATUS_OPTIONS: { id: ApplicationStatus; label: string }[] = [
@@ -24,6 +25,7 @@ export const DriveCardComponent: React.FC<DriveCardComponentProps> = ({
   drive,
   onSelectDrive,
   onStatusUpdated,
+  onAddUpdate,
 }) => {
   const [currentStatus, setCurrentStatus] = useState<ApplicationStatus>(drive.application_status);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
@@ -278,6 +280,22 @@ export const DriveCardComponent: React.FC<DriveCardComponentProps> = ({
               )}
             </div>
           </div>
+
+          {onAddUpdate && (
+            <button
+              type="button"
+              aria-label={`Add update notice for ${drive.company_name}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddUpdate(drive.id);
+              }}
+              className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 hover:text-bmw-primary dark:hover:text-blue-400 px-2 py-1 rounded-sm border border-neutral-200 dark:border-neutral-700 hover:border-bmw-primary dark:hover:border-blue-400 bg-neutral-50 dark:bg-neutral-800 transition-colors cursor-pointer"
+              title="Add new circular or update notice"
+            >
+              <Plus className="w-3 h-3 text-bmw-primary dark:text-blue-400" />
+              <span>Update</span>
+            </button>
+          )}
 
           <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-bmw-primary group-hover:text-bmw-primary-active transition-colors">
             View <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />

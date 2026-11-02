@@ -1,11 +1,12 @@
 import React from "react";
 import { PrototypeDrive } from "./mockData";
-import { MapPin, ArrowRight } from "lucide-react";
+import { MapPin, ArrowRight, Plus } from "lucide-react";
 
 interface PrototypeFunnelViewProps {
   drives: PrototypeDrive[];
   onSelect: (drive: PrototypeDrive) => void;
   onAdvanceStage: (driveId: string, nextStatus: PrototypeDrive["application_status"]) => void;
+  onAddUpdate?: (driveId: string) => void;
 }
 
 const COLUMNS: {
@@ -23,6 +24,7 @@ export const PrototypeFunnelView: React.FC<PrototypeFunnelViewProps> = ({
   drives,
   onSelect,
   onAdvanceStage,
+  onAddUpdate,
 }) => {
   return (
     <div className="overflow-x-auto pb-4 pt-1">
@@ -89,26 +91,44 @@ export const PrototypeFunnelView: React.FC<PrototypeFunnelViewProps> = ({
                         </span>
                       </div>
 
-                      {/* Quick Move Button */}
-                      {col.id !== "offer" && (
-                        <div
-                          className="pt-2 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between text-[10px] font-bold uppercase tracking-[1.5px] text-[#1c69d4] dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const nextMap: Record<string, PrototypeDrive["application_status"]> = {
-                              not_applied: "applied",
-                              applied: "oa",
-                              oa: "interview",
-                              interview: "offer",
-                            };
-                            const next = nextMap[drive.application_status];
-                            if (next) onAdvanceStage(drive.id, next);
-                          }}
-                        >
-                          <span>Move to Next Stage</span>
-                          <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-                        </div>
-                      )}
+                      {/* Card Footer: Update and Move */}
+                      <div className="pt-2 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between text-[10px]">
+                        {onAddUpdate ? (
+                          <button
+                            type="button"
+                            aria-label={`Add update notice for ${drive.company_name}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onAddUpdate(drive.id);
+                            }}
+                            className="inline-flex items-center gap-1 font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400 hover:text-[#1c69d4] dark:hover:text-blue-400 transition-colors cursor-pointer"
+                            title="Add update notice"
+                          >
+                            <Plus className="w-3 h-3 text-[#1c69d4] dark:text-blue-400" />
+                            <span>Update</span>
+                          </button>
+                        ) : <div />}
+
+                        {col.id !== "offer" && (
+                          <div
+                            className="flex items-center gap-1 font-bold uppercase tracking-[1.5px] text-[#1c69d4] dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const nextMap: Record<string, PrototypeDrive["application_status"]> = {
+                                not_applied: "applied",
+                                applied: "oa",
+                                oa: "interview",
+                                interview: "offer",
+                              };
+                              const next = nextMap[drive.application_status];
+                              if (next) onAdvanceStage(drive.id, next);
+                            }}
+                          >
+                            <span>Move Next</span>
+                            <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))
                 )}

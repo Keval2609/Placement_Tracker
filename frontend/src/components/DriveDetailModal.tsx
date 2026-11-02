@@ -7,6 +7,7 @@ import {
   Briefcase,
   Loader2,
   AlertCircle,
+  Plus,
 } from "lucide-react";
 import { DriveDetail, TimelineEvent, ApplicationStatus } from "../types/drive";
 import {
@@ -192,22 +193,33 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
                 </div>
               </div>
 
-              {/* CTC & External Portal Link */}
+              {/* CTC & Actions (Open Portal + Add Update) */}
               <div className="flex sm:flex-col items-end gap-2 shrink-0">
                 <div className="px-4 py-1.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-bmw-primary dark:text-blue-400 font-bold text-lg sm:text-xl rounded-md">
                   {drive.ctc_display || "Not Disclosed"}
                 </div>
-                {drive.application_link && (
-                  <a
-                    href={drive.application_link}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white bg-bmw-primary hover:bg-bmw-primary-active rounded-md transition-colors cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddUpdateOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white bg-bmw-primary hover:bg-bmw-primary-active rounded-md transition-colors cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
+                    title="Add new circular or update notice to this drive"
                   >
-                    <span>Open Portal</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Update</span>
+                  </button>
+                  {drive.application_link && (
+                    <a
+                      href={drive.application_link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-700 rounded-md transition-colors cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
+                    >
+                      <span>Portal</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -245,7 +257,10 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
             />
 
             {/* Timeline Section */}
-            <TimelineSection timeline={timeline} />
+            <TimelineSection
+              timeline={timeline}
+              onOpenAddUpdate={() => setIsAddUpdateOpen(true)}
+            />
 
             {/* Add Update Modal */}
             <AddUpdateModal

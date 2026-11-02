@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { DriveCard, ApplicationStatus } from "../types/drive";
-import { ArrowRight, Clock } from "lucide-react";
+import { ArrowRight, Clock, Plus } from "lucide-react";
 import { updateApplicationStatus } from "../services/api";
 import { cn } from "../lib/utils";
 
@@ -8,6 +8,7 @@ interface DashboardFunnelViewProps {
   drives: DriveCard[];
   onSelectDrive: (driveId: string) => void;
   onStatusUpdated?: () => void;
+  onAddUpdate?: (driveId: string) => void;
 }
 
 const COLUMNS: {
@@ -25,6 +26,7 @@ export const DashboardFunnelView: React.FC<DashboardFunnelViewProps> = ({
   drives,
   onSelectDrive,
   onStatusUpdated,
+  onAddUpdate,
 }) => {
   const [mobileActiveStage, setMobileActiveStage] = useState<ApplicationStatus>("applied");
 
@@ -108,27 +110,31 @@ export const DashboardFunnelView: React.FC<DashboardFunnelViewProps> = ({
                   )}
                 </div>
 
-                {/* Advance Stage button */}
-                {col.id !== "offer" && (
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`Advance ${drive.company_name} to next recruitment stage`}
-                    className="pt-2 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-bmw-primary dark:text-blue-400 hover:text-bmw-primary-active focus-visible:outline-none focus-visible:underline"
-                    onClick={(e) => {
-                      const nextMap: Record<string, ApplicationStatus> = {
-                        not_applied: "applied",
-                        applied: "oa",
-                        oa: "interview",
-                        interview: "offer",
-                      };
-                      const next = nextMap[col.id];
-                      if (next) handleAdvance(e, drive.application_id, next);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
+                {/* Card footer: Update and Advance Stage */}
+                <div className="pt-2 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between text-xs">
+                  {onAddUpdate ? (
+                    <button
+                      type="button"
+                      aria-label={`Add update notice for ${drive.company_name}`}
+                      onClick={(e) => {
                         e.stopPropagation();
+                        onAddUpdate(drive.id);
+                      }}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400 hover:text-bmw-primary dark:hover:text-blue-400 cursor-pointer"
+                      title="Add update notice"
+                    >
+                      <Plus className="w-3 h-3 text-bmw-primary dark:text-blue-400" />
+                      <span>Update</span>
+                    </button>
+                  ) : <div />}
+
+                  {col.id !== "offer" && (
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Advance ${drive.company_name} to next recruitment stage`}
+                      className="flex items-center gap-1 font-bold uppercase tracking-wider text-bmw-primary dark:text-blue-400 hover:text-bmw-primary-active focus-visible:outline-none focus-visible:underline cursor-pointer"
+                      onClick={(e) => {
                         const nextMap: Record<string, ApplicationStatus> = {
                           not_applied: "applied",
                           applied: "oa",
@@ -136,14 +142,28 @@ export const DashboardFunnelView: React.FC<DashboardFunnelViewProps> = ({
                           interview: "offer",
                         };
                         const next = nextMap[col.id];
-                        if (next) updateApplicationStatus(drive.application_id, next).then(onStatusUpdated);
-                      }
-                    }}
-                  >
-                    <span>Move Next Stage</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                )}
+                        if (next) handleAdvance(e, drive.application_id, next);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const nextMap: Record<string, ApplicationStatus> = {
+                            not_applied: "applied",
+                            applied: "oa",
+                            oa: "interview",
+                            interview: "offer",
+                          };
+                          const next = nextMap[col.id];
+                          if (next) updateApplicationStatus(drive.application_id, next).then(onStatusUpdated);
+                        }
+                      }}
+                    >
+                      <span>Move Next</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    </div>
+                  )}
+                </div>
               </div>
             ))
           )}

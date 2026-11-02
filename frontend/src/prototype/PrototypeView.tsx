@@ -182,11 +182,19 @@ export const PrototypeView: React.FC<PrototypeViewProps> = ({
             drives={filteredDrives}
             onSelect={(d) => setSelectedDrive(d)}
             onAdvanceStage={handleUpdateStatus}
+            onAddUpdate={(id) => {
+              const d = drives.find((item) => item.id === id);
+              if (d) setSelectedDrive(d);
+            }}
           />
         ) : viewMode === "table" ? (
           <PrototypeTableView
             drives={filteredDrives}
             onSelect={(d) => setSelectedDrive(d)}
+            onAddUpdate={(id) => {
+              const d = drives.find((item) => item.id === id);
+              if (d) setSelectedDrive(d);
+            }}
           />
         ) : (
           <div className="space-y-8">
@@ -218,6 +226,10 @@ export const PrototypeView: React.FC<PrototypeViewProps> = ({
                       drive={drive}
                       onSelect={(d) => setSelectedDrive(d)}
                       onStatusChange={handleUpdateStatus}
+                      onAddUpdate={(id) => {
+                        const d = drives.find((item) => item.id === id);
+                        if (d) setSelectedDrive(d);
+                      }}
                     />
                   ))}
                 </div>
@@ -238,6 +250,10 @@ export const PrototypeView: React.FC<PrototypeViewProps> = ({
                       drive={drive}
                       onSelect={(d) => setSelectedDrive(d)}
                       onStatusChange={handleUpdateStatus}
+                      onAddUpdate={(id) => {
+                        const d = drives.find((item) => item.id === id);
+                        if (d) setSelectedDrive(d);
+                      }}
                     />
                   ))}
                 </div>

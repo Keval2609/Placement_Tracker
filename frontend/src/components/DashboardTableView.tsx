@@ -1,16 +1,18 @@
 import React from "react";
 import { DriveCard } from "../types/drive";
-import { ChevronRight, Clock } from "lucide-react";
+import { ChevronRight, Clock, Plus } from "lucide-react";
 import { cn } from "../lib/utils";
 
 interface DashboardTableViewProps {
   drives: DriveCard[];
   onSelectDrive: (driveId: string) => void;
+  onAddUpdate?: (driveId: string) => void;
 }
 
 export const DashboardTableView: React.FC<DashboardTableViewProps> = ({
   drives,
   onSelectDrive,
+  onAddUpdate,
 }) => {
   const formatDate = (isoStr: string) => {
     try {
@@ -124,10 +126,28 @@ export const DashboardTableView: React.FC<DashboardTableViewProps> = ({
 
                     {/* Action */}
                     <td className="py-3 px-4 text-right">
-                      <span className="inline-flex items-center gap-1 text-xs text-bmw-primary dark:text-blue-400 group-hover:text-bmw-primary-active font-bold uppercase tracking-wider">
-                        View
-                        <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                      </span>
+                      <div className="inline-flex items-center gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
+                        {onAddUpdate && (
+                          <button
+                            type="button"
+                            aria-label={`Add update notice for ${drive.company_name}`}
+                            onClick={() => onAddUpdate(drive.id)}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 hover:text-bmw-primary dark:hover:text-blue-400 px-2 py-1 rounded-sm border border-neutral-200 dark:border-neutral-700 hover:border-bmw-primary dark:hover:border-blue-400 bg-neutral-50 dark:bg-neutral-800 transition-colors cursor-pointer"
+                            title="Add update notice"
+                          >
+                            <Plus className="w-3 h-3 text-bmw-primary dark:text-blue-400" />
+                            <span>Update</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => onSelectDrive(drive.id)}
+                          className="inline-flex items-center gap-0.5 text-xs text-bmw-primary dark:text-blue-400 hover:text-bmw-primary-active font-bold uppercase tracking-wider cursor-pointer"
+                        >
+                          View
+                          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
