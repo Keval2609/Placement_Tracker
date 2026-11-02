@@ -24,7 +24,7 @@
 | **Extraction Accuracy** | **93.3% field precision** | Benchmark suite across 30 real-world college WhatsApp announcements and PDF circulars |
 | **Median LLM Latency** | **1.78 seconds** | Measured on Groq LPU inference (`llama-3.3-70b-versatile`) with JSON schema constraints |
 | **Escalation Latency SLA** | **< 10 minutes** | Time before unacknowledged PWA Web Push alerts automatically escalate to the Telegram Bot API |
-| **Client Type Safety** | **0 TypeScript errors** | Strict type-check (`tsc -b`) across 2,160+ modules with progressive web app service worker integration |
+| **Client Safety & Hygiene** | **0 Errors, 0 Lint Warnings** | Strict TypeScript check (`tsc -b`) and ESLint zero-warning policy across 2,160+ modules with PWA service worker integration |
 
 ---
 
@@ -63,6 +63,18 @@ graph LR
 
 ## Key Engineering Highlights
 
+* **Multi-View Funnel Pipeline & Modal-First Architecture**: The dashboard provides three synchronized recruitment views designed for different inspection densities:
+  * *Card Grid*: Clean executive cards displaying company emblems, role details, CTC packages, criteria tags, and progress bars.
+  * *Kanban Funnel Pipeline*: Visual drag-and-click stage progression tracking across `Not Applied` ➔ `Applied` ➔ `OA Stage` ➔ `Interview` ➔ `Offer`.
+  * *Dense Table View*: Compact tabular view with sorting across company name, role, CTC, pipeline stage, and primary deadlines.
+  * *Modal-First Inspection*: `DriveDetailModal` enables instant status promotions, criteria review, and timeline updates in place without disruptive page navigations or loss of scroll position.
+* **Global Dark / Light Theme System**:
+  * Centralized `ThemeProvider` driving Tailwind CSS class-based mode switching (`darkMode: "class"`).
+  * Zero-latency anti-flicker pre-render script embedded directly in `<head>` of `index.html` preventing theme flash (FOUC) prior to React hydration.
+  * Synchronous DOM mutation and `localStorage` persistence with seamless fallback to operating system `prefers-color-scheme`.
+* **Refined Corporate Brutalism & Defensive Layouts**:
+  * Softened brutalist aesthetic using systematic rounded corners (`rounded-lg` containers, `rounded-md` cards/buttons/inputs, `rounded-sm` tags/badges, `rounded-full` pills) while preserving high-contrast accessibility (>4.5:1 ratio).
+  * Defensive flexbox constraints with `min-w-0` and truncation protection preventing card layout breaks on long role titles and multi-component CTC packages (Base + Stocks + Bonuses).
 * **Human-in-the-Loop AI Trust Gate**: AI-extracted dates (`application_deadline`, `oa`, `interview`, etc.) render as confidence badges alongside verbatim source phrases. Users can edit any field, verify dates individually, or use the 1-click **Confirm All** action. The backend (`HTTP 422`) strictly enforces that at least one primary application deadline is confirmed by the user before persistence.
 * **Dual-Track Ingestion Engine**:
   * *Campus Drives*: Parses unstructured WhatsApp text or uploaded circulars (`.pdf` via `pdfplumber`, `.docx` via `python-docx`) into structured drafts.
@@ -98,6 +110,11 @@ Building production AI ingestion systems surfaces real failure modes where LLMs 
 * **Root Cause**: OEM battery optimization engines aggressively kill background service worker execution threads.
 * **Resolution**: Built a two-tier escalation architecture: browser push events deliver immediate notifications when the device is active; if the receipt is unacknowledged after 10 minutes, the background APScheduler worker automatically dispatches a priority alert through the student's paired Telegram bot.
 
+### 4. Dark Mode Flash of Unstyled Color (FOUC) & Dynamic DOM Desynchronization
+* **Failure Mode**: When loading the dashboard in dark mode, users experienced an abrupt white flicker before the interface snapped into dark styling, and state changes failed to propagate when the build tool cached CSS media strategies.
+* **Root Cause**: Client-side React hydration evaluates theme state from `localStorage` asynchronously after the browser paints the initial HTML DOM. Furthermore, Tailwind's default configuration relies on system `prefers-color-scheme` unless explicitly directed to the `.dark` class.
+* **Resolution**: Configured Tailwind for `darkMode: "class"` and embedded an inline vanilla JavaScript pre-render script in the `<head>` of `index.html`. This script synchronously reads `localStorage` (falling back to system preferences) and injects the `.dark` class before the first paint cycle. The `ThemeProvider` enforces synchronous DOM mutations on user toggle, eliminating both FOUC and class synchronization drift.
+
 ---
 
 ## Reliability & Scheduler State on Restart
@@ -121,7 +138,10 @@ This application was engineered using an agentic, test-driven AI pair-programmin
 
 | Module | Technical Capabilities |
 | :--- | :--- |
-| **Executive Dashboard** | Card Grid, Kanban Pipeline Funnel, and Dense Table views with client-side search, filtering, and active application retention. |
+| **Executive Dashboard** | Three synchronized views (Card Grid, Kanban Funnel Pipeline, Dense Table) with real-time text search, stage filtering, and active application retention. |
+| **Executive KPI Strip** | Real-time metric cards tracking Total Drives, Urgent Deadlines (<72h with pulse indicator), Active in Pipeline, and Confirmed Offers with 1-click filter shortcuts. |
+| **Global Theme System** | Toggleable Dark and Light mode with zero-latency pre-hydration rendering, system preference sync, and `localStorage` persistence. |
+| **Modal-First Workflows** | In-place drive inspection (`DriveDetailModal`), application stage promotion, alert channels drawer (`AlertsDrawer`), and ingestion modal without navigating away. |
 | **Dual-Track Ingestion** | Campus AI notice parsing (WhatsApp texts, `.pdf`, `.docx`) alongside manual off-campus direct logging with status assignment. |
 | **Job Details Viewer** | Full-text Job Description viewer with preserved whitespace, 1-click clipboard copy, and criteria specifications (CGPA, departments, portal link). |
 | **Audit Timeline** | Chronological event timeline recording initial drive registration, circular updates, and detailed diff summaries. |
@@ -132,11 +152,11 @@ This application was engineered using an agentic, test-driven AI pair-programmin
 
 ## Tech Stack
 
-* **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, PWA Service Workers (Web Push / VAPID)
+* **Frontend**: React 18, TypeScript, Vite, Tailwind CSS (Class-based Dark Mode, Modern Rounded Brutalism), Lucide React, PWA Service Workers (Web Push / VAPID)
 * **Backend**: Python 3.11+, FastAPI, Pydantic v2, APScheduler, `pdfplumber`, `python-docx`
 * **AI Extraction**: Groq API (`llama-3.3-70b-versatile`) / Ollama (`llama3:8b`), structured JSON schema decoding
 * **Database & Auth**: Supabase PostgreSQL with Row-Level Security (RLS), Clerk Authentication (JWT verification)
-* **Testing & CI/CD**: Pytest (74 tests), Ruff, ESLint, TypeScript compiler (`tsc -b`), GitHub Actions
+* **Testing & CI/CD**: Pytest (74 tests), Ruff, ESLint (Strict Zero-Warning Policy), TypeScript compiler (`tsc -b`), GitHub Actions
 
 ---
 
@@ -293,8 +313,8 @@ ruff check .
 
 # Frontend Typecheck, Lint & Production Build
 cd frontend
-npm run lint
-npm run build
+npm run lint      # ESLint strict validation (0 errors, 0 warnings)
+npm run build     # TypeScript compiler (tsc -b) & Vite production bundle
 ```
 
 ### 4. Core API Endpoints

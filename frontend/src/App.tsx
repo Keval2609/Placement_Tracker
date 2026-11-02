@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/react";
 import { DashboardPage } from "./components/DashboardPage";
 import { IngestModal } from "./components/IngestModal";
 import { AlertsDrawer } from "./components/AlertsDrawer";
 import { ThemeToggle } from "./components/ThemeToggle";
+import { LegalPage, LegalTab } from "./components/LegalPage";
 import { PrototypeView } from "./prototype/PrototypeView";
 import {
   Plus,
@@ -18,8 +19,43 @@ import {
 import { setTokenGetter } from "./services/api";
 import { setSupabaseAuth } from "./lib/supabase";
 
+const getInitialLegalTab = (): LegalTab | null => {
+  if (typeof window === "undefined") return null;
+  const path = window.location.pathname.toLowerCase();
+  const search = new URLSearchParams(window.location.search);
+  const hash = window.location.hash.toLowerCase();
+
+  if (
+    path.startsWith("/terms-of-service") ||
+    path === "/terms" ||
+    path.startsWith("/terms/") ||
+    search.get("legal") === "terms" ||
+    search.get("page") === "terms" ||
+    hash === "#terms" ||
+    hash === "#terms-of-service"
+  ) {
+    return "terms";
+  }
+
+  if (
+    path.startsWith("/privacy-policy") ||
+    path === "/privacy" ||
+    path.startsWith("/privacy/") ||
+    search.get("legal") === "privacy" ||
+    search.get("page") === "privacy" ||
+    hash === "#privacy" ||
+    hash === "#privacy-policy"
+  ) {
+    return "privacy";
+  }
+
+  return null;
+};
+
 const isDemoEnvironment = (): boolean => {
   if (typeof window === "undefined") return false;
+  // If we are on a legal page, do not auto-force demo mode
+  if (getInitialLegalTab() !== null) return false;
   const hostname = window.location.hostname.toLowerCase();
   const pathname = window.location.pathname.toLowerCase();
   const params = new URLSearchParams(window.location.search);
@@ -60,6 +96,7 @@ function App() {
   }, [isSignedIn, getToken]);
 
   const [showPrototype, setShowPrototype] = useState<boolean>(isDemoEnvironment);
+  const [legalTab, setLegalTab] = useState<LegalTab | null>(getInitialLegalTab);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isIngestModalOpen, setIsIngestModalOpen] = useState<boolean>(false);
   const [isAlertsDrawerOpen, setIsAlertsDrawerOpen] = useState<boolean>(false);
@@ -67,6 +104,27 @@ function App() {
     active: 0,
     urgent: 0,
   });
+
+  const handleOpenLegal = useCallback((tab: LegalTab) => {
+    setLegalTab(tab);
+    const path = tab === "terms" ? "/terms-of-service" : "/privacy-policy";
+    window.history.pushState({}, "", path);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  const handleCloseLegal = useCallback(() => {
+    setLegalTab(null);
+    window.history.pushState({}, "", "/");
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setLegalTab(getInitialLegalTab());
+      setShowPrototype(isDemoEnvironment());
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   if (!isLoaded) {
     return (
@@ -84,6 +142,15 @@ function App() {
     );
   }
 
+  if (legalTab) {
+    return (
+      <LegalPage
+        initialTab={legalTab}
+        onBack={handleCloseLegal}
+      />
+    );
+  }
+
   if (showPrototype) {
     return (
       <PrototypeView
@@ -98,6 +165,7 @@ function App() {
             window.history.replaceState({}, "", window.location.pathname);
           }
         }}
+        onOpenLegal={handleOpenLegal}
       />
     );
   }
@@ -294,14 +362,34 @@ function App() {
                 <span>Explore Interactive Demo</span>
               </button>
             </div>
-            <div className="mt-8 pt-6 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-center gap-6 text-xs text-neutral-500 dark:text-neutral-400">
+            <div className="mt-8 pt-6 border-t border-neutral-200 dark:border-neutral-800 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-neutral-500 dark:text-neutral-400">
               <span className="flex items-center gap-1.5 font-medium">
                 <ShieldCheck className="w-4 h-4 text-bmw-m-blue-light" /> End-to-end Encrypted
               </span>
               <span>•</span>
               <span className="font-medium">Clerk Authentication</span>
               <span>•</span>
-              <span className="font-medium">Automated Deadlines</span>
+              <a
+                href="/terms-of-service"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleOpenLegal("terms");
+                }}
+                className="hover:text-bmw-primary underline transition-colors"
+              >
+                Terms of Service
+              </a>
+              <span>•</span>
+              <a
+                href="/privacy-policy"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleOpenLegal("privacy");
+                }}
+                className="hover:text-bmw-primary underline transition-colors"
+              >
+                Privacy Policy
+              </a>
             </div>
           </div>
         ) : (
@@ -314,6 +402,53 @@ function App() {
           />
         )}
       </main>
+
+      {/* Global Site Footer */}
+      <footer className="mt-16 border-t border-neutral-200 dark:border-neutral-800 pt-8 pb-10 text-xs text-neutral-500 dark:text-neutral-400">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 bg-bmw-surface-dark rounded flex items-center justify-center font-bold text-white text-[10px] border border-neutral-800">
+              PT
+            </div>
+            <span className="font-medium text-neutral-700 dark:text-neutral-300">
+              DriveTrack — Placement Drive & Application Pipeline Tracker
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3.5 flex-wrap">
+            <a
+              href="/terms-of-service"
+              onClick={(e) => {
+                e.preventDefault();
+                handleOpenLegal("terms");
+              }}
+              className="hover:text-bmw-primary transition-colors"
+            >
+              Terms of Service
+            </a>
+            <span>•</span>
+            <a
+              href="/privacy-policy"
+              onClick={(e) => {
+                e.preventDefault();
+                handleOpenLegal("privacy");
+              }}
+              className="hover:text-bmw-primary transition-colors"
+            >
+              Privacy Policy
+            </a>
+            <span>•</span>
+            <a
+              href="https://github.com/Keval2609/Placement_Tracker"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-bmw-primary transition-colors"
+            >
+              GitHub
+            </a>
+          </div>
+        </div>
+      </footer>
 
       {/* Modal-First Ingest Wizard */}
       <IngestModal

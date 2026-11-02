@@ -15,9 +15,13 @@ import { PrototypeAlertsDrawer } from "./PrototypeAlertsDrawer";
 
 interface PrototypeViewProps {
   onExitPrototype: () => void;
+  onOpenLegal?: (tab: "terms" | "privacy") => void;
 }
 
-export const PrototypeView: React.FC<PrototypeViewProps> = ({ onExitPrototype }) => {
+export const PrototypeView: React.FC<PrototypeViewProps> = ({
+  onExitPrototype,
+  onOpenLegal,
+}) => {
   const [drives, setDrives] = useState<PrototypeDrive[]>(PROTOTYPE_DRIVES);
   const [selectedDrive, setSelectedDrive] = useState<PrototypeDrive | null>(null);
   const [isIngestOpen, setIsIngestOpen] = useState(false);
@@ -235,6 +239,51 @@ export const PrototypeView: React.FC<PrototypeViewProps> = ({ onExitPrototype })
           </div>
         )}
       </main>
+
+      {/* Global Site Footer */}
+      <footer className="mt-16 border-t border-neutral-200 dark:border-neutral-800 pt-8 pb-10 text-xs text-neutral-500 dark:text-neutral-400">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 bg-bmw-surface-dark rounded flex items-center justify-center font-bold text-white text-[10px] border border-neutral-800">
+              PT
+            </div>
+            <span className="font-medium text-neutral-700 dark:text-neutral-300">
+              DriveTrack — Interactive Prototype Showcase
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3.5 flex-wrap">
+            {onOpenLegal && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onOpenLegal("terms")}
+                  className="hover:text-bmw-primary transition-colors cursor-pointer"
+                >
+                  Terms of Service
+                </button>
+                <span>•</span>
+                <button
+                  type="button"
+                  onClick={() => onOpenLegal("privacy")}
+                  className="hover:text-bmw-primary transition-colors cursor-pointer"
+                >
+                  Privacy Policy
+                </button>
+                <span>•</span>
+              </>
+            )}
+            <a
+              href="https://github.com/Keval2609/Placement_Tracker"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-bmw-primary transition-colors"
+            >
+              GitHub
+            </a>
+          </div>
+        </div>
+      </footer>
 
       {/* Modals & Drawers */}
       <PrototypeDriveDetailModal
