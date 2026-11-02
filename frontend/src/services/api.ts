@@ -265,6 +265,19 @@ export async function fetchTelegramStatus(): Promise<{ is_linked: boolean; chat_
   return response.json();
 }
 
+export async function triggerTelegramTest(chatId?: string): Promise<{ success: boolean; message: string }> {
+  const response = await apiFetch(`${API_BASE_URL}/telegram/test`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId || null }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed sending Telegram test message");
+  }
+  return response.json();
+}
+
 export async function triggerOnboardingTest(): Promise<{ test_id: string; message: string }> {
   const response = await apiFetch(`${API_BASE_URL}/push/onboarding-test`, {
     method: "POST",

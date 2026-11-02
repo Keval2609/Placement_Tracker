@@ -80,7 +80,7 @@ export const PrototypeFunnelView: React.FC<PrototypeFunnelViewProps> = ({
 
                         <span
                           className={`px-1.5 py-0.5 rounded-sm ${
-                            drive.days_left <= 2
+                            col.id === "not_applied" && drive.days_left <= 2
                               ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 font-bold border border-amber-200 dark:border-amber-900"
                               : "bg-neutral-100 dark:bg-neutral-700/60 text-neutral-600 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-600"
                           }`}

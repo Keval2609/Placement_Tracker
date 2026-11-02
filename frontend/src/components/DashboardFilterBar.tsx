@@ -55,14 +55,14 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = ({
   ];
 
   return (
-    <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-4 space-y-3.5 rounded-lg shadow-xs">
+    <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-4 space-y-3.5 rounded-lg shadow-xs w-full min-w-0 max-w-full">
       {/* Top row: Stage Chips & View Switcher */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 w-full min-w-0">
         {/* Status Stage Chips */}
         <div
           role="tablist"
           aria-label="Filter drives by recruitment stage"
-          className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none"
+          className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none w-full min-w-0 max-w-full touch-pan-x"
         >
           {statuses.map((st) => {
             const isActive = selectedStatus === st.id;

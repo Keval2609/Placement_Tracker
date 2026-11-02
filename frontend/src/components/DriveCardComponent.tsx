@@ -60,6 +60,18 @@ export const DriveCardComponent: React.FC<DriveCardComponentProps> = ({
       };
     }
 
+    // Candidate has already submitted application or progressed beyond
+    if (currentStatus !== "not_applied") {
+      const daysText =
+        drive.days_left === 0
+          ? "Closes Today"
+          : `${drive.days_left}d left`;
+      return {
+        label: `Applied (${daysText})`,
+        style: "bg-blue-50 dark:bg-blue-950/40 text-bmw-primary dark:text-blue-300 border-blue-200 dark:border-blue-900/60 font-semibold",
+      };
+    }
+
     if (drive.days_left === 0) {
       return {
         label: "Closes Today",

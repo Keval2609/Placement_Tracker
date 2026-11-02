@@ -13,6 +13,7 @@ Handles:
 
 import json
 import logging
+from pathlib import Path
 import uuid
 import zoneinfo
 from datetime import datetime
@@ -34,6 +35,31 @@ from app.services.drive_service import list_drives_for_dashboard
 logger = logging.getLogger(__name__)
 KOLKATA_TZ = zoneinfo.ZoneInfo("Asia/Kolkata")
 
+_DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+_LINKS_FILE = _DATA_DIR / "telegram_links.json"
+
+
+def _load_persisted_telegram_links() -> dict[str, str]:
+    if _LINKS_FILE.exists():
+        try:
+            with open(_LINKS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    return {str(k): str(v) for k, v in data.items()}
+        except Exception as e:
+            logger.warning("Could not read telegram links cache: %s", e)
+    return {}
+
+
+def _persist_telegram_links() -> None:
+    try:
+        _DATA_DIR.mkdir(parents=True, exist_ok=True)
+        with open(_LINKS_FILE, "w", encoding="utf-8") as f:
+            json.dump(_telegram_links, f)
+    except Exception as e:
+        logger.warning("Could not persist telegram links: %s", e)
+
+
 # Dynamic or configured VAPID keypair
 _generated_vapid: Any = None
 _vapid_public_key: str | None = None
@@ -41,7 +67,7 @@ _vapid_private_key: str | None = None
 
 # In-memory stores for offline execution and testing
 _subscriptions: dict[str, list[dict[str, Any]]] = {}
-_telegram_links: dict[str, str] = {}
+_telegram_links: dict[str, str] = _load_persisted_telegram_links()
 _alert_history: dict[str, dict[str, Any]] = {}
 _fired_thresholds: set[str] = set()
 _onboarding_tests: dict[str, dict[str, Any]] = {}
@@ -153,11 +179,14 @@ def link_telegram_chat(user_id: str, chat_id: str) -> None:
             detail="Invalid Telegram chat_id provided.",
         )
     _telegram_links[user_id] = clean_chat_id
+    _persist_telegram_links()
     logger.info("Linked Telegram chat_id %s to user %s", clean_chat_id, user_id)
 
 
 def get_telegram_link(user_id: str) -> str | None:
     """Get linked Telegram chat_id for user."""
+    if user_id not in _telegram_links:
+        _telegram_links.update(_load_persisted_telegram_links())
     return _telegram_links.get(user_id)
 
 
@@ -232,6 +261,81 @@ async def send_telegram_message_async(chat_id: str, text: str) -> bool:
     except Exception as err:
         logger.warning("Failed sending Telegram message: %s", err)
         return False
+
+
+async def send_telegram_test_message_async(
+    user_id: str, chat_id: str | None = None
+) -> tuple[bool, str]:
+    """Dispatch an immediate test alert to user's Telegram chat.
+
+    Returns (success: bool, message: str) with diagnostic feedback.
+    """
+    target_chat_id = (chat_id or "").strip() or get_telegram_link(user_id)
+    if not target_chat_id:
+        return (
+            False,
+            "No Telegram Chat ID is linked. Please enter your Chat ID and click Link first.",
+        )
+
+    settings = get_settings()
+    bot_token = settings.telegram_bot_token
+
+    if not bot_token:
+        return (
+            False,
+            "TELEGRAM_BOT_TOKEN is not configured on the backend server. "
+            "Please configure TELEGRAM_BOT_TOKEN in your environment variables to enable live Telegram delivery.",
+        )
+
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    now_str = datetime.now(KOLKATA_TZ).strftime("%d %b %Y, %I:%M %p")
+    text = (
+        "✅ <b>Placement Tracker — Delivery Test</b>\n\n"
+        "Your Telegram account is connected successfully!\n"
+        f"📅 Verified at: {now_str} (IST)\n\n"
+        "<i>If you miss an application deadline push alert, an automated escalation will arrive here.</i>"
+    )
+    payload = {"chat_id": target_chat_id, "text": text, "parse_mode": "HTML"}
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(url, json=payload)
+            if resp.status_code == 200:
+                logger.info("Test Telegram alert delivered to chat %s", target_chat_id)
+                return (
+                    True,
+                    f"Test alert delivered successfully to Telegram chat {target_chat_id}!",
+                )
+
+            # Parse error description from Telegram API if available
+            try:
+                err_data = resp.json()
+                desc = err_data.get("description", resp.text)
+            except Exception:
+                desc = resp.text
+
+            if resp.status_code == 400 and "chat not found" in desc.lower():
+                return (
+                    False,
+                    f"Telegram Error: Chat not found ({target_chat_id}). "
+                    "Make sure you opened your bot in Telegram and clicked 'Start' before linking.",
+                )
+            elif resp.status_code == 403:
+                return (
+                    False,
+                    "Telegram Error: Bot was blocked or not started by the user. "
+                    "Please open your bot in Telegram and click 'Start'.",
+                )
+            elif resp.status_code == 401:
+                return (
+                    False,
+                    "Telegram Error: Invalid TELEGRAM_BOT_TOKEN configured on server.",
+                )
+
+            return (False, f"Telegram API returned status {resp.status_code}: {desc}")
+    except Exception as err:
+        logger.warning("Failed sending Telegram test message: %s", err)
+        return (False, f"Failed connecting to Telegram API: {err}")
 
 
 def record_push_ack(alert_id: str) -> bool:
@@ -328,6 +432,11 @@ def run_deadline_check_job() -> None:
 
         for card in drive_list.drives:
             if card.is_overdue:
+                continue
+
+            # If candidate has already applied (or progressed further in pipeline),
+            # the primary application deadline is already satisfied — do not fire urgency alerts.
+            if card.application_status != "not_applied":
                 continue
 
             try:

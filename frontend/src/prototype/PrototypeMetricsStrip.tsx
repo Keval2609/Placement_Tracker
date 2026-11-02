@@ -16,8 +16,12 @@ export const PrototypeMetricsStrip: React.FC<PrototypeMetricsStripProps> = ({
   onFilterOffers,
 }) => {
   const totalDrives = drives.length;
-  const urgentDrives = drives.filter((d) => !d.is_overdue && d.days_left <= 3);
-  const inPipeline = drives.filter((d) => ["oa", "interview"].includes(d.application_status));
+  const urgentDrives = drives.filter(
+    (d) => !d.is_overdue && d.days_left <= 3 && d.application_status === "not_applied"
+  );
+  const inPipeline = drives.filter((d) =>
+    ["applied", "oa", "interview"].includes(d.application_status)
+  );
   const offers = drives.filter((d) => d.application_status === "offer");
 
   const cards = [
@@ -41,7 +45,7 @@ export const PrototypeMetricsStrip: React.FC<PrototypeMetricsStripProps> = ({
     {
       title: "Active In Pipeline",
       value: inPipeline.length,
-      subtext: "OA & Technical Interviews",
+      subtext: inPipeline.length > 0 ? `${inPipeline.slice(0, 3).map(d => d.company_name).join(", ")}` : "Applied, OA & Interviews",
       icon: GitPullRequest,
       textColor: "text-[#1c69d4] dark:text-blue-400",
       onClick: onFilterActivePipeline,

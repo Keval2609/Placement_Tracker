@@ -38,3 +38,7 @@ skills-lock.json
 *.pid
 error.md
 
+# Runtime data & caches
+backend/app/data/
+
+
