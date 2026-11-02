@@ -7,7 +7,6 @@ import { ThemeToggle } from "./components/ThemeToggle";
 import { LegalPage, LegalTab } from "./components/LegalPage";
 import { PrototypeView } from "./prototype/PrototypeView";
 import {
-  Plus,
   Sparkles,
   LogIn,
   Loader2,
@@ -171,7 +170,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950 text-neutral-800 dark:text-neutral-100 font-sans pb-16 selection:bg-bmw-primary selection:text-white transition-colors duration-150">
+    <div className="min-h-screen bg-white dark:bg-neutral-950 text-neutral-800 dark:text-neutral-100 font-sans pb-16 selection:bg-bmw-primary selection:text-white transition-colors duration-150 overflow-x-hidden w-full max-w-full">
       {/* BMW M-Stripe Top Signature Divider: 4px M-stripe (Light Blue -> Dark Blue -> Red) */}
       <div className="h-1 w-full flex">
         <div className="w-1/3 bg-bmw-m-blue-light" />
@@ -181,13 +180,13 @@ function App() {
 
       {/* Corporate Top Command Navbar */}
       <header className="sticky top-0 z-30 w-full border-b border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-950/90 backdrop-blur-md transition-all shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
           {/* Brand Logo & Dynamic Subtitle */}
           <div
             role="button"
             tabIndex={0}
             aria-label="Placement Tracker Home - Clear Search"
-            className="flex items-center gap-3 cursor-pointer group shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
+            className="flex items-center gap-2 sm:gap-3 cursor-pointer group shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
             onClick={() => setSearchQuery("")}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
@@ -197,21 +196,28 @@ function App() {
             }}
           >
             {/* Monogram Badge */}
-            <div className="w-9 h-9 bg-bmw-surface-dark rounded-md flex items-center justify-center font-bold text-white text-xs tracking-wider border border-neutral-800">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 bg-bmw-surface-dark rounded-md flex items-center justify-center font-bold text-white text-xs tracking-wider border border-neutral-800 shrink-0">
               PT
             </div>
 
-            <div>
+            {/* Mobile stacked brand title */}
+            <div className="flex sm:hidden flex-col leading-tight select-none">
+              <span className="text-xs font-bold tracking-tight text-neutral-900 dark:text-white">Placement</span>
+              <span className="text-xs font-bold tracking-tight text-bmw-primary">Tracker</span>
+            </div>
+
+            {/* Desktop horizontal brand title & Live pill */}
+            <div className="hidden sm:block">
               <div className="flex items-center gap-2">
                 <h1 className="text-base font-bold tracking-tight text-neutral-900 dark:text-white">
                   Placement <span className="text-bmw-primary">Tracker</span>
                 </h1>
-                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-sm bg-blue-50 dark:bg-blue-950/50 text-bmw-primary border border-blue-200 dark:border-blue-900/50">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-sm bg-blue-50 dark:bg-blue-950/50 text-bmw-primary border border-blue-200 dark:border-blue-900/50">
                   <Radio className="w-2.5 h-2.5 text-emerald-500 motion-safe:animate-pulse" />
                   Live Portal
                 </span>
               </div>
-              <p className="text-[11px] font-normal text-neutral-500 dark:text-neutral-400 hidden sm:block">
+              <p className="text-[11px] font-normal text-neutral-500 dark:text-neutral-400">
                 {counts.active} Active Drives •{" "}
                 {counts.urgent > 0 ? (
                   <span className="text-amber-700 dark:text-amber-400 font-bold">{counts.urgent} Closing Soon</span>
@@ -257,24 +263,24 @@ function App() {
               type="button"
               aria-label="Open alert channel settings"
               onClick={() => setIsAlertsDrawerOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
+              className="inline-flex items-center justify-center gap-1.5 p-2 sm:px-3 sm:py-2 w-8 h-8 sm:w-auto sm:h-auto text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-md transition-colors cursor-pointer relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
               title="Configure Telegram & Web Push notification channels"
             >
               <Bell className="w-3.5 h-3.5 text-bmw-primary" />
               <span className="hidden sm:inline">Alert Channels</span>
-              <span className="w-2 h-2 bg-emerald-500 rounded-full" />
+              <span className="w-2 h-2 bg-emerald-500 rounded-full absolute top-1 right-1 sm:static" />
             </button>
 
-            {/* Retained Mock Showcase Switcher Button */}
+            {/* Retained Mock Showcase Switcher Button - Hidden on mobile navbar */}
             <button
               type="button"
               aria-label="Explore demo mock showcase"
               onClick={() => setShowPrototype(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
               title="Explore Demo Mock Showcase (Google, Microsoft, Uber, etc.)"
             >
               <Sparkles className="w-3.5 h-3.5 text-bmw-primary" />
-              <span className="hidden sm:inline">Mock Showcase</span>
+              <span>Mock Showcase</span>
             </button>
 
             {/* Add Drive Button */}
@@ -283,22 +289,20 @@ function App() {
                 type="button"
                 aria-label="Add new placement drive"
                 onClick={() => setIsIngestModalOpen(true)}
-                className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs font-bold uppercase tracking-wider text-white bg-bmw-primary hover:bg-bmw-primary-active rounded-md transition-colors cursor-pointer shadow-xs active:bg-bmw-primary-active focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary focus-visible:ring-offset-2"
+                className="inline-flex items-center justify-center px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs font-bold uppercase tracking-wider text-white bg-bmw-primary hover:bg-bmw-primary-active rounded-md transition-colors cursor-pointer shadow-xs active:bg-bmw-primary-active focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary focus-visible:ring-offset-2"
               >
-                <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">+ Add Drive</span>
-                <span className="sm:hidden">Add</span>
+                <span className="sm:hidden">+ Add</span>
               </button>
             ) : (
               <SignInButton mode="modal">
                 <button
                   type="button"
                   aria-label="Sign in to add drive"
-                  className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs font-bold uppercase tracking-wider text-white bg-bmw-primary hover:bg-bmw-primary-active rounded-md transition-colors cursor-pointer shadow-xs active:bg-bmw-primary-active focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary focus-visible:ring-offset-2"
+                  className="inline-flex items-center justify-center px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs font-bold uppercase tracking-wider text-white bg-bmw-primary hover:bg-bmw-primary-active rounded-md transition-colors cursor-pointer shadow-xs active:bg-bmw-primary-active focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary focus-visible:ring-offset-2"
                 >
-                  <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">+ Add Drive</span>
-                  <span className="sm:hidden">Add</span>
+                  <span className="sm:hidden">+ Add</span>
                 </button>
               </SignInButton>
             )}
@@ -309,7 +313,7 @@ function App() {
                 <SignInButton mode="modal">
                   <button
                     aria-label="Sign in to your account"
-                    className="text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 px-3 py-2 rounded-md border border-neutral-200 dark:border-neutral-700 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
+                    className="text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-md border border-neutral-200 dark:border-neutral-700 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
                   >
                     Sign In
                   </button>

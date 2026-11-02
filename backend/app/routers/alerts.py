@@ -2,7 +2,7 @@
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from app.dependencies import get_current_user_id
@@ -13,6 +13,7 @@ from app.services.alert_service import (
     link_telegram_chat,
     record_push_ack,
     save_push_subscription,
+    send_telegram_test_message_async,
     trigger_onboarding_test,
 )
 
@@ -31,6 +32,12 @@ class TelegramLinkRequest(BaseModel):
     """Payload for linking user's Telegram chat_id."""
 
     chat_id: str
+
+
+class TelegramTestRequest(BaseModel):
+    """Optional payload for dispatching a test message to specific Telegram chat_id."""
+
+    chat_id: str | None = None
 
 
 class PushAckRequest(BaseModel):
@@ -99,6 +106,27 @@ async def fetch_telegram_status(
 ) -> dict[str, Any]:
     chat_id = get_telegram_link(user_id=user_id)
     return {"is_linked": chat_id is not None, "chat_id": chat_id}
+
+
+@router.post(
+    "/telegram/test",
+    status_code=status.HTTP_200_OK,
+    summary="Dispatch immediate test alert to linked Telegram chat",
+)
+async def trigger_test_telegram(
+    user_id: Annotated[str, Depends(get_current_user_id)],
+    payload: TelegramTestRequest | None = None,
+) -> dict[str, Any]:
+    chat_id = payload.chat_id if payload else None
+    success, message = await send_telegram_test_message_async(
+        user_id=user_id, chat_id=chat_id
+    )
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=message,
+        )
+    return {"success": True, "message": message}
 
 
 @router.post(

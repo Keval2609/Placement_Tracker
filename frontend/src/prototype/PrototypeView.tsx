@@ -61,7 +61,7 @@ export const PrototypeView: React.FC<PrototypeViewProps> = ({
 
       // 4. Deadline Filter
       if (deadlineFilter === "urgent_72h") {
-        if (drive.is_overdue || drive.days_left > 3) return false;
+        if (drive.is_overdue || drive.days_left > 3 || drive.application_status !== "not_applied") return false;
       } else if (deadlineFilter === "next_7d") {
         if (drive.is_overdue || drive.days_left > 7) return false;
       } else if (deadlineFilter === "next_30d") {
@@ -98,7 +98,7 @@ export const PrototypeView: React.FC<PrototypeViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950 text-neutral-800 dark:text-neutral-100 font-sans selection:bg-bmw-primary selection:text-white pb-16 transition-colors duration-150">
+    <div className="min-h-screen bg-white dark:bg-neutral-950 text-neutral-800 dark:text-neutral-100 font-sans selection:bg-bmw-primary selection:text-white pb-16 transition-colors duration-150 overflow-x-hidden w-full max-w-full">
       {/* Top Notification Bar */}
       <div className="bg-neutral-50 dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 px-4 py-2.5 text-xs text-neutral-800 dark:text-neutral-200">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
@@ -131,7 +131,14 @@ export const PrototypeView: React.FC<PrototypeViewProps> = ({
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         activeDrivesCount={drives.filter((d) => !d.is_overdue).length}
-        urgentCount={drives.filter((d) => !d.is_overdue && d.days_left <= 3).length}
+        urgentCount={
+          drives.filter(
+            (d) =>
+              !d.is_overdue &&
+              d.days_left <= 3 &&
+              d.application_status === "not_applied"
+          ).length
+        }
         onExitPrototype={onExitPrototype}
       />
 

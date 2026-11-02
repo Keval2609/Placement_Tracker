@@ -30,24 +30,31 @@ export const PrototypeNavbar: React.FC<PrototypeNavbarProps> = ({
         <div className="w-1/3 bg-bmw-m-red" />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
         {/* Brand logo & Live status badge */}
-        <div className="flex items-center gap-3.5">
-          <div className="w-9 h-9 bg-bmw-surface-dark border border-neutral-800 rounded-md flex items-center justify-center font-bold text-white text-xs tracking-wider">
+        <div className="flex items-center gap-2 sm:gap-3 cursor-pointer select-none">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 bg-bmw-surface-dark border border-neutral-800 rounded-md flex items-center justify-center font-bold text-white text-xs tracking-wider shrink-0">
             PT
           </div>
 
-          <div>
+          {/* Mobile stacked brand title */}
+          <div className="flex sm:hidden flex-col leading-tight select-none">
+            <span className="text-xs font-bold tracking-tight text-neutral-900 dark:text-white">Placement</span>
+            <span className="text-xs font-bold tracking-tight text-bmw-primary">Tracker</span>
+          </div>
+
+          {/* Desktop horizontal brand title */}
+          <div className="hidden sm:block">
             <div className="flex items-center gap-2">
               <h1 className="text-base font-bold text-neutral-900 dark:text-white tracking-tight">
                 Placement <span className="text-bmw-primary">Tracker</span>
               </h1>
-              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-sm bg-blue-50 dark:bg-blue-950/50 text-bmw-primary border border-blue-200 dark:border-blue-900/50">
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-sm bg-blue-50 dark:bg-blue-950/50 text-bmw-primary border border-blue-200 dark:border-blue-900/50">
                 <Radio className="w-2.5 h-2.5 text-emerald-500 motion-safe:animate-pulse" />
                 Demo Showcase
               </span>
             </div>
-            <p className="text-[11px] font-normal text-neutral-500 dark:text-neutral-400 hidden sm:block">
+            <p className="text-[11px] font-normal text-neutral-500 dark:text-neutral-400">
               {activeDrivesCount} Active Drives • {urgentCount > 0 ? (
                 <span className="text-amber-700 dark:text-amber-400 font-bold">{urgentCount} Closing Soon</span>
               ) : "All on schedule"}
@@ -81,7 +88,7 @@ export const PrototypeNavbar: React.FC<PrototypeNavbarProps> = ({
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           {/* Theme Switcher */}
           <ThemeToggle />
 
@@ -89,22 +96,23 @@ export const PrototypeNavbar: React.FC<PrototypeNavbarProps> = ({
           <button
             type="button"
             onClick={onOpenAlerts}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-md transition-colors cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 p-2 sm:px-3 sm:py-2 w-8 h-8 sm:w-auto sm:h-auto text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-md transition-colors cursor-pointer relative"
             title="Configure Telegram & Push notifications"
           >
             <Bell className="w-3.5 h-3.5 text-bmw-primary" />
             <span className="hidden sm:inline">Alert Channels</span>
-            <span className="w-2 h-2 bg-emerald-500 rounded-full" />
+            <span className="w-2 h-2 bg-emerald-500 rounded-full absolute top-1 right-1 sm:static" />
           </button>
 
           {/* AI Notice Ingest Button */}
           <button
             type="button"
             onClick={onOpenIngest}
-            className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 text-xs font-bold uppercase tracking-wider text-white bg-bmw-primary hover:bg-bmw-primary-active rounded-md transition-colors cursor-pointer shadow-xs"
+            className="inline-flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs font-bold uppercase tracking-wider text-white bg-bmw-primary hover:bg-bmw-primary-active rounded-md transition-colors cursor-pointer shadow-xs"
           >
-            <Sparkles className="w-4 h-4" />
-            <span>AI Parse Notice</span>
+            <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">AI Parse Notice</span>
+            <span className="sm:hidden">Parse</span>
           </button>
 
           {/* Switch back to Live UI */}

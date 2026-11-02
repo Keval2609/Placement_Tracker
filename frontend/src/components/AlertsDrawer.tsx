@@ -7,8 +7,10 @@ import {
   linkTelegramChat,
   savePushSubscription,
   triggerOnboardingTest,
+  triggerTelegramTest,
 } from "../services/api";
 import { detectOemBrand, OemInfo } from "../utils/oemDetection";
+import { cn } from "../lib/utils";
 import {
   X,
   Bell,
@@ -43,6 +45,11 @@ export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) =
   const [telegramChatId, setTelegramChatId] = useState<string>("");
   const [isTelegramLinked, setIsTelegramLinked] = useState<boolean>(false);
   const [telegramLoading, setTelegramLoading] = useState<boolean>(false);
+  const [telegramTestLoading, setTelegramTestLoading] = useState<boolean>(false);
+  const [telegramTestFeedback, setTelegramTestFeedback] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
   const [testLoading, setTestLoading] = useState<boolean>(false);
   const [testStatus, setTestStatus] = useState<{
     has_tested: boolean;
@@ -140,6 +147,19 @@ export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) =
       setStatusMessage(`Failed linking Telegram: ${(err as Error).message}`);
     } finally {
       setTelegramLoading(false);
+    }
+  };
+
+  const handleTestTelegram = async () => {
+    setTelegramTestLoading(true);
+    setTelegramTestFeedback(null);
+    try {
+      const res = await triggerTelegramTest(telegramChatId.trim());
+      setTelegramTestFeedback({ success: true, message: res.message });
+    } catch (err: unknown) {
+      setTelegramTestFeedback({ success: false, message: (err as Error).message });
+    } finally {
+      setTelegramTestLoading(false);
     }
   };
 
@@ -258,25 +278,39 @@ export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) =
           <p className="text-xs font-normal text-neutral-600 dark:text-neutral-400">
             If push notifications go unacknowledged, alerts automatically escalate to your Telegram.
           </p>
-          <div className="text-xs text-neutral-600 dark:text-neutral-400 bg-white dark:bg-neutral-800 p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-md space-y-1">
-            <div className="flex items-center justify-between">
-              <span>1. Open our Telegram Bot:</span>
-              <a
-                href="https://t.me/PlacementTrackerBot"
-                target="_blank"
-                rel="noreferrer"
-                className="font-bold text-sky-600 dark:text-sky-400 hover:underline inline-flex items-center gap-0.5"
-              >
-                @PlacementTrackerBot <ExternalLink className="w-3 h-3" />
-              </a>
-            </div>
-            <div>2. Type <code>/start</code> to receive your unique Chat ID.</div>
+          <div className="text-xs text-neutral-600 dark:text-neutral-400 bg-white dark:bg-neutral-800 p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-md space-y-1.5">
+            <div className="font-semibold text-neutral-800 dark:text-neutral-200">How to link your Telegram:</div>
+            <ol className="list-decimal pl-4 space-y-1 leading-relaxed">
+              <li>
+                Open{" "}
+                <a
+                  href="https://t.me/userinfobot"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-bold text-sky-600 dark:text-sky-400 hover:underline inline-flex items-center gap-0.5"
+                >
+                  @userinfobot <ExternalLink className="w-3 h-3" />
+                </a>{" "}
+                (or{" "}
+                <a
+                  href="https://t.me/PlacementTrackerBot"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-bold text-sky-600 dark:text-sky-400 hover:underline inline-flex items-center gap-0.5"
+                >
+                  @PlacementTrackerBot <ExternalLink className="w-3 h-3" />
+                </a>
+                ) and click <strong>Start</strong>.
+              </li>
+              <li>Copy your numeric <strong>Id</strong> (e.g. <code>987654321</code>) and paste below.</li>
+              <li>Click <strong>Link</strong>, then use <strong>Send Test Message</strong> to verify delivery.</li>
+            </ol>
           </div>
           <form onSubmit={handleLinkTelegram} className="flex gap-2">
             <input
               type="text"
               aria-label="Telegram Chat ID"
-              placeholder="Enter your Telegram Chat ID"
+              placeholder="Enter your Telegram Chat ID (e.g. 987654321)"
               value={telegramChatId}
               onChange={(e) => setTelegramChatId(e.target.value)}
               className="flex-1 px-3 py-1.5 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-md text-xs text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-bmw-primary focus:border-bmw-primary font-mono"
@@ -289,6 +323,43 @@ export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) =
               {telegramLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Link"}
             </button>
           </form>
+
+          {/* Direct Telegram Test Button & Real-time Diagnostic Feedback */}
+          {isTelegramLinked && (
+            <div className="pt-1 space-y-2">
+              <button
+                type="button"
+                onClick={handleTestTelegram}
+                disabled={telegramTestLoading}
+                className="w-full py-2 px-3 text-xs font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/40 hover:bg-sky-100 dark:hover:bg-sky-900/40 border border-sky-200 dark:border-sky-800 rounded-md transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {telegramTestLoading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Sending Telegram Test Alert...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Send Test Telegram Message</span>
+                  </>
+                )}
+              </button>
+
+              {telegramTestFeedback && (
+                <div
+                  className={cn(
+                    "p-2.5 rounded-md text-xs border leading-relaxed",
+                    telegramTestFeedback.success
+                      ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300"
+                      : "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300"
+                  )}
+                >
+                  {telegramTestFeedback.message}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Delivery Health Verification */}

@@ -52,11 +52,11 @@ export const PrototypeFilterBar: React.FC<PrototypeFilterBarProps> = ({
   ];
 
   return (
-    <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-4 rounded-lg space-y-3.5 transition-colors">
+    <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-4 rounded-lg space-y-3.5 transition-colors w-full min-w-0 max-w-full">
       {/* Top row: Stage Chips & View Switcher */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 w-full min-w-0">
         {/* Status Stage Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none w-full min-w-0 max-w-full touch-pan-x">
           {statuses.map((st) => {
             const isActive = selectedStatus === st.id;
             return (

@@ -62,8 +62,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   // Keep parent navbar updated with live counts
   useEffect(() => {
-    const active = drives.filter((d) => !d.is_overdue).length;
-    const urgent = drives.filter((d) => !d.is_overdue && d.days_left <= 3).length;
+    const isPipelineActive = (status: ApplicationStatus) =>
+      ["applied", "oa", "interview"].includes(status);
+    const active = drives.filter(
+      (d) => !d.is_overdue || isPipelineActive(d.application_status)
+    ).length;
+    const urgent = drives.filter(
+      (d) => !d.is_overdue && d.days_left <= 3 && d.application_status === "not_applied"
+    ).length;
     if (onDriveCountChange) {
       onDriveCountChange(active, urgent);
     }
@@ -96,7 +102,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
       // 4. Deadline Window Filter
       if (deadlineFilter === "urgent_72h") {
-        if (drive.is_overdue || drive.days_left > 3) return false;
+        if (drive.is_overdue || drive.days_left > 3 || drive.application_status !== "not_applied") return false;
       } else if (deadlineFilter === "next_7d") {
         if (drive.is_overdue || drive.days_left > 7) return false;
       } else if (deadlineFilter === "next_30d") {

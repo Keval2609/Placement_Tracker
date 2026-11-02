@@ -20,12 +20,31 @@ export const PrototypeDriveCard: React.FC<PrototypeDriveCardProps> = ({
   onStatusChange,
 }) => {
   const getUrgencyChip = () => {
+    const isPipelineActive = ["applied", "oa", "interview"].includes(drive.application_status);
     if (drive.is_overdue) {
+      if (isPipelineActive) {
+        return {
+          label: "In Pipeline (Closed)",
+          style: "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 font-semibold",
+        };
+      }
       return {
         label: "Closed / Ended",
         style: "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700",
       };
     }
+
+    if (drive.application_status !== "not_applied") {
+      const daysText =
+        drive.days_left === 0
+          ? "Closes Today"
+          : `${drive.days_left}d left`;
+      return {
+        label: `Applied (${daysText})`,
+        style: "bg-blue-50 dark:bg-blue-950/40 text-[#1c69d4] dark:text-blue-300 border-blue-200 dark:border-blue-900/60 font-semibold",
+      };
+    }
+
     if (drive.days_left === 0) {
       return {
         label: "Closes Today",

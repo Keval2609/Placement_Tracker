@@ -44,7 +44,10 @@ export const DashboardTableView: React.FC<DashboardTableViewProps> = ({
               </tr>
             ) : (
               drives.map((drive) => {
-                const isUrgent = !drive.is_overdue && drive.days_left <= 2;
+                const isUrgent =
+                  !drive.is_overdue &&
+                  drive.days_left <= 2 &&
+                  drive.application_status === "not_applied";
                 return (
                   <tr
                     key={drive.id}
