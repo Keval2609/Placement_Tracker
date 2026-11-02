@@ -13,10 +13,10 @@ Handles:
 
 import json
 import logging
-from pathlib import Path
 import uuid
 import zoneinfo
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -42,7 +42,7 @@ _LINKS_FILE = _DATA_DIR / "telegram_links.json"
 def _load_persisted_telegram_links() -> dict[str, str]:
     if _LINKS_FILE.exists():
         try:
-            with open(_LINKS_FILE, "r", encoding="utf-8") as f:
+            with open(_LINKS_FILE, encoding="utf-8") as f:
                 data = json.load(f)
                 if isinstance(data, dict):
                     return {str(k): str(v) for k, v in data.items()}
@@ -284,7 +284,8 @@ async def send_telegram_test_message_async(
         return (
             False,
             "TELEGRAM_BOT_TOKEN is not configured on the backend server. "
-            "Please configure TELEGRAM_BOT_TOKEN in your environment variables to enable live Telegram delivery.",
+            "Please configure TELEGRAM_BOT_TOKEN in your environment variables "
+            "to enable live Telegram delivery.",
         )
 
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
@@ -293,7 +294,8 @@ async def send_telegram_test_message_async(
         "✅ <b>Placement Tracker — Delivery Test</b>\n\n"
         "Your Telegram account is connected successfully!\n"
         f"📅 Verified at: {now_str} (IST)\n\n"
-        "<i>If you miss an application deadline push alert, an automated escalation will arrive here.</i>"
+        "<i>If you miss an application deadline push alert, "
+        "an automated escalation will arrive here.</i>"
     )
     payload = {"chat_id": target_chat_id, "text": text, "parse_mode": "HTML"}
 

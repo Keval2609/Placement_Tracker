@@ -166,7 +166,10 @@ async def test_escalation_logic_unacked_push_to_telegram() -> None:
 
 
 def test_applied_drive_skips_deadline_alert() -> None:
-    """Acceptance Criteria: Once a drive has been marked 'applied' (or beyond), deadline alerts are skipped."""
+    """Acceptance Criteria: Once a drive has been marked 'applied' (or beyond),
+
+    deadline alerts are skipped.
+    """
     from app.dependencies import DEFAULT_MOCK_USER_ID
 
     # 1. Register push subscription
