@@ -31,6 +31,7 @@ export interface DrivePostingDraft {
   min_cgpa?: number | null;
   eligible_branches?: string[];
   application_link?: string | null;
+  ctc_display?: string | null;
   application_status?: ApplicationStatus;
   dates: DetectedDateDraft[];
 }
@@ -43,6 +44,7 @@ export interface ExtractionAPIResponse {
     min_cgpa?: number | null;
     eligible_branches?: string[];
     application_link?: string | null;
+    ctc_display?: string | null;
     dates: {
       date_type: DateType;
       label?: string | null;

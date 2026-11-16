@@ -107,17 +107,27 @@ export const PrototypeDriveDetailModal: React.FC<PrototypeDriveDetailModalProps>
             <div className="px-4 py-1.5 rounded-md bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 text-[#1c69d4] dark:text-blue-400 font-bold text-lg sm:text-xl">
               {drive.ctc_display}
             </div>
-            {drive.application_link && (
-              <a
-                href={drive.application_link}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-[0.5px] text-white bg-[#1c69d4] hover:bg-blue-700 rounded-md transition-colors cursor-pointer"
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsAddingUpdate(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-200 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 rounded-md transition-colors cursor-pointer"
               >
-                <span>Portal Link</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            )}
+                <Plus className="w-3.5 h-3.5 text-[#1c69d4] dark:text-blue-400" />
+                <span>Add Update</span>
+              </button>
+              {drive.application_link && (
+                <a
+                  href={drive.application_link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-[0.5px] text-white bg-[#1c69d4] hover:bg-blue-700 rounded-md transition-colors cursor-pointer"
+                >
+                  <span>Portal Link</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              )}
+            </div>
           </div>
         </div>
 

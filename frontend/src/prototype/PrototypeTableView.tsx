@@ -1,15 +1,17 @@
 import React from "react";
 import { PrototypeDrive } from "./mockData";
-import { ChevronRight, Clock } from "lucide-react";
+import { ChevronRight, Clock, Plus } from "lucide-react";
 
 interface PrototypeTableViewProps {
   drives: PrototypeDrive[];
   onSelect: (drive: PrototypeDrive) => void;
+  onAddUpdate?: (driveId: string) => void;
 }
 
 export const PrototypeTableView: React.FC<PrototypeTableViewProps> = ({
   drives,
   onSelect,
+  onAddUpdate,
 }) => {
   return (
     <div className="overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-lg shadow-xs">
@@ -100,9 +102,26 @@ export const PrototypeTableView: React.FC<PrototypeTableViewProps> = ({
 
                     {/* Action */}
                     <td className="py-3 px-4 text-right">
-                      <span className="inline-flex items-center gap-1 text-xs text-[#1c69d4] dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300 font-bold uppercase tracking-[1.5px] transition-colors">
-                        View <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                      </span>
+                      <div className="inline-flex items-center gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
+                        {onAddUpdate && (
+                          <button
+                            type="button"
+                            aria-label={`Add update notice for ${drive.company_name}`}
+                            onClick={() => onAddUpdate(drive.id)}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 hover:text-[#1c69d4] dark:hover:text-blue-400 px-2 py-1 rounded-sm border border-neutral-200 dark:border-neutral-700 hover:border-[#1c69d4] dark:hover:border-blue-400 bg-neutral-50 dark:bg-neutral-800 transition-colors cursor-pointer"
+                            title="Add update notice"
+                          >
+                            <Plus className="w-3 h-3 text-[#1c69d4] dark:text-blue-400" />
+                            <span>Update</span>
+                          </button>
+                        )}
+                        <span
+                          onClick={() => onSelect(drive)}
+                          className="inline-flex items-center gap-1 text-xs text-[#1c69d4] dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300 font-bold uppercase tracking-[1.5px] transition-colors cursor-pointer"
+                        >
+                          View <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                        </span>
+                      </div>
                     </td>
                   </tr>
                 );

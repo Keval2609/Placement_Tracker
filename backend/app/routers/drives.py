@@ -16,6 +16,7 @@ from app.models.drives import (
     DriveListResponse,
     DriveResponse,
     DriveTimelineResponse,
+    UpdateDriveRequest,
 )
 from app.models.extraction import DriveUpdateDraftResponse
 from app.services.drive_service import (
@@ -26,6 +27,7 @@ from app.services.drive_service import (
     get_drive_timeline,
     list_drives_for_dashboard,
     save_drive,
+    update_drive,
 )
 
 router = APIRouter(prefix="/drives", tags=["Drives"])
@@ -82,6 +84,7 @@ async def create_drive(
                 "application_status": form.get("application_status"),
                 "min_cgpa": float(form.get("min_cgpa")) if form.get("min_cgpa") else None,
                 "application_link": form.get("application_link"),
+                "ctc_display": form.get("ctc_display"),
             }
             dates_raw = form.get("dates")
             if dates_raw and isinstance(dates_raw, str):
@@ -136,6 +139,20 @@ async def fetch_drive_detail(
     user_id: Annotated[str, Depends(get_current_user_id)],
 ) -> DriveDetailResponse:
     return get_drive_detail(drive_id=id, user_id=user_id)
+
+
+@router.patch(
+    "/{id}",
+    response_model=DriveDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Directly edit drive details (CTC package, role, criteria, link)",
+)
+async def update_drive_details(
+    id: str,
+    payload: UpdateDriveRequest,
+    user_id: Annotated[str, Depends(get_current_user_id)],
+) -> DriveDetailResponse:
+    return update_drive(drive_id=id, user_id=user_id, payload=payload)
 
 
 @router.get(

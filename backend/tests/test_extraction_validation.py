@@ -197,3 +197,61 @@ def test_call_groq_success(mock_groq_class: MagicMock) -> None:
     dummy_settings = Settings(groq_api_key="gsk_dummy_key")
     out = _call_groq("sys", "user text", dummy_settings)
     assert out == '{"postings": []}'
+
+
+def test_extraction_result_with_ctc() -> None:
+    """ExtractionResult validates and stores ctc_display correctly."""
+    valid_json = """{
+        "postings": [
+            {
+                "company_name": "Google",
+                "role_title": "Software Engineer",
+                "ctc_display": "₹34.50 LPA",
+                "dates": [
+                    {
+                        "date_type": "application_deadline",
+                        "label": "Application Deadline",
+                        "date_iso": "2026-08-15T23:59:59+05:30",
+                        "date_raw": "Aug 15"
+                    }
+                ]
+            }
+        ]
+    }"""
+    result = ExtractionResult.model_validate_json(valid_json)
+    assert len(result.postings) == 1
+    assert result.postings[0].ctc_display == "₹34.50 LPA"
+
+
+def test_heuristic_fallback_extraction_extracts_ctc() -> None:
+    """Heuristic fallback parses CTC/package line when LLM is unavailable."""
+    from app.services.llm import _heuristic_fallback_extraction
+
+    notice = """
+    Hiring Drive for Microsoft
+    Role: Software Engineer
+    Package (CTC): 28.00 LPA (16L Base + 12L Stocks)
+    Apply before: 15 Sep 2026
+    """
+    result = _heuristic_fallback_extraction(notice, "2026-09-01T10:00:00+05:30")
+    assert len(result.postings) == 1
+    assert "28.00 LPA" in (result.postings[0].ctc_display or "")
+
+
+def test_normalize_extraction_payload_ctc() -> None:
+    """normalize_extraction_payload handles 'ctc', 'salary', and 'package' keys."""
+    from app.services.llm import normalize_extraction_payload
+
+    data = {
+        "postings": [
+            {
+                "company_name": "Stripe",
+                "role_title": "SWE",
+                "salary": "₹30 LPA",
+                "dates": [],
+            }
+        ]
+    }
+    normalized = normalize_extraction_payload(data, "raw text", "2026-09-01T10:00:00+05:30")
+    assert normalized["postings"][0]["ctc_display"] == "₹30 LPA"
+

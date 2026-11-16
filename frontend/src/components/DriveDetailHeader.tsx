@@ -1,10 +1,11 @@
 import React from "react";
-import { Building2, Calendar, Plus, ExternalLink, Award, GraduationCap } from "lucide-react";
+import { Building2, Calendar, Plus, ExternalLink, Award, GraduationCap, IndianRupee, Pencil } from "lucide-react";
 import { DriveDetail } from "../types/drive";
 
 interface DriveDetailHeaderProps {
   drive: DriveDetail;
   onOpenAddUpdate: () => void;
+  onOpenEditDrive?: () => void;
 }
 
 const APP_STATUS_BADGES: Record<string, { label: string; style: string }> = {
@@ -20,6 +21,7 @@ const APP_STATUS_BADGES: Record<string, { label: string; style: string }> = {
 export const DriveDetailHeader: React.FC<DriveDetailHeaderProps> = ({
   drive,
   onOpenAddUpdate,
+  onOpenEditDrive,
 }) => {
   const statusBadge = APP_STATUS_BADGES[drive.application_status] || APP_STATUS_BADGES.not_applied;
 
@@ -69,7 +71,18 @@ export const DriveDetailHeader: React.FC<DriveDetailHeaderProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {onOpenEditDrive && (
+            <button
+              type="button"
+              onClick={onOpenEditDrive}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-[0.5px] text-white bg-transparent hover:bg-white/10 border border-white transition-colors cursor-pointer"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              <span>Edit Drive</span>
+            </button>
+          )}
+
           {drive.application_link && (
             <a
               href={drive.application_link}
@@ -94,7 +107,18 @@ export const DriveDetailHeader: React.FC<DriveDetailHeaderProps> = ({
       </div>
 
       {/* Drive Metadata Row - BMW Spec Cells */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 pt-4 border-t border-white/10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-white/10">
+        {/* CTC / Package */}
+        <div className="p-3.5 bg-[#262e38] border border-white/10 space-y-1">
+          <div className="text-[11px] text-[#bbbbbb] font-bold uppercase tracking-[1.5px] flex items-center gap-1.5">
+            <IndianRupee className="w-3.5 h-3.5 text-emerald-400" />
+            <span>CTC Package</span>
+          </div>
+          <div className="text-xs sm:text-sm font-bold text-white font-mono">
+            {drive.ctc_display || "Not Disclosed"}
+          </div>
+        </div>
+
         <div className="p-3.5 bg-[#262e38] border border-white/10 space-y-1">
           <div className="text-[11px] text-[#bbbbbb] font-bold uppercase tracking-[1.5px] flex items-center gap-1.5">
             <Award className="w-3.5 h-3.5 text-amber-400" />

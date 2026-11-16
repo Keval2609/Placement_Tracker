@@ -1,9 +1,10 @@
 import React from "react";
-import { MessageSquare, FileText, File, History, Sparkles } from "lucide-react";
+import { MessageSquare, FileText, File, History, Sparkles, Plus } from "lucide-react";
 import { TimelineEvent } from "../types/drive";
 
 interface TimelineSectionProps {
   timeline: TimelineEvent[];
+  onOpenAddUpdate?: () => void;
 }
 
 const SOURCE_ICONS: Record<string, React.ReactNode> = {
@@ -12,7 +13,7 @@ const SOURCE_ICONS: Record<string, React.ReactNode> = {
   docx: <File className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />,
 };
 
-export const TimelineSection: React.FC<TimelineSectionProps> = ({ timeline }) => {
+export const TimelineSection: React.FC<TimelineSectionProps> = ({ timeline, onOpenAddUpdate }) => {
   const formatDate = (isoStr: string) => {
     try {
       const d = new Date(isoStr);
@@ -30,7 +31,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({ timeline }) =>
 
   return (
     <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-6 space-y-4 shadow-xs transition-colors">
-      <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-3.5">
+      <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-3.5 flex-wrap gap-2">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 bg-[#1a2129] rounded-md text-white flex items-center justify-center">
             <History className="w-4 h-4" />
@@ -39,9 +40,21 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({ timeline }) =>
             Drive Updates & Event Timeline
           </h2>
         </div>
-        <span className="text-xs px-2.5 py-1 rounded-sm bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700 font-mono">
-          {timeline.length} {timeline.length === 1 ? "entry" : "entries"}
-        </span>
+        <div className="flex items-center gap-2">
+          {onOpenAddUpdate && (
+            <button
+              type="button"
+              onClick={onOpenAddUpdate}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-bmw-primary dark:text-blue-400 hover:text-white hover:bg-bmw-primary rounded-md border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/30 transition-colors cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Update</span>
+            </button>
+          )}
+          <span className="text-xs px-2.5 py-1 rounded-sm bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700 font-mono">
+            {timeline.length} {timeline.length === 1 ? "entry" : "entries"}
+          </span>
+        </div>
       </div>
 
       <div className="relative pl-6 space-y-5 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-[2px] before:bg-neutral-200 dark:before:bg-neutral-800">

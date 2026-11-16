@@ -118,3 +118,14 @@ export interface ConfirmUpdateResponse {
   added_dates_count: number;
   updated_fields_count: number;
 }
+
+export interface UpdateDrivePayload {
+  ctc_display?: string | null;
+  role_title?: string;
+  min_cgpa?: number | null;
+  eligible_branches?: string[];
+  application_link?: string | null;
+  job_description?: string | null;
+  eligibility_raw?: string | null;
+}
+

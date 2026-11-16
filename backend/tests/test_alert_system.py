@@ -91,6 +91,9 @@ def test_telegram_test_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
     client.post("/telegram/link", json={"chat_id": "987654321"})
 
     # Case 1: bot token not set -> should return 400 with helpful explanation
+    from app.config import get_settings
+    dummy_settings = get_settings().model_copy(update={"telegram_bot_token": ""})
+    monkeypatch.setattr("app.services.alert_service.get_settings", lambda: dummy_settings)
     resp = client.post("/telegram/test")
     assert resp.status_code == 400
     assert "TELEGRAM_BOT_TOKEN is not configured" in resp.json()["detail"]

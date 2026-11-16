@@ -12,6 +12,7 @@ import {
   ExternalLink,
   CheckCircle2,
   BookmarkCheck,
+  IndianRupee,
 } from "lucide-react";
 import { ingestFile, ingestText, createDrive } from "../services/api";
 import { ExtractionAPIResponse } from "../types/extraction";
@@ -63,6 +64,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
   const [applicationStatus, setApplicationStatus] = useState<ApplicationStatus>("applied");
   const [deadlineDate, setDeadlineDate] = useState("");
   const [minCgpa, setMinCgpa] = useState("");
+  const [ctcDisplay, setCtcDisplay] = useState("");
   const [applicationLink, setApplicationLink] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -127,6 +129,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
         job_description: jobDescription.trim(),
         eligibility_raw: jobDescription.trim(),
         min_cgpa: minCgpa ? parseFloat(minCgpa) : null,
+        ctc_display: ctcDisplay.trim() || null,
         eligible_branches: [],
         application_link: applicationLink.trim() || null,
         application_status: applicationStatus,
@@ -492,20 +495,38 @@ export const IngestInput: React.FC<IngestInputProps> = ({
             </div>
           </div>
 
-          {/* Application Portal Link */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
-              <ExternalLink className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
-              <span>Application Portal URL (Optional)</span>
-            </label>
-            <input
-              type="url"
-              value={applicationLink}
-              onChange={(e) => setApplicationLink(e.target.value)}
-              placeholder="https://company.careers/job/12345"
-              className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-bmw-primary"
-              disabled={loading}
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Salary / Package (CTC) */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
+                <IndianRupee className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+                <span>Salary / Package CTC (Optional)</span>
+              </label>
+              <input
+                type="text"
+                value={ctcDisplay}
+                onChange={(e) => setCtcDisplay(e.target.value)}
+                placeholder="e.g. ₹18 LPA or 12-15 LPA"
+                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-bmw-primary"
+                disabled={loading}
+              />
+            </div>
+
+            {/* Application Portal Link */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
+                <ExternalLink className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+                <span>Application Portal URL (Optional)</span>
+              </label>
+              <input
+                type="url"
+                value={applicationLink}
+                onChange={(e) => setApplicationLink(e.target.value)}
+                placeholder="https://company.careers/job/12345"
+                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-bmw-primary"
+                disabled={loading}
+              />
+            </div>
           </div>
 
           {/* Form Actions */}

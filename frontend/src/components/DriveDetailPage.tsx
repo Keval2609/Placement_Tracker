@@ -4,6 +4,7 @@ import { DriveDetailHeader } from "./DriveDetailHeader";
 import { JobDescriptionCard } from "./JobDescriptionCard";
 import { TimelineSection } from "./TimelineSection";
 import { AddUpdateModal } from "./AddUpdateModal";
+import { EditDriveModal } from "./EditDriveModal";
 import { DriveDetail, TimelineEvent } from "../types/drive";
 import { fetchDriveDetail, fetchDriveTimeline } from "../services/api";
 
@@ -22,6 +23,7 @@ export const DriveDetailPage: React.FC<DriveDetailPageProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const [isAddUpdateOpen, setIsAddUpdateOpen] = useState<boolean>(false);
+  const [isEditDriveOpen, setIsEditDriveOpen] = useState<boolean>(false);
 
   const loadAllDriveData = useCallback(async () => {
     setIsLoading(true);
@@ -98,6 +100,7 @@ export const DriveDetailPage: React.FC<DriveDetailPageProps> = ({
       <DriveDetailHeader
         drive={drive}
         onOpenAddUpdate={() => setIsAddUpdateOpen(true)}
+        onOpenEditDrive={() => setIsEditDriveOpen(true)}
       />
 
       {/* Job Details & Description Card */}
@@ -115,6 +118,17 @@ export const DriveDetailPage: React.FC<DriveDetailPageProps> = ({
         isOpen={isAddUpdateOpen}
         onClose={() => setIsAddUpdateOpen(false)}
         onUpdateConfirmed={loadAllDriveData}
+      />
+
+      {/* Edit Drive Modal */}
+      <EditDriveModal
+        drive={drive}
+        isOpen={isEditDriveOpen}
+        onClose={() => setIsEditDriveOpen(false)}
+        onDriveUpdated={(updated) => {
+          setDrive(updated);
+          loadAllDriveData();
+        }}
       />
     </div>
   );

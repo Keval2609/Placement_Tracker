@@ -7,6 +7,7 @@ import { DashboardFunnelView } from "./DashboardFunnelView";
 import { DashboardTableView } from "./DashboardTableView";
 import { DashboardMetricsStrip } from "./DashboardMetricsStrip";
 import { DriveDetailModal } from "./DriveDetailModal";
+import { AddUpdateModal } from "./AddUpdateModal";
 import { ApplicationStatus, DriveCard } from "../types/drive";
 import { fetchDashboardDrives } from "../services/api";
 
@@ -30,6 +31,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   // Selected modal drive (Modal-First Drive Inspection)
   const [modalDriveId, setModalDriveId] = useState<string | null>(null);
+
+  // Selected drive for 1-click Direct Add Update Modal
+  const [addUpdateDriveId, setAddUpdateDriveId] = useState<string | null>(null);
 
   // View Mode: Cards / Pipeline Funnel / Table
   const [viewMode, setViewMode] = useState<DashboardViewMode>("grid");
@@ -212,11 +216,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               drives={filteredDrives}
               onSelectDrive={handleDriveCardClick}
               onStatusUpdated={loadDrives}
+              onAddUpdate={(id) => setAddUpdateDriveId(id)}
             />
           ) : viewMode === "table" ? (
             <DashboardTableView
               drives={filteredDrives}
               onSelectDrive={handleDriveCardClick}
+              onAddUpdate={(id) => setAddUpdateDriveId(id)}
             />
           ) : (
             <div className="space-y-8">
@@ -239,6 +245,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         drive={drive}
                         onSelectDrive={handleDriveCardClick}
                         onStatusUpdated={loadDrives}
+                        onAddUpdate={(id) => setAddUpdateDriveId(id)}
                       />
                     ))}
                   </div>
@@ -260,6 +267,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         drive={drive}
                         onSelectDrive={handleDriveCardClick}
                         onStatusUpdated={loadDrives}
+                        onAddUpdate={(id) => setAddUpdateDriveId(id)}
                       />
                     ))}
                   </div>
@@ -276,6 +284,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         onClose={() => setModalDriveId(null)}
         onStatusUpdated={loadDrives}
       />
+
+      {/* 1-Click Direct Add Update Modal */}
+      {addUpdateDriveId && (
+        <AddUpdateModal
+          driveId={addUpdateDriveId}
+          isOpen={true}
+          onClose={() => setAddUpdateDriveId(null)}
+          onUpdateConfirmed={async () => {
+            setAddUpdateDriveId(null);
+            await loadDrives();
+          }}
+        />
+      )}
     </div>
   );
 };

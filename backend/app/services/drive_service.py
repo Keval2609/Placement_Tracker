@@ -38,6 +38,7 @@ from app.models.drives import (
     DriveResponse,
     DriveTimelineResponse,
     TimelineEvent,
+    UpdateDriveRequest,
 )
 from app.models.extraction import DriveUpdateDraftResponse
 from app.services.company_classifier import classify_company
@@ -60,9 +61,12 @@ _in_memory_update_drafts: dict[str, dict[str, Any]] = {}
 ALLOWED_DRIVE_FIELDS = {
     "min_cgpa",
     "eligibility_raw",
+    "job_description",
     "role_title",
     "application_link",
     "eligible_branches",
+    "ctc_display",
+    "location",
 }
 
 
@@ -311,6 +315,7 @@ def save_drive(
         "job_description": desc,
         "min_cgpa": payload.min_cgpa,
         "eligible_branches": payload.eligible_branches,
+        "ctc_display": payload.ctc_display,
         "status": "confirmed",
         "created_at": now_iso,
     }
@@ -373,14 +378,16 @@ def save_drive(
             supabase = get_service_client()
             try:
                 supabase.table("drives").insert(drive_row).execute()
-            except Exception as insert_err:
-                if "job_description" in drive_row:
-                    drive_row_compat = {
-                        k: v for k, v in drive_row.items() if k != "job_description"
-                    }
-                    supabase.table("drives").insert(drive_row_compat).execute()
-                else:
-                    raise insert_err
+            except Exception:
+                filtered_row = dict(drive_row)
+                if "ctc_display" in filtered_row:
+                    del filtered_row["ctc_display"]
+                try:
+                    supabase.table("drives").insert(filtered_row).execute()
+                except Exception:
+                    if "job_description" in filtered_row:
+                        del filtered_row["job_description"]
+                    supabase.table("drives").insert(filtered_row).execute()
             supabase.table("drive_dates").insert(date_rows).execute()
             supabase.table("applications").insert(app_row).execute()
             if doc_row:
@@ -468,6 +475,7 @@ def build_existing_drive_summary(drive_id: str, user_id: str) -> str:
     lines = [
         f"Company: {company_name}",
         f"Role Title: {drive_data.get('role_title', 'N/A')}",
+        f"CTC / Salary: {drive_data.get('ctc_display') or 'N/A'}",
         f"Eligibility Raw: {drive_data.get('eligibility_raw') or 'N/A'}",
         f"Min CGPA: {min_cgpa_str}",
         f"Eligible Branches: {branches_str}",
@@ -784,6 +792,7 @@ def get_drive_detail(drive_id: str, user_id: str) -> DriveDetailResponse:
         min_cgpa=float(drive_data["min_cgpa"]) if drive_data.get("min_cgpa") is not None else None,
         eligible_branches=branches,
         application_link=drive_data.get("application_link"),
+        ctc_display=drive_data.get("ctc_display"),
         status=drive_data.get("status", "confirmed"),
         application_status=app_status,
         created_at=str(drive_data.get("created_at") or datetime.now(KOLKATA_TZ).isoformat()),
@@ -1031,6 +1040,7 @@ def list_drives_for_dashboard(user_id: str) -> DriveListResponse:
                 days_left=days_left,
                 is_overdue=is_overdue,
                 created_at=d.get("created_at", now_dt.isoformat()),
+                ctc_display=d.get("ctc_display"),
             )
         )
 
@@ -1136,3 +1146,64 @@ def update_application_status(
         notes=app_row.get("notes"),
         updated_at=now_iso,
     )
+
+
+def update_drive(
+    drive_id: str,
+    user_id: str,
+    payload: UpdateDriveRequest,
+) -> DriveDetailResponse:
+    """Directly update drive details (CTC, role, eligibility, links) and return updated detail."""
+    settings = get_settings()
+
+    # Verify drive exists (raises 404 if not found)
+    _ = get_drive_detail(drive_id=drive_id, user_id=user_id)
+
+    # Collect fields explicitly provided
+    update_data = payload.model_dump(exclude_unset=True)
+
+    # Sync job_description and eligibility_raw if one is provided
+    if "job_description" in update_data and "eligibility_raw" not in update_data:
+        update_data["eligibility_raw"] = update_data["job_description"]
+    elif "eligibility_raw" in update_data and "job_description" not in update_data:
+        update_data["job_description"] = update_data["eligibility_raw"]
+
+    use_supabase = bool(settings.supabase_url and settings.supabase_service_role_key)
+    if use_supabase:
+        try:
+            supabase = get_service_client()
+            filtered_fields = {
+                k: v for k, v in update_data.items()
+                if k in ALLOWED_DRIVE_FIELDS
+            }
+            if filtered_fields:
+                try:
+                    (
+                        supabase.table("drives")
+                        .update(filtered_fields)
+                        .eq("id", drive_id)
+                        .execute()
+                    )
+                except Exception as inner_err:
+                    if "job_description" in filtered_fields:
+                        del filtered_fields["job_description"]
+                        (
+                            supabase.table("drives")
+                            .update(filtered_fields)
+                            .eq("id", drive_id)
+                            .execute()
+                        )
+                    else:
+                        raise inner_err
+        except Exception as err:
+            logger.warning("Failed updating drive in Supabase: %s", err)
+            use_supabase = False
+
+    # Also update in-memory cache for fallback and tests
+    if drive_id in _in_memory_drives:
+        for k, v in update_data.items():
+            if k in ALLOWED_DRIVE_FIELDS:
+                _in_memory_drives[drive_id][k] = v
+
+    return get_drive_detail(drive_id=drive_id, user_id=user_id)
+
