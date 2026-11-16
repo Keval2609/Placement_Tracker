@@ -8,16 +8,20 @@ import {
   Loader2,
   AlertCircle,
   Plus,
+  Pencil,
+  Check,
 } from "lucide-react";
 import { DriveDetail, TimelineEvent, ApplicationStatus } from "../types/drive";
 import {
   fetchDriveDetail,
   fetchDriveTimeline,
   updateApplicationStatus,
+  updateDrive,
 } from "../services/api";
 import { JobDescriptionCard } from "./JobDescriptionCard";
 import { TimelineSection } from "./TimelineSection";
 import { AddUpdateModal } from "./AddUpdateModal";
+import { EditDriveModal } from "./EditDriveModal";
 
 interface DriveDetailModalProps {
   driveId: string | null;
@@ -48,6 +52,35 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
   const [isAddUpdateOpen, setIsAddUpdateOpen] = useState<boolean>(false);
+  const [isEditDriveOpen, setIsEditDriveOpen] = useState<boolean>(false);
+
+  // Quick Inline CTC Edit state
+  const [isEditingCtc, setIsEditingCtc] = useState<boolean>(false);
+  const [editedCtcValue, setEditedCtcValue] = useState<string>("");
+  const [isSavingCtc, setIsSavingCtc] = useState<boolean>(false);
+
+  const startEditingCtc = () => {
+    if (!drive) return;
+    setEditedCtcValue(drive.ctc_display || "");
+    setIsEditingCtc(true);
+  };
+
+  const handleSaveQuickCtc = async () => {
+    if (!drive) return;
+    setIsSavingCtc(true);
+    try {
+      const updated = await updateDrive(drive.id, {
+        ctc_display: editedCtcValue.trim() || null,
+      });
+      setDrive(updated);
+      setIsEditingCtc(false);
+      if (onStatusUpdated) onStatusUpdated();
+    } catch (err) {
+      console.error("Failed to update CTC:", err);
+    } finally {
+      setIsSavingCtc(false);
+    }
+  };
 
   const loadData = useCallback(async () => {
     if (!driveId) return;
@@ -193,12 +226,75 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
                 </div>
               </div>
 
-              {/* CTC & Actions (Open Portal + Add Update) */}
+              {/* CTC & Actions (Open Portal + Edit Drive + Add Update) */}
               <div className="flex sm:flex-col items-end gap-2 shrink-0">
-                <div className="px-4 py-1.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-bmw-primary dark:text-blue-400 font-bold text-lg sm:text-xl rounded-md">
-                  {drive.ctc_display || "Not Disclosed"}
-                </div>
+                {/* CTC Display / Quick Edit Widget */}
+                {isEditingCtc ? (
+                  <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-neutral-800 border border-bmw-primary rounded-md shadow-sm">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={editedCtcValue}
+                      onChange={(e) => setEditedCtcValue(e.target.value)}
+                      placeholder="e.g. ₹34.5 LPA"
+                      className="px-2 py-1 text-xs font-bold text-neutral-900 dark:text-white bg-transparent border-none focus:outline-none w-28 sm:w-36"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleSaveQuickCtc();
+                        if (e.key === "Escape") setIsEditingCtc(false);
+                      }}
+                      disabled={isSavingCtc}
+                    />
+                    <button
+                      type="button"
+                      aria-label="Save CTC"
+                      onClick={handleSaveQuickCtc}
+                      disabled={isSavingCtc}
+                      className="p-1 bg-bmw-primary text-white rounded hover:bg-bmw-primary-active transition-colors cursor-pointer disabled:opacity-50"
+                      title="Save CTC"
+                    >
+                      {isSavingCtc ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Check className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Cancel editing CTC"
+                      onClick={() => setIsEditingCtc(false)}
+                      disabled={isSavingCtc}
+                      className="p-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors cursor-pointer"
+                      title="Cancel"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="group relative flex items-center gap-2 px-4 py-1.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-bmw-primary dark:text-blue-400 font-bold text-lg sm:text-xl rounded-md transition-all">
+                    <span>{drive.ctc_display || "Not Disclosed"}</span>
+                    <button
+                      type="button"
+                      aria-label="Quick edit CTC"
+                      onClick={startEditingCtc}
+                      className="p-1 rounded text-neutral-400 hover:text-bmw-primary dark:hover:text-blue-300 hover:bg-blue-100/60 dark:hover:bg-blue-900/60 transition-colors cursor-pointer"
+                      title="Quick edit CTC"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+
                 <div className="flex items-center gap-2 flex-wrap justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditDriveOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-700 rounded-md transition-colors cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
+                    title="Edit drive details (CTC, criteria, branches, portal link)"
+                  >
+                    <Pencil className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+                    <span>Edit Drive</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => setIsAddUpdateOpen(true)}
@@ -268,6 +364,18 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
               isOpen={isAddUpdateOpen}
               onClose={() => setIsAddUpdateOpen(false)}
               onUpdateConfirmed={loadData}
+            />
+
+            {/* Edit Drive Modal */}
+            <EditDriveModal
+              drive={drive}
+              isOpen={isEditDriveOpen}
+              onClose={() => setIsEditDriveOpen(false)}
+              onDriveUpdated={(updated) => {
+                setDrive(updated);
+                loadData();
+                if (onStatusUpdated) onStatusUpdated();
+              }}
             />
           </div>
         )}

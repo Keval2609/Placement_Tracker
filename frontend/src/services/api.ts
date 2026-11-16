@@ -9,6 +9,7 @@ import {
   DriveDetail,
   DriveUpdateDraft,
   TimelineEvent,
+  UpdateDrivePayload,
 } from "../types/drive";
 
 const API_BASE_URL =
@@ -121,6 +122,26 @@ export async function fetchDriveDetail(id: string): Promise<DriveDetail> {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || `Drive not found (${response.status})`);
   }
+  return response.json();
+}
+
+export async function updateDrive(
+  id: string,
+  payload: UpdateDrivePayload
+): Promise<DriveDetail> {
+  const response = await apiFetch(`${API_BASE_URL}/drives/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Failed to update drive (${response.status})`);
+  }
+
   return response.json();
 }
 

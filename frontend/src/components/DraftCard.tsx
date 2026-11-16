@@ -7,6 +7,7 @@ import {
   Plus,
   AlertCircle,
   FileText,
+  IndianRupee,
 } from "lucide-react";
 import { DateType, DetectedDateDraft, DrivePostingDraft } from "../types/extraction";
 import { DateRow } from "./DateRow";
@@ -140,6 +141,22 @@ export const DraftCard: React.FC<DraftCardProps> = ({
             placeholder="e.g. Software Engineer / SDE Intern"
             className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400"
             required
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-[1px] text-neutral-800 dark:text-neutral-200 mb-1 flex items-center gap-1.5">
+            <IndianRupee className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+            Salary / CTC Package
+          </label>
+          <input
+            type="text"
+            value={posting.ctc_display ?? ""}
+            onChange={(e) =>
+              handleFieldChange("ctc_display", e.target.value || null)
+            }
+            placeholder="e.g. ₹34.5 LPA or 18 LPA"
+            className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400"
           />
         </div>
 

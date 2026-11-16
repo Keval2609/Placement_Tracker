@@ -33,6 +33,7 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
           min_cgpa: null,
           eligible_branches: [],
           application_link: null,
+          ctc_display: null,
           dates: [],
         },
       ];
@@ -46,6 +47,7 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
       min_cgpa: p.min_cgpa ?? null,
       eligible_branches: p.eligible_branches || [],
       application_link: p.application_link || null,
+      ctc_display: p.ctc_display || null,
       dates: (p.dates || []).map((d, dIdx) => ({
         id: `date_${Date.now()}_${pIdx}_${dIdx}`,
         date_type: d.date_type,

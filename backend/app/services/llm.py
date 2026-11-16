@@ -271,6 +271,18 @@ def normalize_extraction_payload(
             except (ValueError, TypeError):
                 posting["min_cgpa"] = None
 
+        # Normalize ctc_display
+        ctc_val = (
+            posting.get("ctc_display")
+            or posting.get("ctc")
+            or posting.get("salary")
+            or posting.get("package")
+        )
+        if ctc_val and isinstance(ctc_val, (str, int, float)):
+            posting["ctc_display"] = str(ctc_val).strip()
+        else:
+            posting["ctc_display"] = None
+
         normalized_postings.append(posting)
 
     payload["postings"] = normalized_postings
@@ -316,6 +328,15 @@ def _heuristic_fallback_extraction(
                 break
 
     ref_iso = reference_date_iso or datetime.now(KOLKATA_TZ).isoformat()
+    ctc_val = None
+    ctc_match = re.search(
+        r"(?:package\s*\(ctc\)|package|ctc|salary|stipend)\s*[:\-]\s*([^\n\r]+)",
+        raw_text,
+        re.IGNORECASE,
+    )
+    if ctc_match:
+        ctc_val = ctc_match.group(1).strip("*_ ")
+
     posting = {
         "company_name": company_name,
         "role_title": role_title,
@@ -323,6 +344,7 @@ def _heuristic_fallback_extraction(
         "min_cgpa": None,
         "eligible_branches": [],
         "application_link": app_link,
+        "ctc_display": ctc_val,
         "dates": [
             {
                 "date_type": "application_deadline",

@@ -35,8 +35,22 @@ class CreateDriveRequest(BaseModel):
     min_cgpa: float | None = None
     eligible_branches: list[str] = Field(default_factory=list)
     application_link: str | None = None
+    ctc_display: str | None = None
     application_status: str | None = None
     dates: list[ConfirmedDateItem] = Field(default_factory=list)
+
+
+class UpdateDriveRequest(BaseModel):
+    """Payload sent by client to directly update existing drive details."""
+
+    ctc_display: str | None = None
+    role_title: str | None = None
+    min_cgpa: float | None = None
+    eligible_branches: list[str] | None = None
+    application_link: str | None = None
+    job_description: str | None = None
+    eligibility_raw: str | None = None
+    location: str | None = None
 
 
 class DriveResponse(BaseModel):
@@ -98,6 +112,7 @@ class DriveDetailResponse(BaseModel):
     min_cgpa: float | None = None
     eligible_branches: list[str] = Field(default_factory=list)
     application_link: str | None = None
+    ctc_display: str | None = None
     status: str = "confirmed"
     application_status: str = "not_applied"
     created_at: str
@@ -183,6 +198,7 @@ class DriveCardResponse(BaseModel):
     days_left: int
     is_overdue: bool
     created_at: str
+    ctc_display: str | None = None
 
 
 class DriveListResponse(BaseModel):

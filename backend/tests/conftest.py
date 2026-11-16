@@ -1,7 +1,11 @@
-import pytest
+import os
 
-from app.dependencies import DEFAULT_MOCK_USER_ID, get_current_user_id
-from app.main import app
+os.environ["SENTRY_DSN"] = ""
+
+import pytest  # noqa: E402
+
+from app.dependencies import DEFAULT_MOCK_USER_ID, get_current_user_id  # noqa: E402
+from app.main import app  # noqa: E402
 
 
 async def mock_get_current_user_id() -> str:
