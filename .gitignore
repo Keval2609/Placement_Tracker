@@ -31,6 +31,8 @@ dist-ssr/
 doc/
 docs/
 .agents/
+.agent/
+.audit/
 skills-lock.json
 .playwright-mcp/
 
