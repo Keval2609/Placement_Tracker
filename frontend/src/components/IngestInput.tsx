@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import {
   MessageSquareText,
   FileUp,
-  Sparkles,
+  FileText,
   AlertCircle,
   Loader2,
   Zap,
@@ -174,12 +174,12 @@ export const IngestInput: React.FC<IngestInputProps> = ({
             }}
             className={`flex items-center justify-center gap-2.5 py-3 px-4 text-xs font-bold uppercase tracking-[0.5px] rounded-md transition-all cursor-pointer ${
               entryType === "campus"
-                ? "bg-white dark:bg-neutral-900 text-bmw-primary dark:text-blue-400 shadow-xs border border-neutral-200 dark:border-neutral-700"
+                ? "bg-white dark:bg-neutral-900 text-tpo-cobalt dark:text-blue-400 shadow-xs border border-neutral-200 dark:border-neutral-700"
                 : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-neutral-700/50"
             }`}
           >
-            <Sparkles className="w-4 h-4 text-bmw-primary dark:text-blue-400" />
-            <span>Campus Drive (AI Parser)</span>
+            <FileText className="w-4 h-4 text-tpo-cobalt dark:text-blue-400" />
+            <span>Campus Notice (Parser)</span>
           </button>
 
           <button
@@ -190,11 +190,11 @@ export const IngestInput: React.FC<IngestInputProps> = ({
             }}
             className={`flex items-center justify-center gap-2.5 py-3 px-4 text-xs font-bold uppercase tracking-[0.5px] rounded-md transition-all cursor-pointer ${
               entryType === "off_campus"
-                ? "bg-white dark:bg-neutral-900 text-bmw-primary dark:text-blue-400 shadow-xs border border-neutral-200 dark:border-neutral-700"
+                ? "bg-white dark:bg-neutral-900 text-tpo-cobalt dark:text-blue-400 shadow-xs border border-neutral-200 dark:border-neutral-700"
                 : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-neutral-700/50"
             }`}
           >
-            <Briefcase className="w-4 h-4 text-bmw-primary dark:text-blue-400" />
+            <Briefcase className="w-4 h-4 text-tpo-cobalt dark:text-blue-400" />
             <span>Off-Campus Job (Manual Entry)</span>
           </button>
         </div>
@@ -203,20 +203,20 @@ export const IngestInput: React.FC<IngestInputProps> = ({
       {/* Header Info */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-5 border-b border-neutral-200 dark:border-neutral-800">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 bg-[#1a2129] rounded-md flex items-center justify-center text-white shrink-0">
+          <div className="w-11 h-11 bg-tpo-navy rounded-md flex items-center justify-center text-white shrink-0">
             {entryType === "campus" ? (
-              <Sparkles className="w-5 h-5 text-bmw-primary dark:text-blue-400" />
+              <FileText className="w-5 h-5 text-tpo-accent" />
             ) : (
-              <Briefcase className="w-5 h-5 text-bmw-primary dark:text-blue-400" />
+              <Briefcase className="w-5 h-5 text-tpo-cobalt dark:text-blue-400" />
             )}
           </div>
           <div>
-            <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white tracking-tight">
+            <h2 className="text-lg sm:text-xl font-serif font-bold text-neutral-900 dark:text-white tracking-tight">
               {entryType === "campus"
-                ? "Campus Placement Notice Parser"
+                ? "TPO Circular & Placement Notice Parser"
                 : "Manual Off-Campus Application"}
             </h2>
-            <p className="text-xs font-light text-neutral-500 dark:text-neutral-400 mt-0.5">
+            <p className="text-xs font-normal text-neutral-500 dark:text-neutral-400 mt-0.5">
               {entryType === "campus"
                 ? "Paste WhatsApp announcement or upload PDF / DOCX circular to extract deadlines & criteria."
                 : "Directly log an off-campus job application with role description and pipeline status (no AI parsing)."}
@@ -235,7 +235,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
               }}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.5px] rounded-sm transition-all cursor-pointer ${
                 activeTab === "text"
-                  ? "bg-bmw-primary text-white shadow-xs"
+                  ? "bg-tpo-cobalt text-white shadow-xs"
                   : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               }`}
             >
@@ -250,7 +250,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
               }}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.5px] rounded-sm transition-all cursor-pointer ${
                 activeTab === "file"
-                  ? "bg-bmw-primary text-white shadow-xs"
+                  ? "bg-tpo-cobalt text-white shadow-xs"
                   : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               }`}
             >
@@ -279,7 +279,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
             <button
               type="button"
               onClick={() => setRawText(SAMPLE_NOTICE)}
-              className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[0.5px] text-bmw-primary dark:text-blue-400 hover:underline transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[0.5px] text-tpo-cobalt dark:text-blue-400 hover:underline transition-colors cursor-pointer"
             >
               <Zap className="w-3.5 h-3.5" />
               <span>Load WhatsApp Sample</span>
@@ -291,7 +291,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
             value={rawText}
             onChange={(e) => setRawText(e.target.value)}
             placeholder="Paste announcement text here... (e.g., Company name, role, 11:59 PM deadline, CGPA criteria, Google form link)"
-            className="w-full p-4 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400 leading-relaxed font-sans"
+            className="w-full p-4 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-tpo-cobalt dark:focus:border-blue-400 leading-relaxed font-sans"
             disabled={loading}
           />
 
@@ -303,7 +303,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
             <button
               type="submit"
               disabled={loading || !rawText.trim()}
-              className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-bmw-primary hover:bg-blue-700 disabled:opacity-50 rounded-md transition-colors cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-tpo-cobalt hover:bg-blue-700 disabled:opacity-50 rounded-md transition-colors cursor-pointer shadow-xs"
             >
               {loading ? (
                 <>
@@ -312,7 +312,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4" />
+                  <FileText className="w-4 h-4" />
                   <span>Extract Placement Details</span>
                 </>
               )}
@@ -324,8 +324,8 @@ export const IngestInput: React.FC<IngestInputProps> = ({
       {/* Campus Mode - Tab 2: File Ingest Form */}
       {entryType === "campus" && activeTab === "file" && (
         <form onSubmit={handleFileSubmit} className="space-y-4">
-          <div className="border-2 border-dashed border-neutral-300 dark:border-neutral-700 hover:border-bmw-primary dark:hover:border-blue-400 rounded-lg p-8 sm:p-10 text-center space-y-3 transition-colors bg-neutral-50 dark:bg-neutral-800/40">
-            <div className="w-12 h-12 rounded-md bg-white dark:bg-neutral-800 text-bmw-primary dark:text-blue-400 border border-neutral-300 dark:border-neutral-700 flex items-center justify-center mx-auto">
+          <div className="border-2 border-dashed border-neutral-300 dark:border-neutral-700 hover:border-tpo-cobalt dark:hover:border-blue-400 rounded-lg p-8 sm:p-10 text-center space-y-3 transition-colors bg-neutral-50 dark:bg-neutral-800/40">
+            <div className="w-12 h-12 rounded-md bg-white dark:bg-neutral-800 text-tpo-cobalt dark:text-blue-400 border border-neutral-300 dark:border-neutral-700 flex items-center justify-center mx-auto">
               <FileUp className="w-6 h-6" />
             </div>
 
@@ -346,12 +346,12 @@ export const IngestInput: React.FC<IngestInputProps> = ({
                   setSelectedFile(e.target.files[0]);
                 }
               }}
-              className="block w-full text-xs text-neutral-600 dark:text-neutral-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:rounded-md file:text-xs file:font-bold file:uppercase file:tracking-[0.5px] file:bg-bmw-primary file:text-white hover:file:bg-blue-700 file:cursor-pointer max-w-xs mx-auto pt-2"
+              className="block w-full text-xs text-neutral-600 dark:text-neutral-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:rounded-md file:text-xs file:font-bold file:uppercase file:tracking-[0.5px] file:bg-tpo-cobalt file:text-white hover:file:bg-blue-700 file:cursor-pointer max-w-xs mx-auto pt-2"
               disabled={loading}
             />
 
             {selectedFile && (
-              <div className="pt-2 text-xs font-mono text-bmw-primary dark:text-blue-400">
+              <div className="pt-2 text-xs font-mono text-tpo-cobalt dark:text-blue-400">
                 Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
               </div>
             )}
@@ -361,7 +361,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
             <button
               type="submit"
               disabled={loading || !selectedFile}
-              className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-bmw-primary hover:bg-blue-700 disabled:opacity-50 rounded-md transition-colors cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-tpo-cobalt hover:bg-blue-700 disabled:opacity-50 rounded-md transition-colors cursor-pointer shadow-xs"
             >
               {loading ? (
                 <>
@@ -370,7 +370,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4" />
+                  <FileText className="w-4 h-4" />
                   <span>Parse Circular Document</span>
                 </>
               )}
@@ -386,7 +386,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
             {/* Company Name */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+                <Building2 className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
                 <span>Company Name *</span>
               </label>
               <input
@@ -395,7 +395,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 placeholder="e.g. Stripe, Amazon, Microsoft"
-                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-bmw-primary"
+                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-tpo-cobalt"
                 disabled={loading}
               />
             </div>
@@ -403,7 +403,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
             {/* Role Title */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
-                <Briefcase className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+                <Briefcase className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
                 <span>Job Role / Title *</span>
               </label>
               <input
@@ -412,7 +412,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
                 value={roleTitle}
                 onChange={(e) => setRoleTitle(e.target.value)}
                 placeholder="e.g. Software Engineer, Backend Intern"
-                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-bmw-primary"
+                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-tpo-cobalt"
                 disabled={loading}
               />
             </div>
@@ -434,7 +434,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value)}
               placeholder="Paste or write the job description, required skills, responsibilities, compensation details, etc..."
-              className="w-full p-3.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-bmw-primary leading-relaxed font-sans"
+              className="w-full p-3.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-tpo-cobalt leading-relaxed font-sans"
               disabled={loading}
             />
           </div>
@@ -443,13 +443,13 @@ export const IngestInput: React.FC<IngestInputProps> = ({
             {/* Current Application Status */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
-                <BookmarkCheck className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+                <BookmarkCheck className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
                 <span>Current Status *</span>
               </label>
               <select
                 value={applicationStatus}
                 onChange={(e) => setApplicationStatus(e.target.value as ApplicationStatus)}
-                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary cursor-pointer"
+                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white focus:outline-none focus:border-tpo-cobalt cursor-pointer"
                 disabled={loading}
               >
                 <option value="applied">Applied (In Pipeline)</option>
@@ -464,14 +464,14 @@ export const IngestInput: React.FC<IngestInputProps> = ({
             {/* Application Deadline / Applied Date */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+                <Calendar className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
                 <span>Deadline / Applied Date</span>
               </label>
               <input
                 type="date"
                 value={deadlineDate}
                 onChange={(e) => setDeadlineDate(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary"
+                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white focus:outline-none focus:border-tpo-cobalt"
                 disabled={loading}
               />
             </div>
@@ -489,7 +489,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
                 value={minCgpa}
                 onChange={(e) => setMinCgpa(e.target.value)}
                 placeholder="e.g. 7.5"
-                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-bmw-primary"
+                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-tpo-cobalt"
                 disabled={loading}
               />
             </div>
@@ -499,7 +499,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
             {/* Salary / Package (CTC) */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
-                <IndianRupee className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+                <IndianRupee className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
                 <span>Salary / Package CTC (Optional)</span>
               </label>
               <input
@@ -507,7 +507,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
                 value={ctcDisplay}
                 onChange={(e) => setCtcDisplay(e.target.value)}
                 placeholder="e.g. ₹18 LPA or 12-15 LPA"
-                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-bmw-primary"
+                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-tpo-cobalt"
                 disabled={loading}
               />
             </div>
@@ -515,7 +515,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
             {/* Application Portal Link */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
-                <ExternalLink className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+                <ExternalLink className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
                 <span>Application Portal URL (Optional)</span>
               </label>
               <input
@@ -523,7 +523,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
                 value={applicationLink}
                 onChange={(e) => setApplicationLink(e.target.value)}
                 placeholder="https://company.careers/job/12345"
-                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-bmw-primary"
+                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-tpo-cobalt"
                 disabled={loading}
               />
             </div>
@@ -549,7 +549,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
             <button
               type="submit"
               disabled={loading || !companyName.trim() || !roleTitle.trim() || !jobDescription.trim()}
-              className="inline-flex items-center gap-2 px-7 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-bmw-primary hover:bg-blue-700 disabled:opacity-50 rounded-md transition-colors cursor-pointer shadow-xs ml-auto"
+              className="inline-flex items-center gap-2 px-7 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-tpo-cobalt hover:bg-blue-700 disabled:opacity-50 rounded-md transition-colors cursor-pointer shadow-xs ml-auto"
             >
               {loading ? (
                 <>

@@ -72,16 +72,16 @@ export const PrototypeDriveDetailModal: React.FC<PrototypeDriveDetailModalProps>
         {/* Top Header Section */}
         <div className="flex flex-wrap items-start justify-between gap-4 pt-2">
           <div className="flex items-start gap-4 min-w-0 flex-1">
-            <div className="w-14 h-14 bg-[#1a2129] border border-[#262e38] rounded-lg flex items-center justify-center font-bold text-xl text-white shrink-0">
+            <div className="w-14 h-14 bg-tpo-navy border border-neutral-800 rounded-lg flex items-center justify-center font-serif font-bold text-2xl text-white shrink-0">
               {drive.company_name.slice(0, 2).toUpperCase()}
             </div>
 
             <div className="space-y-1 min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white tracking-tight truncate">
+                <h2 className="text-xl sm:text-2xl font-serif font-bold text-neutral-900 dark:text-white tracking-tight truncate">
                   {drive.company_name}
                 </h2>
-                <span className="text-[10px] font-bold uppercase tracking-[1px] px-2 py-0.5 rounded-sm bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-sm bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700">
                   {drive.company_type}
                 </span>
               </div>

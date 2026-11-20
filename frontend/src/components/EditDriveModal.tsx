@@ -119,7 +119,7 @@ export const EditDriveModal: React.FC<EditDriveModalProps> = ({
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between bg-neutral-50 dark:bg-neutral-800/60">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-bmw-surface-dark border border-neutral-800 rounded-md flex items-center justify-center font-bold text-white text-sm shrink-0">
+            <div className="w-10 h-10 bg-tpo-navy border border-neutral-800 rounded-md flex items-center justify-center font-bold text-white text-sm shrink-0">
               {drive.company_name.slice(0, 2).toUpperCase()}
             </div>
             <div>
@@ -157,7 +157,7 @@ export const EditDriveModal: React.FC<EditDriveModalProps> = ({
             {/* Role Title */}
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-bold uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
-                <Briefcase className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+                <Briefcase className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
                 <span>Role Title *</span>
               </label>
               <input
@@ -166,7 +166,7 @@ export const EditDriveModal: React.FC<EditDriveModalProps> = ({
                 value={roleTitle}
                 onChange={(e) => setRoleTitle(e.target.value)}
                 placeholder="e.g. Software Engineer or Data Analyst"
-                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400"
+                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-tpo-cobalt dark:focus:border-blue-400"
                 disabled={isLoading}
               />
             </div>
@@ -174,7 +174,7 @@ export const EditDriveModal: React.FC<EditDriveModalProps> = ({
             {/* Salary / CTC Package */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
-                <IndianRupee className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+                <IndianRupee className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
                 <span>Salary / Package CTC</span>
               </label>
               <input
@@ -182,7 +182,7 @@ export const EditDriveModal: React.FC<EditDriveModalProps> = ({
                 value={ctcDisplay}
                 onChange={(e) => setCtcDisplay(e.target.value)}
                 placeholder="e.g. ₹34.5 LPA or 18 LPA"
-                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400"
+                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-tpo-cobalt dark:focus:border-blue-400"
                 disabled={isLoading}
               />
             </div>
@@ -201,7 +201,7 @@ export const EditDriveModal: React.FC<EditDriveModalProps> = ({
                 value={minCgpa}
                 onChange={(e) => setMinCgpa(e.target.value)}
                 placeholder="e.g. 7.5 (leave empty for none)"
-                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400 font-mono"
+                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-tpo-cobalt dark:focus:border-blue-400 font-mono"
                 disabled={isLoading}
               />
             </div>
@@ -209,7 +209,7 @@ export const EditDriveModal: React.FC<EditDriveModalProps> = ({
             {/* Eligible Branches */}
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-bold uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
-                <GraduationCap className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+                <GraduationCap className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
                 <span>Eligible Branches (Comma-separated)</span>
               </label>
               <input
@@ -217,7 +217,7 @@ export const EditDriveModal: React.FC<EditDriveModalProps> = ({
                 value={eligibleBranchesText}
                 onChange={(e) => setEligibleBranchesText(e.target.value)}
                 placeholder="e.g. CSE, IT, ECE (leave empty for All Branches)"
-                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400"
+                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-tpo-cobalt dark:focus:border-blue-400"
                 disabled={isLoading}
               />
             </div>
@@ -225,7 +225,7 @@ export const EditDriveModal: React.FC<EditDriveModalProps> = ({
             {/* Application Portal Link */}
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-bold uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
-                <ExternalLink className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+                <ExternalLink className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
                 <span>Application Portal URL</span>
               </label>
               <input
@@ -233,7 +233,7 @@ export const EditDriveModal: React.FC<EditDriveModalProps> = ({
                 value={applicationLink}
                 onChange={(e) => setApplicationLink(e.target.value)}
                 placeholder="https://company.careers/job/12345"
-                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400 font-mono"
+                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-tpo-cobalt dark:focus:border-blue-400 font-mono"
                 disabled={isLoading}
               />
             </div>
@@ -241,7 +241,7 @@ export const EditDriveModal: React.FC<EditDriveModalProps> = ({
             {/* Job Description / Criteria */}
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-bold uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
-                <FileText className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+                <FileText className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
                 <span>Job Description & Requirements</span>
               </label>
               <textarea
@@ -249,7 +249,7 @@ export const EditDriveModal: React.FC<EditDriveModalProps> = ({
                 onChange={(e) => setJobDescription(e.target.value)}
                 placeholder="Paste or edit the job description, eligibility rules, and round details here..."
                 rows={5}
-                className="w-full p-3.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400"
+                className="w-full p-3.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-tpo-cobalt dark:focus:border-blue-400"
                 disabled={isLoading}
               />
             </div>
@@ -268,7 +268,7 @@ export const EditDriveModal: React.FC<EditDriveModalProps> = ({
             <button
               type="submit"
               disabled={isLoading || !roleTitle.trim()}
-              className="inline-flex items-center gap-1.5 px-6 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-bmw-primary hover:bg-bmw-primary-active disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
+              className="inline-flex items-center gap-1.5 px-6 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-tpo-cobalt hover:bg-tpo-cobalt-hover disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt"
             >
               {isLoading ? (
                 <>

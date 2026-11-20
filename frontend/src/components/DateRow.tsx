@@ -91,7 +91,7 @@ export const DateRow: React.FC<DateRowProps> = ({
           <select
             value={date.date_type}
             onChange={handleTypeChange}
-            className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border-neutral-300 dark:border-neutral-700 focus:border-bmw-primary cursor-pointer"
+            className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border-neutral-300 dark:border-neutral-700 focus:border-tpo-cobalt cursor-pointer"
           >
             {Object.entries(DATE_TYPE_LABELS).map(([typeKey, typeLabel]) => (
               <option key={typeKey} value={typeKey} className="bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100">
@@ -145,7 +145,7 @@ export const DateRow: React.FC<DateRowProps> = ({
             value={date.label || ""}
             onChange={handleLabelChange}
             placeholder="e.g. Resume Submission EOD"
-            className="w-full text-xs px-2.5 py-1.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary"
+            className="w-full text-xs px-2.5 py-1.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-tpo-cobalt"
           />
         </div>
 
@@ -158,7 +158,7 @@ export const DateRow: React.FC<DateRowProps> = ({
               type="datetime-local"
               value={formatForInput(date.date_iso)}
               onChange={handleDateChange}
-              className="w-full text-xs px-2.5 py-1.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary"
+              className="w-full text-xs px-2.5 py-1.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-tpo-cobalt"
             />
           </div>
         </div>

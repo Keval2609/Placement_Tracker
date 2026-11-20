@@ -128,7 +128,7 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between bg-neutral-50 dark:bg-neutral-800/60">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-bmw-primary dark:text-blue-400" />
+            <Sparkles className="w-5 h-5 text-tpo-cobalt dark:text-blue-400" />
             <h2 className="text-base font-bold uppercase tracking-[1px] text-neutral-900 dark:text-white">
               Add Drive Update
             </h2>
@@ -163,7 +163,7 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
                   onChange={(e) => setTextInput(e.target.value)}
                   placeholder="e.g. Interview shortlisted candidates: OA results out! Interview on the 12th at 10 AM..."
                   rows={5}
-                  className="w-full text-xs p-3 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400 font-mono"
+                  className="w-full text-xs p-3 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-tpo-cobalt dark:focus:border-blue-400 font-mono"
                 />
               </div>
 
@@ -173,7 +173,7 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
                 </label>
                 <div className="flex items-center gap-3">
                   <label className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-bold uppercase tracking-[0.5px] bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 border border-neutral-300 dark:border-neutral-700 rounded-md cursor-pointer transition-colors">
-                    <Upload className="w-4 h-4 text-bmw-primary dark:text-blue-400" />
+                    <Upload className="w-4 h-4 text-tpo-cobalt dark:text-blue-400" />
                     <span>{selectedFile ? selectedFile.name : "Choose File"}</span>
                     <input
                       type="file"
@@ -199,7 +199,7 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
                 <button
                   type="submit"
                   disabled={isLoading || (!textInput.trim() && !selectedFile)}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-bmw-primary hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors cursor-pointer shadow-xs"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-tpo-cobalt hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors cursor-pointer shadow-xs"
                 >
                   {isLoading ? (
                     <>
@@ -219,7 +219,7 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
             /* Stage 2: Diff Confirmation Gate */
             <div className="space-y-6">
               <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-xs space-y-1">
-                <div className="font-bold text-bmw-primary dark:text-blue-400 flex items-center gap-1.5 uppercase tracking-[1px]">
+                <div className="font-bold text-tpo-cobalt dark:text-blue-400 flex items-center gap-1.5 uppercase tracking-[1px]">
                   <Sparkles className="w-4 h-4" />
                   <span>Proposed Change Summary</span>
                 </div>
@@ -240,7 +240,7 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
                         <span className="text-neutral-500 dark:text-neutral-400 uppercase font-mono text-[10px] block">
                           {k}
                         </span>
-                        <span className="text-bmw-primary dark:text-blue-400 font-bold">{String(v)}</span>
+                        <span className="text-tpo-cobalt dark:text-blue-400 font-bold">{String(v)}</span>
                       </div>
                     ))}
                   </div>
@@ -256,7 +256,7 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
                   <button
                     type="button"
                     onClick={handleAddManualDate}
-                    className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[0.5px] text-bmw-primary dark:text-blue-400 hover:underline"
+                    className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[0.5px] text-tpo-cobalt dark:text-blue-400 hover:underline"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add Date Manually</span>
@@ -303,7 +303,7 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
                   type="button"
                   onClick={handleConfirmMerge}
                   disabled={!canSave}
-                  className="inline-flex items-center gap-1.5 px-6 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-bmw-primary hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-md transition-colors cursor-pointer shadow-xs"
+                  className="inline-flex items-center gap-1.5 px-6 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-tpo-cobalt hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-md transition-colors cursor-pointer shadow-xs"
                 >
                   {isLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

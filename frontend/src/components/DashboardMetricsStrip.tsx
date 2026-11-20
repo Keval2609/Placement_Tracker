@@ -67,7 +67,7 @@ export const DashboardMetricsStrip: React.FC<DashboardMetricsStripProps> = ({
       value: offers.length,
       subtext:
         offers.length > 0
-          ? `${offers.map((d) => d.company_name).join(", ")} 🎉`
+          ? `${offers.map((d) => d.company_name).join(", ")} (Secured)`
           : "In selection rounds",
       icon: Trophy,
       textColor: "text-emerald-400",
@@ -78,14 +78,14 @@ export const DashboardMetricsStrip: React.FC<DashboardMetricsStripProps> = ({
   ];
 
   return (
-    <div className="bg-bmw-surface-dark border border-neutral-800 p-4 sm:p-5 text-white rounded-lg shadow-sm">
-      {/* BMW Hero Band Header Label */}
-      <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
-        <span className="text-[11px] font-bold uppercase tracking-[1.5px] text-neutral-300">
-          Executive Recruitment Overview
+    <div className="bg-tpo-navy border border-neutral-800 p-4 sm:p-5 text-white rounded-lg shadow-sm">
+      {/* Registry Hero Band Header Label */}
+      <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/10 font-mono text-[11px]">
+        <span className="font-bold uppercase tracking-wider text-neutral-300">
+          Cohort Registry Metrics
         </span>
-        <span className="text-[11px] font-medium text-neutral-300">
-          Real-Time Candidate Pipeline
+        <span className="text-neutral-400">
+          Active Student Dispatch
         </span>
       </div>
 
@@ -108,22 +108,22 @@ export const DashboardMetricsStrip: React.FC<DashboardMetricsStripProps> = ({
                 }
               }}
               className={cn(
-                "group bg-neutral-800/80 border border-white/10 p-4 rounded-md transition-all duration-200 hover:border-bmw-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary",
+                "group bg-neutral-900/70 border border-white/10 p-4 rounded-md transition-all duration-200 hover:border-tpo-cobalt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt",
                 isInteractive && "cursor-pointer"
               )}
             >
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                  <span className="text-[11px] font-bold text-neutral-300 uppercase tracking-wider block">
+                  <span className="text-[11px] font-mono font-bold text-neutral-300 uppercase tracking-wider block">
                     {card.title}
                   </span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-white tracking-tight">
+                    <span className="text-2xl sm:text-3xl font-mono font-bold text-white tracking-tight">
                       {card.value}
                     </span>
                     {card.highlight && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-xs bg-red-500/20 text-red-400 font-bold uppercase tracking-wider border border-red-500/30 motion-safe:animate-pulse">
-                        Action Needed
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-xs bg-tpo-urgent/25 text-red-300 font-bold uppercase tracking-wider border border-tpo-urgent/40">
+                        Closing Soon
                       </span>
                     )}
                   </div>
@@ -143,9 +143,9 @@ export const DashboardMetricsStrip: React.FC<DashboardMetricsStripProps> = ({
               </div>
 
               {card.onClick && (
-                <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-neutral-300 group-hover:text-white transition-colors">
-                  <span>Filter by category</span>
-                  <ArrowUpRight className="w-3.5 h-3.5 text-bmw-primary" />
+                <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[11px] font-mono font-bold uppercase tracking-wider text-neutral-300 group-hover:text-white transition-colors">
+                  <span>Filter by stage</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 text-tpo-accent" />
                 </div>
               )}
             </div>

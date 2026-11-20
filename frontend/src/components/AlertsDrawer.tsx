@@ -196,15 +196,15 @@ export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) =
           type="button"
           aria-label="Close notification settings"
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
+          className="absolute top-5 right-5 p-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-bmw-surface-dark flex items-center justify-center text-white border border-neutral-800 rounded-lg">
-            <Bell className="w-5 h-5 text-bmw-primary" />
+          <div className="w-10 h-10 bg-tpo-navy flex items-center justify-center text-white border border-neutral-800 rounded-lg">
+            <Bell className="w-5 h-5 text-tpo-cobalt" />
           </div>
           <div>
             <h2 id="alerts-drawer-title" className="text-lg font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
@@ -217,7 +217,7 @@ export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) =
         </div>
 
         {statusMessage && (
-          <div className="p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-bmw-primary dark:text-blue-400 text-xs font-medium rounded-md flex items-center gap-2">
+          <div className="p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-tpo-cobalt dark:text-blue-400 text-xs font-medium rounded-md flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{statusMessage}</span>
           </div>
@@ -227,7 +227,7 @@ export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) =
         <div className="p-4 bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-800 rounded-lg space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Smartphone className="w-4 h-4 text-bmw-primary" />
+              <Smartphone className="w-4 h-4 text-tpo-cobalt" />
               <span className="text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200">
                 Browser Web Push
               </span>
@@ -249,7 +249,7 @@ export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) =
             <button
               type="button"
               onClick={handleEnablePush}
-              className="px-3.5 py-1.5 bg-bmw-primary hover:bg-bmw-primary-active text-white text-xs font-bold uppercase tracking-wider rounded-md transition-colors cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
+              className="px-3.5 py-1.5 bg-tpo-cobalt hover:bg-tpo-cobalt-hover text-white text-xs font-bold uppercase tracking-wider rounded-md transition-colors cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt"
             >
               Enable Push Notifications
             </button>
@@ -313,12 +313,12 @@ export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) =
               placeholder="Enter your Telegram Chat ID (e.g. 987654321)"
               value={telegramChatId}
               onChange={(e) => setTelegramChatId(e.target.value)}
-              className="flex-1 px-3 py-1.5 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-md text-xs text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-bmw-primary focus:border-bmw-primary font-mono"
+              className="flex-1 px-3 py-1.5 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-md text-xs text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-tpo-cobalt focus:border-tpo-cobalt font-mono"
             />
             <button
               type="submit"
               disabled={telegramLoading || !telegramChatId.trim()}
-              className="px-3.5 py-1.5 bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-900 rounded-md text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
+              className="px-3.5 py-1.5 bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-900 rounded-md text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt"
             >
               {telegramLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Link"}
             </button>
@@ -393,12 +393,12 @@ export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) =
             type="button"
             onClick={handleTriggerTestAlert}
             disabled={testLoading}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 rounded-md text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 rounded-md text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt"
           >
             {testLoading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-bmw-primary" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-tpo-cobalt" />
             ) : (
-              <Send className="w-3.5 h-3.5 text-bmw-primary" />
+              <Send className="w-3.5 h-3.5 text-tpo-cobalt" />
             )}
             <span>Send Test Alert</span>
           </button>

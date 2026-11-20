@@ -35,7 +35,7 @@ const STATUS_OPTIONS: { id: ApplicationStatus; label: string }[] = [
   { id: "applied", label: "Applied" },
   { id: "oa", label: "OA Test Stage" },
   { id: "interview", label: "Interview Round" },
-  { id: "offer", label: "Offer Accepted 🎉" },
+  { id: "offer", label: "Offer Extended" },
   { id: "rejected", label: "Not Selected" },
   { id: "withdrawn", label: "Withdrawn" },
 ];
@@ -174,14 +174,14 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
           type="button"
           aria-label="Close placement drive details"
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
+          className="absolute top-5 right-5 p-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt"
         >
           <X className="w-5 h-5" />
         </button>
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 text-neutral-600 dark:text-neutral-400 gap-3">
-            <Loader2 className="w-8 h-8 animate-spin text-bmw-primary" />
+            <Loader2 className="w-8 h-8 animate-spin text-tpo-cobalt" />
             <span className="text-sm font-medium">Loading drive details...</span>
           </div>
         ) : error || !drive ? (
@@ -196,16 +196,16 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
             <div className="flex flex-wrap items-start justify-between gap-4 pt-2 border-b border-neutral-200 dark:border-neutral-800 pb-5">
               <div className="flex items-start gap-4 min-w-0 flex-1">
                 {/* Monogram Avatar */}
-                <div className="w-14 h-14 bg-bmw-surface-dark border border-neutral-800 rounded-lg flex items-center justify-center font-bold text-xl text-white shrink-0">
+                <div className="w-14 h-14 bg-tpo-navy border border-neutral-800 rounded-lg flex items-center justify-center font-serif font-bold text-2xl text-white shrink-0">
                   {drive.company_name.slice(0, 2).toUpperCase()}
                 </div>
 
                 <div className="space-y-1 min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h2 id="drive-detail-title" className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white tracking-tight truncate">
+                    <h2 id="drive-detail-title" className="text-xl sm:text-2xl font-serif font-bold text-neutral-900 dark:text-white tracking-tight truncate">
                       {drive.company_name}
                     </h2>
-                    <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-sm bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700">
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-sm bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700">
                       {drive.company_type}
                     </span>
                   </div>
@@ -219,7 +219,7 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
                     </span>
                     <span>•</span>
                     <span className="flex items-center gap-1 font-mono font-medium">
-                      <Clock className="w-3.5 h-3.5 text-bmw-primary" />
+                      <Clock className="w-3.5 h-3.5 text-tpo-accent" />
                       Deadline: {formatDate(primaryDeadlineIso)}
                     </span>
                   </div>
@@ -230,14 +230,14 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
               <div className="flex sm:flex-col items-end gap-2 shrink-0">
                 {/* CTC Display / Quick Edit Widget */}
                 {isEditingCtc ? (
-                  <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-neutral-800 border border-bmw-primary rounded-md shadow-sm">
+                  <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-neutral-800 border border-tpo-cobalt rounded-md shadow-sm">
                     <input
                       type="text"
                       autoFocus
                       value={editedCtcValue}
                       onChange={(e) => setEditedCtcValue(e.target.value)}
                       placeholder="e.g. ₹34.5 LPA"
-                      className="px-2 py-1 text-xs font-bold text-neutral-900 dark:text-white bg-transparent border-none focus:outline-none w-28 sm:w-36"
+                      className="px-2 py-1 text-xs font-mono font-bold text-neutral-900 dark:text-white bg-transparent border-none focus:outline-none w-28 sm:w-36"
                       onKeyDown={(e) => {
                         if (e.key === "Enter") handleSaveQuickCtc();
                         if (e.key === "Escape") setIsEditingCtc(false);
@@ -249,7 +249,7 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
                       aria-label="Save CTC"
                       onClick={handleSaveQuickCtc}
                       disabled={isSavingCtc}
-                      className="p-1 bg-bmw-primary text-white rounded hover:bg-bmw-primary-active transition-colors cursor-pointer disabled:opacity-50"
+                      className="p-1 bg-tpo-cobalt text-white rounded hover:bg-tpo-cobalt-hover transition-colors cursor-pointer disabled:opacity-50"
                       title="Save CTC"
                     >
                       {isSavingCtc ? (
@@ -270,13 +270,13 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
                     </button>
                   </div>
                 ) : (
-                  <div className="group relative flex items-center gap-2 px-4 py-1.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-bmw-primary dark:text-blue-400 font-bold text-lg sm:text-xl rounded-md transition-all">
+                  <div className="group relative flex items-center gap-2 px-4 py-1.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-tpo-cobalt dark:text-blue-400 font-bold text-lg sm:text-xl rounded-md transition-all">
                     <span>{drive.ctc_display || "Not Disclosed"}</span>
                     <button
                       type="button"
                       aria-label="Quick edit CTC"
                       onClick={startEditingCtc}
-                      className="p-1 rounded text-neutral-400 hover:text-bmw-primary dark:hover:text-blue-300 hover:bg-blue-100/60 dark:hover:bg-blue-900/60 transition-colors cursor-pointer"
+                      className="p-1 rounded text-neutral-400 hover:text-tpo-cobalt dark:hover:text-blue-300 hover:bg-blue-100/60 dark:hover:bg-blue-900/60 transition-colors cursor-pointer"
                       title="Quick edit CTC"
                     >
                       <Pencil className="w-3.5 h-3.5" />
@@ -288,17 +288,17 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsEditDriveOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-700 rounded-md transition-colors cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-700 rounded-md transition-colors cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt"
                     title="Edit drive details (CTC, criteria, branches, portal link)"
                   >
-                    <Pencil className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+                    <Pencil className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
                     <span>Edit Drive</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setIsAddUpdateOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white bg-bmw-primary hover:bg-bmw-primary-active rounded-md transition-colors cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white bg-tpo-cobalt hover:bg-tpo-cobalt-hover rounded-md transition-colors cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt"
                     title="Add new circular or update notice to this drive"
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -309,7 +309,7 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
                       href={drive.application_link}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-700 rounded-md transition-colors cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-700 rounded-md transition-colors cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt"
                     >
                       <span>Portal</span>
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -322,7 +322,7 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
             {/* Quick Status Control Bar */}
             <div className="bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-800 p-3.5 rounded-lg flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <Briefcase className="w-4 h-4 text-bmw-primary" />
+                <Briefcase className="w-4 h-4 text-tpo-cobalt" />
                 <label htmlFor="modal-status-select" className="text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200">
                   Candidate Application Stage:
                 </label>
@@ -334,7 +334,7 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
                   value={drive.application_status}
                   onChange={handleStatusChange}
                   disabled={isUpdatingStatus}
-                  className="px-3 py-1.5 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs font-bold text-neutral-800 dark:text-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-bmw-primary focus:border-bmw-primary cursor-pointer disabled:opacity-50"
+                  className="px-3 py-1.5 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs font-bold text-neutral-800 dark:text-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-tpo-cobalt focus:border-tpo-cobalt cursor-pointer disabled:opacity-50"
                 >
                   {STATUS_OPTIONS.map((opt) => (
                     <option key={opt.id} value={opt.id} className="bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">
@@ -342,7 +342,7 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
                     </option>
                   ))}
                 </select>
-                {isUpdatingStatus && <Loader2 className="w-4 h-4 animate-spin text-bmw-primary" />}
+                {isUpdatingStatus && <Loader2 className="w-4 h-4 animate-spin text-tpo-cobalt" />}
               </div>
             </div>
 

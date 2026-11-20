@@ -10,10 +10,10 @@ interface DriveDetailHeaderProps {
 
 const APP_STATUS_BADGES: Record<string, { label: string; style: string }> = {
   not_applied: { label: "Not Applied", style: "bg-white/10 text-white border-white/20" },
-  applied: { label: "Applied", style: "bg-[#1c69d4]/30 text-white border-[#1c69d4]" },
-  oa: { label: "OA Stage", style: "bg-[#1c69d4]/30 text-white border-[#1c69d4]" },
+  applied: { label: "Applied", style: "bg-tpo-cobalt/30 text-white border-tpo-cobalt" },
+  oa: { label: "OA Stage", style: "bg-tpo-cobalt/30 text-white border-tpo-cobalt" },
   interview: { label: "Interviewing", style: "bg-purple-500/30 text-white border-purple-400" },
-  offer: { label: "Offer Received 🎉", style: "bg-emerald-500/30 text-emerald-200 border-emerald-400 font-bold" },
+  offer: { label: "Offer Extended", style: "bg-emerald-500/30 text-emerald-200 border-emerald-400 font-bold" },
   rejected: { label: "Rejected", style: "bg-rose-500/30 text-rose-200 border-rose-400" },
   withdrawn: { label: "Withdrawn", style: "bg-white/10 text-white border-white/20" },
 };
@@ -41,30 +41,30 @@ export const DriveDetailHeader: React.FC<DriveDetailHeaderProps> = ({
   };
 
   return (
-    <div className="bg-[#1a2129] border border-[#262e38] p-6 sm:p-8 space-y-6 text-white">
+    <div className="bg-tpo-navy border border-neutral-800 p-6 sm:p-8 space-y-6 text-white rounded-lg">
       {/* Title & Badges Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-start gap-4">
           {/* Monogram avatar */}
-          <div className="w-14 h-14 bg-[#262e38] border border-white/20 flex items-center justify-center font-bold text-xl text-white shrink-0">
+          <div className="w-14 h-14 bg-neutral-900 border border-white/20 rounded-md flex items-center justify-center font-serif font-bold text-2xl text-white shrink-0">
             {drive.company_name.slice(0, 2).toUpperCase()}
           </div>
 
           <div className="space-y-1.5">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-serif font-bold text-white tracking-tight">
                 {drive.company_name}
               </h1>
-              <span className="text-[11px] font-bold uppercase tracking-[1px] px-2.5 py-0.5 bg-[#262e38] text-white border border-white/10">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 bg-neutral-800 text-white border border-white/10 rounded-sm">
                 {drive.company_type}
               </span>
-              <span className={`text-[11px] font-bold uppercase tracking-[1px] px-2.5 py-0.5 border ${statusBadge.style}`}>
+              <span className={`text-[11px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 border rounded-sm ${statusBadge.style}`}>
                 {statusBadge.label}
               </span>
             </div>
 
-            <div className="text-sm sm:text-base font-light text-[#bbbbbb] flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-[#1c69d4]" />
+            <div className="text-sm sm:text-base font-normal text-neutral-300 flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-tpo-cobalt" />
               <span>{drive.role_title}</span>
             </div>
           </div>
@@ -76,7 +76,7 @@ export const DriveDetailHeader: React.FC<DriveDetailHeaderProps> = ({
             <button
               type="button"
               onClick={onOpenEditDrive}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-[0.5px] text-white bg-transparent hover:bg-white/10 border border-white transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-transparent hover:bg-white/10 border border-white/40 rounded-md transition-colors cursor-pointer"
             >
               <Pencil className="w-3.5 h-3.5" />
               <span>Edit Drive</span>
@@ -88,7 +88,7 @@ export const DriveDetailHeader: React.FC<DriveDetailHeaderProps> = ({
               href={drive.application_link}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-[0.5px] text-white bg-transparent hover:bg-white/10 border border-white transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-transparent hover:bg-white/10 border border-white/40 rounded-md transition-colors cursor-pointer"
             >
               <span>Application Portal</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -98,7 +98,7 @@ export const DriveDetailHeader: React.FC<DriveDetailHeaderProps> = ({
           <button
             type="button"
             onClick={onOpenAddUpdate}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-[#1c69d4] hover:bg-[#0653b6] transition-colors cursor-pointer shadow-sm"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white bg-tpo-cobalt hover:bg-tpo-cobalt-hover rounded-md transition-colors cursor-pointer shadow-sm"
           >
             <Plus className="w-4 h-4" />
             <span>Add Update</span>
@@ -106,7 +106,7 @@ export const DriveDetailHeader: React.FC<DriveDetailHeaderProps> = ({
         </div>
       </div>
 
-      {/* Drive Metadata Row - BMW Spec Cells */}
+      {/* Drive Metadata Row - Registry Spec Cells */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-white/10">
         {/* CTC / Package */}
         <div className="p-3.5 bg-[#262e38] border border-white/10 space-y-1">

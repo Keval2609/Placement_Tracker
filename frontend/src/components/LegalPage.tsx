@@ -36,12 +36,13 @@ export function LegalPage({ initialTab = "terms", onBack }: LegalPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950 text-neutral-800 dark:text-neutral-100 font-sans pb-20 selection:bg-bmw-primary selection:text-white transition-colors duration-150">
-      {/* BMW M-Stripe Top Signature Divider */}
-      <div className="h-1 w-full flex">
-        <div className="w-1/3 bg-bmw-m-blue-light" />
-        <div className="w-1/3 bg-bmw-primary" />
-        <div className="w-1/3 bg-bmw-m-red" />
+    <div className="min-h-screen bg-white dark:bg-neutral-950 text-neutral-800 dark:text-neutral-100 font-sans pb-20 selection:bg-tpo-cobalt selection:text-white transition-colors duration-150">
+      {/* Institutional Top Dispatch Header Bar */}
+      <div className="w-full bg-registry-surface dark:bg-registry-dark-surface border-b border-registry-border dark:border-registry-dark-border px-4 sm:px-8 py-1.5 flex items-center justify-between text-[11px] font-mono text-neutral-500 dark:text-neutral-400">
+        <span className="font-bold text-tpo-navy dark:text-neutral-200 uppercase tracking-wider">
+          Academic Placement Registry
+        </span>
+        <span className="text-neutral-400">Compliance & Governance Charter</span>
       </div>
 
       {/* Top Header */}
@@ -52,17 +53,17 @@ export function LegalPage({ initialTab = "terms", onBack }: LegalPageProps) {
               type="button"
               onClick={onBack}
               aria-label="Back to Portal"
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Portal</span>
+              <span>Back to Registry</span>
             </button>
 
             <div className="h-4 w-px bg-neutral-300 dark:bg-neutral-700 hidden sm:block" />
 
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-bmw-surface-dark rounded-md flex items-center justify-center font-bold text-white text-[11px] tracking-wider border border-neutral-800">
-                PT
+              <div className="w-7 h-7 bg-tpo-navy rounded-md flex items-center justify-center font-serif font-bold text-white text-[11px] tracking-wider border border-neutral-800">
+                PR
               </div>
               <span className="text-sm font-bold tracking-tight text-neutral-900 dark:text-white hidden sm:inline">
                 DriveTrack <span className="text-neutral-500 dark:text-neutral-400 font-medium text-xs">Legal Center</span>
@@ -81,8 +82,8 @@ export function LegalPage({ initialTab = "terms", onBack }: LegalPageProps) {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-[11px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/60 text-bmw-primary border border-blue-200 dark:border-blue-900/50 mb-3">
-                <Scale className="w-3 h-3 text-bmw-primary" />
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-[11px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/60 text-tpo-cobalt border border-blue-200 dark:border-blue-900/50 mb-3">
+                <Scale className="w-3 h-3 text-tpo-cobalt" />
                 Legal Agreements & Privacy Policy
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
@@ -104,7 +105,7 @@ export function LegalPage({ initialTab = "terms", onBack }: LegalPageProps) {
                     : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200"
                 }`}
               >
-                <FileText className="w-3.5 h-3.5 text-bmw-primary" />
+                <FileText className="w-3.5 h-3.5 text-tpo-cobalt" />
                 Terms of Service
               </button>
               <button
@@ -275,7 +276,7 @@ function TermsOfServiceContent({ onSwitchToPrivacy }: { onSwitchToPrivacy: () =>
           <button
             type="button"
             onClick={onSwitchToPrivacy}
-            className="text-bmw-primary hover:underline font-bold inline-flex items-center gap-0.5 cursor-pointer"
+            className="text-tpo-cobalt hover:underline font-bold inline-flex items-center gap-0.5 cursor-pointer"
           >
             Privacy Policy <ExternalLink className="w-3 h-3 inline" />
           </button>.
@@ -289,7 +290,7 @@ function TermsOfServiceContent({ onSwitchToPrivacy }: { onSwitchToPrivacy: () =>
             href="https://github.com/Keval2609/Placement_Tracker/issues"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-bmw-primary hover:underline font-bold"
+            className="text-tpo-cobalt hover:underline font-bold"
           >
             GitHub Repository
           </a>.
@@ -334,7 +335,7 @@ function PrivacyPolicyContent({ onSwitchToTerms }: { onSwitchToTerms: () => void
       {/* Section 1 */}
       <section className="space-y-3">
         <h2 className="text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-          <Database className="w-4 h-4 text-bmw-primary" />
+          <Database className="w-4 h-4 text-tpo-cobalt" />
           1. Information We Collect
         </h2>
         <p>We collect only the minimal data required to provide recruitment deadline tracking and notice parsing:</p>
@@ -342,7 +343,7 @@ function PrivacyPolicyContent({ onSwitchToTerms }: { onSwitchToTerms: () => void
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
           <div className="p-3.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/60">
             <h3 className="font-bold text-xs uppercase tracking-wider text-neutral-900 dark:text-white mb-1.5 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-bmw-primary" />
+              <span className="w-2 h-2 rounded-full bg-tpo-cobalt" />
               Account & Identity Data
             </h3>
             <p className="text-xs text-neutral-600 dark:text-neutral-400">
@@ -352,7 +353,7 @@ function PrivacyPolicyContent({ onSwitchToTerms }: { onSwitchToTerms: () => void
 
           <div className="p-3.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/60">
             <h3 className="font-bold text-xs uppercase tracking-wider text-neutral-900 dark:text-white mb-1.5 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-bmw-m-blue-light" />
+              <span className="w-2 h-2 rounded-full bg-tpo-cobalt" />
               Placement & Funnel Records
             </h3>
             <p className="text-xs text-neutral-600 dark:text-neutral-400">
@@ -385,7 +386,7 @@ function PrivacyPolicyContent({ onSwitchToTerms }: { onSwitchToTerms: () => void
       {/* Section 2 */}
       <section className="space-y-3">
         <h2 className="text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-          <Cpu className="w-4 h-4 text-bmw-primary" />
+          <Cpu className="w-4 h-4 text-tpo-cobalt" />
           2. AI Extraction & Model Privacy
         </h2>
         <p>
@@ -404,7 +405,7 @@ function PrivacyPolicyContent({ onSwitchToTerms }: { onSwitchToTerms: () => void
       {/* Section 3 */}
       <section className="space-y-3">
         <h2 className="text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-          <Lock className="w-4 h-4 text-bmw-primary" />
+          <Lock className="w-4 h-4 text-tpo-cobalt" />
           3. Database Security & Tenant Isolation (RLS)
         </h2>
         <p>
@@ -426,7 +427,7 @@ function PrivacyPolicyContent({ onSwitchToTerms }: { onSwitchToTerms: () => void
       {/* Section 4 */}
       <section className="space-y-3">
         <h2 className="text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-          <Bell className="w-4 h-4 text-bmw-primary" />
+          <Bell className="w-4 h-4 text-tpo-cobalt" />
           4. Third-Party Service Providers
         </h2>
         <p>We work exclusively with reputable cloud infrastructure providers:</p>
@@ -444,7 +445,7 @@ function PrivacyPolicyContent({ onSwitchToTerms }: { onSwitchToTerms: () => void
                 <td className="p-2.5 font-bold">Clerk</td>
                 <td className="p-2.5">Authentication & Session Management</td>
                 <td className="p-2.5">
-                  <a href="https://clerk.com/privacy" target="_blank" rel="noopener noreferrer" className="text-bmw-primary hover:underline">
+                  <a href="https://clerk.com/privacy" target="_blank" rel="noopener noreferrer" className="text-tpo-cobalt hover:underline">
                     clerk.com/privacy
                   </a>
                 </td>
@@ -453,7 +454,7 @@ function PrivacyPolicyContent({ onSwitchToTerms }: { onSwitchToTerms: () => void
                 <td className="p-2.5 font-bold">Supabase</td>
                 <td className="p-2.5">PostgreSQL Database with RLS & Storage</td>
                 <td className="p-2.5">
-                  <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer" className="text-bmw-primary hover:underline">
+                  <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer" className="text-tpo-cobalt hover:underline">
                     supabase.com/privacy
                   </a>
                 </td>
@@ -462,7 +463,7 @@ function PrivacyPolicyContent({ onSwitchToTerms }: { onSwitchToTerms: () => void
                 <td className="p-2.5 font-bold">Groq</td>
                 <td className="p-2.5">LPU Inference for Structured Extraction</td>
                 <td className="p-2.5">
-                  <a href="https://groq.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-bmw-primary hover:underline">
+                  <a href="https://groq.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-tpo-cobalt hover:underline">
                     groq.com/privacy-policy
                   </a>
                 </td>
@@ -471,7 +472,7 @@ function PrivacyPolicyContent({ onSwitchToTerms }: { onSwitchToTerms: () => void
                 <td className="p-2.5 font-bold">Telegram Bot API</td>
                 <td className="p-2.5">Opt-in Deadline Escalation Alerts</td>
                 <td className="p-2.5">
-                  <a href="https://telegram.org/privacy" target="_blank" rel="noopener noreferrer" className="text-bmw-primary hover:underline">
+                  <a href="https://telegram.org/privacy" target="_blank" rel="noopener noreferrer" className="text-tpo-cobalt hover:underline">
                     telegram.org/privacy
                   </a>
                 </td>
@@ -480,7 +481,7 @@ function PrivacyPolicyContent({ onSwitchToTerms }: { onSwitchToTerms: () => void
                 <td className="p-2.5 font-bold">Sentry</td>
                 <td className="p-2.5">Error Monitoring & Crash Diagnostics</td>
                 <td className="p-2.5">
-                  <a href="https://sentry.io/privacy" target="_blank" rel="noopener noreferrer" className="text-bmw-primary hover:underline">
+                  <a href="https://sentry.io/privacy" target="_blank" rel="noopener noreferrer" className="text-tpo-cobalt hover:underline">
                     sentry.io/privacy
                   </a>
                 </td>
@@ -493,7 +494,7 @@ function PrivacyPolicyContent({ onSwitchToTerms }: { onSwitchToTerms: () => void
       {/* Section 5 */}
       <section className="space-y-3">
         <h2 className="text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-bmw-primary" />
+          <ShieldCheck className="w-4 h-4 text-tpo-cobalt" />
           5. Data Retention & User Rights
         </h2>
         <p>
@@ -509,7 +510,7 @@ function PrivacyPolicyContent({ onSwitchToTerms }: { onSwitchToTerms: () => void
       {/* Section 6 */}
       <section className="space-y-3">
         <h2 className="text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-          <Scale className="w-4 h-4 text-bmw-primary" />
+          <Scale className="w-4 h-4 text-tpo-cobalt" />
           6. Terms of Service
         </h2>
         <p>
@@ -517,7 +518,7 @@ function PrivacyPolicyContent({ onSwitchToTerms }: { onSwitchToTerms: () => void
           <button
             type="button"
             onClick={onSwitchToTerms}
-            className="text-bmw-primary hover:underline font-bold inline-flex items-center gap-0.5 cursor-pointer"
+            className="text-tpo-cobalt hover:underline font-bold inline-flex items-center gap-0.5 cursor-pointer"
           >
             Terms of Service <ExternalLink className="w-3 h-3 inline" />
           </button>.
@@ -531,7 +532,7 @@ function PrivacyPolicyContent({ onSwitchToTerms }: { onSwitchToTerms: () => void
             href="https://github.com/Keval2609/Placement_Tracker/issues"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-bmw-primary hover:underline font-bold"
+            className="text-tpo-cobalt hover:underline font-bold"
           >
             GitHub Repository
           </a>.
