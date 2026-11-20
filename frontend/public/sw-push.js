@@ -13,15 +13,15 @@ self.addEventListener('push', function (event) {
   var title = data.title || 'Placement Drive Alert';
   var options = {
     body: data.body || 'Tap to view placement drive details.',
-    icon: '/pwa-192x192.png',
-    badge: '/pwa-192x192.png',
+    icon: data.icon || '/pwa-192x192.png',
+    badge: data.badge || '/pwa-192x192.png',
     data: data.data || {},
     vibrate: [200, 100, 200],
+    tag: (data.data && data.data.alert_id) || 'placement-alert',
   };
 
   event.waitUntil(
     self.registration.showNotification(title, options).then(function () {
-      // Auto-send receipt acknowledgment to backend if alert_id is present
       var alertId = data.data && data.data.alert_id;
       if (alertId) {
         fetch('/push/ack', {
@@ -38,8 +38,11 @@ self.addEventListener('push', function (event) {
 
 self.addEventListener('notificationclick', function (event) {
   event.notification.close();
-  var driveId = event.notification.data && event.notification.data.drive_id;
-  var targetUrl = driveId ? '/drives/' + driveId : '/';
+  var targetUrl =
+    (event.notification.data && event.notification.data.target_url) ||
+    (event.notification.data && event.notification.data.drive_id
+      ? '/drives/' + event.notification.data.drive_id
+      : '/');
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {

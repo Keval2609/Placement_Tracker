@@ -1,14 +1,14 @@
-"""Web Push (pywebpush + VAPID), Telegram Bot linking, and escalation engine.
+"""Web Push (pywebpush + VAPID) notification engine.
 
 Handles:
-1. VAPID keypair generation & retrieval (GET /push/vapid-public-key).
-2. Storing push subscriptions per user (POST /push/subscribe).
-3. Linking user Telegram account chat_id (POST /telegram/link).
-4. Web Push dispatch with client receipt acknowledgment (POST /push/ack).
-5. APScheduler background jobs:
+1. VAPID keypair retrieval & generation (GET /push/vapid-public-key).
+2. Storing and removing mobile/desktop Web Push subscriptions
+   (POST /push/subscribe, /push/unsubscribe).
+3. Persistent storage in Supabase `push_subscriptions` with memory fallback.
+4. Immediate mobile verification test push (POST /push/test).
+5. APScheduler background job:
    - `run_deadline_check_job`: Triggers Web Push at 48h, 24h, and 6h to primary deadline.
-   - `run_escalation_job`: Auto-fires Telegram fallback if Web Push is unacked after 10 minutes.
-6. Onboarding self-test & OEM background notification warning detection.
+6. Client receipt acknowledgment (POST /push/ack) and onboarding self-test.
 """
 
 import json
@@ -16,10 +16,8 @@ import logging
 import uuid
 import zoneinfo
 from datetime import datetime
-from pathlib import Path
 from typing import Any
 
-import httpx
 from fastapi import HTTPException, status
 
 try:
@@ -31,43 +29,18 @@ except ImportError:
 
 from app.config import get_settings
 from app.services.drive_service import list_drives_for_dashboard
+from app.supabase_client import get_service_client
 
 logger = logging.getLogger(__name__)
 KOLKATA_TZ = zoneinfo.ZoneInfo("Asia/Kolkata")
-
-_DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-_LINKS_FILE = _DATA_DIR / "telegram_links.json"
-
-
-def _load_persisted_telegram_links() -> dict[str, str]:
-    if _LINKS_FILE.exists():
-        try:
-            with open(_LINKS_FILE, encoding="utf-8") as f:
-                data = json.load(f)
-                if isinstance(data, dict):
-                    return {str(k): str(v) for k, v in data.items()}
-        except Exception as e:
-            logger.warning("Could not read telegram links cache: %s", e)
-    return {}
-
-
-def _persist_telegram_links() -> None:
-    try:
-        _DATA_DIR.mkdir(parents=True, exist_ok=True)
-        with open(_LINKS_FILE, "w", encoding="utf-8") as f:
-            json.dump(_telegram_links, f)
-    except Exception as e:
-        logger.warning("Could not persist telegram links: %s", e)
-
 
 # Dynamic or configured VAPID keypair
 _generated_vapid: Any = None
 _vapid_public_key: str | None = None
 _vapid_private_key: str | None = None
 
-# In-memory stores for offline execution and testing
+# In-memory fallback stores for offline/mock testing
 _subscriptions: dict[str, list[dict[str, Any]]] = {}
-_telegram_links: dict[str, str] = _load_persisted_telegram_links()
 _alert_history: dict[str, dict[str, Any]] = {}
 _fired_thresholds: set[str] = set()
 _onboarding_tests: dict[str, dict[str, Any]] = {}
@@ -78,7 +51,6 @@ def clear_alert_stores() -> None:
     """Clear alert state (useful for testing)."""
     global _last_scheduler_heartbeat
     _subscriptions.clear()
-    _telegram_links.clear()
     _alert_history.clear()
     _fired_thresholds.clear()
     _onboarding_tests.clear()
@@ -129,13 +101,19 @@ def get_or_create_vapid_keys() -> tuple[str, str]:
 
     if Vapid is not None:
         try:
+            import base64
+
+            from cryptography.hazmat.primitives import serialization
+
             v = Vapid()
             v.generate_keys()
             _generated_vapid = v
-            # public_key and private_key in pywebpush are base64url-encoded strings
-            _vapid_public_key = str(v.public_key)
-            _vapid_private_key = str(v.private_key)
-            logger.info("Auto-generated VAPID keypair for Web Push delivery.")
+            raw_pub = v.public_key.public_bytes(
+                serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint
+            )
+            _vapid_public_key = base64.urlsafe_b64encode(raw_pub).decode().rstrip("=")
+            _vapid_private_key = v.private_pem().decode()
+            logger.info("Auto-generated in-memory VAPID keypair for Web Push delivery.")
             return _vapid_public_key, _vapid_private_key
         except Exception as err:
             logger.warning("Could not auto-generate VAPID keys: %s", err)
@@ -154,40 +132,110 @@ def get_vapid_public_key() -> str:
     return pub_key
 
 
-def save_push_subscription(user_id: str, subscription: dict[str, Any]) -> None:
-    """Store web push subscription payload for user."""
+def _is_supabase_configured() -> bool:
+    settings = get_settings()
+    return bool(settings.supabase_url and settings.supabase_service_role_key)
+
+
+def save_push_subscription(
+    user_id: str,
+    subscription: dict[str, Any],
+    user_agent: str | None = None,
+) -> None:
+    """Store web push subscription for user in Supabase (with in-memory fallback)."""
+    endpoint = subscription.get("endpoint")
+    if not endpoint:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Subscription endpoint is missing.",
+        )
+
+    keys = subscription.get("keys", {})
+    p256dh = keys.get("p256dh", "")
+    auth_key = keys.get("auth", "")
+
+    # Always update in-memory cache
     if user_id not in _subscriptions:
         _subscriptions[user_id] = []
-
-    # Avoid duplicate subscriptions on same endpoint
-    endpoint = subscription.get("endpoint")
     _subscriptions[user_id] = [
         s for s in _subscriptions[user_id] if s.get("endpoint") != endpoint
     ]
+    sub_record = {
+        "endpoint": endpoint,
+        "keys": {"p256dh": p256dh, "auth": auth_key},
+        "user_agent": user_agent,
+        "created_at": datetime.now(KOLKATA_TZ).isoformat(),
+    }
+    _subscriptions[user_id].append(sub_record)
 
-    subscription["created_at"] = datetime.now(KOLKATA_TZ).isoformat()
-    _subscriptions[user_id].append(subscription)
-    logger.info("Saved Web Push subscription for user %s", user_id)
+    # Persist to Supabase if available
+    if _is_supabase_configured():
+        try:
+            supabase = get_service_client()
+            payload = {
+                "user_id": user_id,
+                "endpoint": endpoint,
+                "p256dh": p256dh,
+                "auth_key": auth_key,
+                "user_agent": user_agent,
+            }
+            supabase.table("push_subscriptions").upsert(
+                payload, on_conflict="endpoint"
+            ).execute()
+            logger.info("Persisted Web Push subscription to Supabase for user %s", user_id)
+        except Exception as err:
+            logger.warning("Failed to persist push subscription to Supabase: %s", err)
 
 
-def link_telegram_chat(user_id: str, chat_id: str) -> None:
-    """Link Telegram chat_id to user profile for escalation fallback."""
-    clean_chat_id = chat_id.strip()
-    if not clean_chat_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid Telegram chat_id provided.",
-        )
-    _telegram_links[user_id] = clean_chat_id
-    _persist_telegram_links()
-    logger.info("Linked Telegram chat_id %s to user %s", clean_chat_id, user_id)
+def remove_push_subscription(user_id: str, endpoint: str) -> None:
+    """Remove a push subscription when unsubscribed or expired."""
+    if user_id in _subscriptions:
+        _subscriptions[user_id] = [
+            s for s in _subscriptions[user_id] if s.get("endpoint") != endpoint
+        ]
+
+    if _is_supabase_configured():
+        try:
+            supabase = get_service_client()
+            supabase.table("push_subscriptions").delete().eq("endpoint", endpoint).execute()
+            logger.info("Removed push subscription for endpoint: %s", endpoint[:30])
+        except Exception as err:
+            logger.warning("Failed removing push subscription from Supabase: %s", err)
 
 
-def get_telegram_link(user_id: str) -> str | None:
-    """Get linked Telegram chat_id for user."""
-    if user_id not in _telegram_links:
-        _telegram_links.update(_load_persisted_telegram_links())
-    return _telegram_links.get(user_id)
+def get_user_subscriptions(user_id: str) -> list[dict[str, Any]]:
+    """Retrieve all active push subscriptions for a user."""
+    subs: list[dict[str, Any]] = list(_subscriptions.get(user_id, []))
+
+    if _is_supabase_configured():
+        try:
+            supabase = get_service_client()
+            res = (
+                supabase.table("push_subscriptions")
+                .select("*")
+                .eq("user_id", user_id)
+                .execute()
+            )
+            if res.data:
+                db_endpoints = {s.get("endpoint") for s in subs}
+                for row in res.data:
+                    ep = row.get("endpoint")
+                    if ep and ep not in db_endpoints:
+                        subs.append(
+                            {
+                                "endpoint": ep,
+                                "keys": {
+                                    "p256dh": row.get("p256dh", ""),
+                                    "auth": row.get("auth_key", ""),
+                                },
+                                "user_agent": row.get("user_agent"),
+                                "created_at": row.get("created_at"),
+                            }
+                        )
+        except Exception as err:
+            logger.warning("Error fetching push subscriptions from Supabase: %s", err)
+
+    return subs
 
 
 def send_web_push(
@@ -196,25 +244,30 @@ def send_web_push(
     body: str,
     data: dict[str, Any] | None = None,
 ) -> bool:
-    """Send Web Push notification to all active subscriptions of a user."""
-    subs = _subscriptions.get(user_id, [])
+    """Send Web Push notification to all active mobile/desktop devices of a user."""
+    subs = get_user_subscriptions(user_id)
     if not subs:
-        logger.info("No push subscriptions found for user %s", user_id)
+        logger.info("No active push subscriptions found for user %s", user_id)
         return False
 
     pub_key, priv_key = get_or_create_vapid_keys()
     settings = get_settings()
 
+    push_data = dict(data or {})
     payload = json.dumps(
         {
             "title": title,
             "body": body,
-            "data": data or {},
+            "icon": "/pwa-192x192.png",
+            "badge": "/pwa-192x192.png",
+            "vibrate": [200, 100, 200],
+            "data": push_data,
         }
     )
 
     success = False
-    for sub in list(subs):
+    for sub in subs:
+        endpoint = sub.get("endpoint")
         if webpush is not None:
             try:
                 webpush(
@@ -224,127 +277,59 @@ def send_web_push(
                     vapid_claims={"sub": settings.vapid_claim_email},
                 )
                 success = True
+                logger.info("Dispatched Web Push to %s...", (endpoint or "")[:35])
             except WebPushException as err:
                 logger.warning("WebPushException sending notification: %s", err)
                 if hasattr(err, "response") and err.response is not None:
                     if getattr(err.response, "status_code", 0) in (404, 410):
-                        subs.remove(sub)
+                        if endpoint:
+                            remove_push_subscription(user_id, endpoint)
             except Exception as err:
                 logger.info("Simulated Web Push delivery for offline mode: %s", err)
                 success = True
         else:
-            logger.info("Simulated Web Push delivery for offline mode: %s", sub)
+            logger.info("Simulated Web Push delivery (webpush not installed): %s", sub)
             success = True
 
     return success
 
 
-async def send_telegram_message_async(chat_id: str, text: str) -> bool:
-    """Send Telegram message via Telegram Bot API asynchronously."""
-    settings = get_settings()
-    bot_token = settings.telegram_bot_token
+def send_test_push_async(user_id: str) -> dict[str, Any]:
+    """Trigger an immediate mobile push notification test."""
+    subs = get_user_subscriptions(user_id)
+    if not subs:
+        return {
+            "success": False,
+            "device_count": 0,
+            "message": (
+                "No active device push subscription found. "
+                "Please tap 'Enable Push Notifications' first."
+            ),
+        }
 
-    if not bot_token:
-        logger.info("Simulating Telegram alert to chat %s: %s", chat_id, text)
-        return True
+    alert_id = f"test_{uuid.uuid4()}"
+    now_str = datetime.now(KOLKATA_TZ).strftime("%I:%M %p")
 
-    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
+    title = "🔔 Placement Tracker — Mobile Delivery Test"
+    body = f"Test notification received at {now_str}. Urgency alerts will arrive here."
+    data = {
+        "alert_id": alert_id,
+        "is_test": True,
+        "target_url": "/",
+    }
 
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(url, json=payload)
-            if resp.status_code == 200:
-                return True
-            logger.warning("Telegram API error status %s: %s", resp.status_code, resp.text)
-            return False
-    except Exception as err:
-        logger.warning("Failed sending Telegram message: %s", err)
-        return False
-
-
-async def send_telegram_test_message_async(
-    user_id: str, chat_id: str | None = None
-) -> tuple[bool, str]:
-    """Dispatch an immediate test alert to user's Telegram chat.
-
-    Returns (success: bool, message: str) with diagnostic feedback.
-    """
-    target_chat_id = (chat_id or "").strip() or get_telegram_link(user_id)
-    if not target_chat_id:
-        return (
-            False,
-            "No Telegram Chat ID is linked. Please enter your Chat ID and click Link first.",
-        )
-
-    settings = get_settings()
-    bot_token = settings.telegram_bot_token
-
-    if not bot_token:
-        return (
-            False,
-            "TELEGRAM_BOT_TOKEN is not configured on the backend server. "
-            "Please configure TELEGRAM_BOT_TOKEN in your environment variables "
-            "to enable live Telegram delivery.",
-        )
-
-    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    now_str = datetime.now(KOLKATA_TZ).strftime("%d %b %Y, %I:%M %p")
-    text = (
-        "✅ <b>Placement Tracker — Delivery Test</b>\n\n"
-        "Your Telegram account is connected successfully!\n"
-        f"📅 Verified at: {now_str} (IST)\n\n"
-        "<i>If you miss an application deadline push alert, "
-        "an automated escalation will arrive here.</i>"
-    )
-    payload = {"chat_id": target_chat_id, "text": text, "parse_mode": "HTML"}
-
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(url, json=payload)
-            if resp.status_code == 200:
-                logger.info("Test Telegram alert delivered to chat %s", target_chat_id)
-                return (
-                    True,
-                    f"Test alert delivered successfully to Telegram chat {target_chat_id}!",
-                )
-
-            # Parse error description from Telegram API if available
-            try:
-                err_data = resp.json()
-                desc = err_data.get("description", resp.text)
-            except Exception:
-                desc = resp.text
-
-            if resp.status_code == 400 and "chat not found" in desc.lower():
-                return (
-                    False,
-                    f"Telegram Error: Chat not found ({target_chat_id}). "
-                    "Make sure you opened your bot in Telegram and clicked 'Start' before linking.",
-                )
-            elif resp.status_code == 403:
-                return (
-                    False,
-                    "Telegram Error: Bot was blocked or not started by the user. "
-                    "Please open your bot in Telegram and click 'Start'.",
-                )
-            elif resp.status_code == 401:
-                return (
-                    False,
-                    "Telegram Error: Invalid TELEGRAM_BOT_TOKEN configured on server.",
-                )
-
-            return (False, f"Telegram API returned status {resp.status_code}: {desc}")
-    except Exception as err:
-        logger.warning("Failed sending Telegram test message: %s", err)
-        return (False, f"Failed connecting to Telegram API: {err}")
+    sent = send_web_push(user_id=user_id, title=title, body=body, data=data)
+    return {
+        "success": sent,
+        "device_count": len(subs),
+        "message": f"Test push alert dispatched to {len(subs)} connected device(s).",
+    }
 
 
 def record_push_ack(alert_id: str) -> bool:
     """Record receipt acknowledgment (ack) from client service worker."""
-    rec = _alert_history.get(alert_id)
     now_iso = datetime.now(KOLKATA_TZ).isoformat()
-
+    rec = _alert_history.get(alert_id)
     if rec:
         rec["ack_received"] = True
         rec["ack_at"] = now_iso
@@ -352,7 +337,6 @@ def record_push_ack(alert_id: str) -> bool:
         logger.info("Recorded push ACK for alert_id %s", alert_id)
         return True
 
-    # Check onboarding tests
     for uid, o_rec in _onboarding_tests.items():
         if o_rec.get("alert_id") == alert_id or o_rec.get("test_id") == alert_id:
             o_rec["ack_received"] = True
@@ -381,9 +365,9 @@ def trigger_onboarding_test(user_id: str) -> dict[str, Any]:
     }
     _onboarding_tests[user_id] = test_rec
 
-    title = "Placement Tracker Alert Test"
+    title = "🔔 Placement Tracker — Mobile Alert Test"
     body = "Tap to verify background notification delivery on your phone."
-    data = {"alert_id": alert_id, "is_onboarding_test": True}
+    data = {"alert_id": alert_id, "is_onboarding_test": True, "target_url": "/"}
 
     _ = send_web_push(user_id=user_id, title=title, body=body, data=data)
 
@@ -414,14 +398,32 @@ def get_onboarding_test_status(user_id: str) -> dict[str, Any]:
     }
 
 
+def get_all_subscribed_user_ids() -> set[str]:
+    """Get all user IDs that have active push subscriptions."""
+    from app.dependencies import DEFAULT_MOCK_USER_ID
+
+    users: set[str] = {DEFAULT_MOCK_USER_ID, "default_user"}.union(_subscriptions.keys())
+
+    if _is_supabase_configured():
+        try:
+            supabase = get_service_client()
+            res = supabase.table("push_subscriptions").select("user_id").execute()
+            if res.data:
+                for row in res.data:
+                    uid = row.get("user_id")
+                    if uid:
+                        users.add(str(uid))
+        except Exception as err:
+            logger.warning("Failed querying active subscription users: %s", err)
+
+    return users
+
+
 def run_deadline_check_job() -> None:
     """Scheduled job: Checks all primary deadlines against thresholds (48h, 24h, 6h)."""
     record_scheduler_heartbeat()
-    from app.dependencies import DEFAULT_MOCK_USER_ID
-
     now_dt = datetime.now(KOLKATA_TZ)
-    user_ids = {DEFAULT_MOCK_USER_ID, "default_user"}
-    user_ids = user_ids.union(_subscriptions.keys()).union(_telegram_links.keys())
+    user_ids = get_all_subscribed_user_ids()
 
     for user_id in user_ids:
         try:
@@ -436,8 +438,7 @@ def run_deadline_check_job() -> None:
             if card.is_overdue:
                 continue
 
-            # If candidate has already applied (or progressed further in pipeline),
-            # the primary application deadline is already satisfied — do not fire urgency alerts.
+            # Skip drives if already applied
             if card.application_status != "not_applied":
                 continue
 
@@ -492,6 +493,7 @@ def run_deadline_check_job() -> None:
                 "alert_id": alert_id,
                 "drive_id": card.id,
                 "threshold": threshold_to_fire,
+                "target_url": f"/drives/{card.id}",
             }
 
             _ = send_web_push(user_id=user_id, title=title, body=body, data=data)
@@ -501,56 +503,3 @@ def run_deadline_check_job() -> None:
                 card.id,
                 card.company_name,
             )
-
-
-async def run_escalation_job() -> None:
-    """Scheduled job: Scans unacknowledged Web Push notifications > 10 minutes old.
-
-    Auto-fires Telegram fallback to user's chat_id if unacked within timeout window.
-    """
-    record_scheduler_heartbeat()
-    now_dt = datetime.now(KOLKATA_TZ)
-
-    for alert_id, rec in list(_alert_history.items()):
-        if rec.get("status") == "push_sent" and not rec.get("ack_received"):
-            sent_at_str = rec.get("push_sent_at")
-            if not sent_at_str:
-                continue
-
-            try:
-                sent_at = datetime.fromisoformat(sent_at_str)
-                if sent_at.tzinfo is None:
-                    sent_at = sent_at.replace(tzinfo=KOLKATA_TZ)
-                elapsed_seconds = (now_dt - sent_at).total_seconds()
-            except Exception:
-                continue
-
-            # Escalate after 10 minutes (600 seconds), or 60 seconds for test triggers
-            is_test_alert = "test_" in alert_id or rec.get("threshold") == "test"
-            timeout_threshold = 60.0 if is_test_alert else 600.0
-
-            if elapsed_seconds >= timeout_threshold:
-                user_id = rec.get("user_id", "default_user")
-                chat_id = _telegram_links.get(user_id)
-
-                if chat_id:
-                    company = rec.get("company_name", "Placement Drive")
-                    role = rec.get("role_title", "Position")
-                    threshold = rec.get("threshold", "Upcoming")
-
-                    text = (
-                        f"🚨 <b>Placement Deadline Escalation</b>\n\n"
-                        f"<b>{company}</b> - {role}\n"
-                        f"Deadline approaching in {threshold}.\n"
-                        f"<i>Web push was unacknowledged. Telegram fallback triggered.</i>"
-                    )
-
-                    sent = await send_telegram_message_async(chat_id=chat_id, text=text)
-                    if sent:
-                        rec["status"] = "telegram_escalated"
-                        rec["telegram_sent_at"] = now_dt.isoformat()
-                        logger.info(
-                            "Escalated alert %s via Telegram fallback to chat %s",
-                            alert_id,
-                            chat_id,
-                        )

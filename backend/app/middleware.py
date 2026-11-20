@@ -2,59 +2,71 @@
 
 import logging
 import time
-from collections.abc import Callable
-
-from fastapi import Request, Response
-from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
+from typing import Any
 
 logger = logging.getLogger("app.request")
 
 
-class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    """Middleware to log request method, path, status_code, latency_ms, and user_id."""
+class RequestLoggingMiddleware:
+    """Pure ASGI Middleware to log request method, path, status_code, latency_ms, and user_id.
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    Avoids BaseHTTPMiddleware issues with event loops and streaming transports.
+    """
+
+    def __init__(self, app: Any) -> None:
+        self.app = app
+
+    async def __call__(self, scope: dict[str, Any], receive: Any, send: Any) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
         start_time = time.perf_counter()
 
-        # Extract user_id from headers if available
-        user_id = request.headers.get("x-user-id")
-        if not user_id and "authorization" in request.headers:
-            auth = request.headers.get("authorization", "")
-            if auth.startswith("Bearer ") and len(auth) > 10:
-                user_id = "authenticated_user"
+        # Extract user_id from headers
+        headers_list = scope.get("headers", [])
+        user_id = ""
+        for raw_k, raw_v in headers_list:
+            if raw_k.lower() == b"x-user-id":
+                user_id = raw_v.decode("latin1", errors="replace")
+                break
+            elif raw_k.lower() == b"authorization":
+                auth_str = raw_v.decode("latin1", errors="replace")
+                if auth_str.startswith("Bearer ") and len(auth_str) > 10:
+                    user_id = "authenticated_user"
+
+        status_code = 200
+
+        async def send_wrapper(message: dict[str, Any]) -> None:
+            nonlocal status_code
+            if message["type"] == "http.response.start":
+                status_code = message.get("status", 200)
+            await send(message)
 
         try:
-            response = await call_next(request)
+            await self.app(scope, receive, send_wrapper)
             latency_ms = round((time.perf_counter() - start_time) * 1000, 2)
-
             log_data = {
-                "method": request.method,
-                "path": request.url.path,
-                "status_code": response.status_code,
+                "method": scope.get("method"),
+                "path": scope.get("path"),
+                "status_code": status_code,
                 "latency_ms": latency_ms,
                 "user_id": user_id or "anonymous",
             }
-
-            if response.status_code >= 500:
+            if status_code >= 500:
                 logger.error("HTTP Request Failed", extra=log_data)
-            elif response.status_code >= 400:
+            elif status_code >= 400:
                 logger.warning("HTTP Request Client Error", extra=log_data)
             else:
                 logger.info("HTTP Request Handled", extra=log_data)
-
-            return response
-        except Exception as exc:
+        except Exception:
             latency_ms = round((time.perf_counter() - start_time) * 1000, 2)
             log_data = {
-                "method": request.method,
-                "path": request.url.path,
+                "method": scope.get("method"),
+                "path": scope.get("path"),
                 "status_code": 500,
                 "latency_ms": latency_ms,
                 "user_id": user_id or "anonymous",
             }
             logger.exception("HTTP Request Unhandled Exception", extra=log_data)
-            return JSONResponse(
-                status_code=500,
-                content={"detail": "Internal Server Error", "error": str(exc)},
-            )
+            raise

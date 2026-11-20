@@ -2,25 +2,25 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "@clerk/react";
 import {
   fetchOnboardingTestStatus,
-  fetchTelegramStatus,
+  fetchPushStatus,
   fetchVapidPublicKey,
-  linkTelegramChat,
   savePushSubscription,
   triggerOnboardingTest,
-  triggerTelegramTest,
+  triggerPushTest,
 } from "../services/api";
 import { detectOemBrand, OemInfo } from "../utils/oemDetection";
 import { cn } from "../lib/utils";
 import {
   X,
   Bell,
-  Send,
   AlertTriangle,
   ShieldCheck,
   Smartphone,
   CheckCircle2,
   Loader2,
-  ExternalLink,
+  Share,
+  PlusSquare,
+  Sparkles,
 } from "lucide-react";
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -42,15 +42,14 @@ interface AlertsDrawerProps {
 export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) => {
   const { isLoaded, isSignedIn } = useAuth();
   const [pushEnabled, setPushEnabled] = useState<boolean>(false);
-  const [telegramChatId, setTelegramChatId] = useState<string>("");
-  const [isTelegramLinked, setIsTelegramLinked] = useState<boolean>(false);
-  const [telegramLoading, setTelegramLoading] = useState<boolean>(false);
-  const [telegramTestLoading, setTelegramTestLoading] = useState<boolean>(false);
-  const [telegramTestFeedback, setTelegramTestFeedback] = useState<{
+  const [deviceCount, setDeviceCount] = useState<number>(0);
+  const [pushLoading, setPushLoading] = useState<boolean>(false);
+  const [testLoading, setTestLoading] = useState<boolean>(false);
+  const [testFeedback, setTestFeedback] = useState<{
     success: boolean;
     message: string;
   } | null>(null);
-  const [testLoading, setTestLoading] = useState<boolean>(false);
+
   const [testStatus, setTestStatus] = useState<{
     has_tested: boolean;
     ack_received: boolean;
@@ -60,9 +59,23 @@ export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) =
   const [oemInfo, setOemInfo] = useState<OemInfo | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
+  // Mobile environment detection
+  const [isIOS, setIsIOS] = useState<boolean>(false);
+  const [isStandalone, setIsStandalone] = useState<boolean>(false);
+
   useEffect(() => {
     const info = detectOemBrand();
     setOemInfo(info);
+
+    // iOS and standalone PWA detection
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const isIOSDevice = /iphone|ipad|ipod/.test(userAgent);
+    setIsIOS(isIOSDevice);
+
+    const isRunningStandalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+    setIsStandalone(Boolean(isRunningStandalone));
 
     if ("Notification" in window && Notification.permission === "granted") {
       setPushEnabled(true);
@@ -86,9 +99,11 @@ export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) =
 
   const loadStatus = async () => {
     try {
-      const tg = await fetchTelegramStatus();
-      setIsTelegramLinked(tg.is_linked);
-      if (tg.chat_id) setTelegramChatId(tg.chat_id);
+      const pStatus = await fetchPushStatus();
+      setDeviceCount(pStatus.device_count);
+      if (pStatus.is_enabled && "Notification" in window && Notification.permission === "granted") {
+        setPushEnabled(true);
+      }
 
       const test = await fetchOnboardingTestStatus();
       setTestStatus(test);
@@ -98,80 +113,66 @@ export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) =
   };
 
   const handleEnablePush = async () => {
+    setPushLoading(true);
+    setStatusMessage(null);
+    setTestFeedback(null);
     try {
       if (!("Notification" in window)) {
-        setStatusMessage("Web Push is not supported by your browser.");
+        setStatusMessage("Web Push is not supported by your current browser.");
+        return;
+      }
+
+      if (!("serviceWorker" in navigator)) {
+        setStatusMessage("Service Workers are not available in this browser.");
         return;
       }
 
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
-        setStatusMessage("Notification permission was denied.");
+        setStatusMessage("Notification permission was denied. Please allow notifications in site settings.");
         return;
       }
 
-      if ("serviceWorker" in navigator) {
-        const registration = await navigator.serviceWorker.ready;
-        const vapidPublicKey = await fetchVapidPublicKey();
-        const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+      const registration = await navigator.serviceWorker.ready;
+      const vapidPublicKey = await fetchVapidPublicKey();
+      const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
 
-        let subscription = await registration.pushManager.getSubscription();
-        if (!subscription) {
-          subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: convertedVapidKey,
-          });
-        }
-
-        await savePushSubscription(subscription);
-        setPushEnabled(true);
-        setStatusMessage("Web Push notifications enabled successfully.");
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: convertedVapidKey,
+        });
       }
-    } catch (err: unknown) {
-      setStatusMessage(`Push setup failed: ${(err as Error).message}`);
-    }
-  };
 
-  const handleLinkTelegram = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!telegramChatId.trim()) return;
-
-    setTelegramLoading(true);
-    setStatusMessage(null);
-    try {
-      await linkTelegramChat(telegramChatId.trim());
-      setIsTelegramLinked(true);
-      setStatusMessage("Telegram linked successfully!");
+      await savePushSubscription(subscription.toJSON());
+      setPushEnabled(true);
+      setStatusMessage("Web Push notifications enabled successfully on this device!");
       await loadStatus();
     } catch (err: unknown) {
-      setStatusMessage(`Failed linking Telegram: ${(err as Error).message}`);
+      setStatusMessage(`Push setup failed: ${(err as Error).message}`);
     } finally {
-      setTelegramLoading(false);
-    }
-  };
-
-  const handleTestTelegram = async () => {
-    setTelegramTestLoading(true);
-    setTelegramTestFeedback(null);
-    try {
-      const res = await triggerTelegramTest(telegramChatId.trim());
-      setTelegramTestFeedback({ success: true, message: res.message });
-    } catch (err: unknown) {
-      setTelegramTestFeedback({ success: false, message: (err as Error).message });
-    } finally {
-      setTelegramTestLoading(false);
+      setPushLoading(false);
     }
   };
 
   const handleTriggerTestAlert = async () => {
     setTestLoading(true);
+    setTestFeedback(null);
     setStatusMessage(null);
     try {
-      const res = await triggerOnboardingTest();
-      setStatusMessage(res.message || "Test alerts triggered across all connected channels!");
+      const res = await triggerPushTest();
+      setTestFeedback({
+        success: res.success,
+        message: res.message || "Test alert dispatched to your device.",
+      });
+      await triggerOnboardingTest();
       await loadStatus();
     } catch (err: unknown) {
-      setStatusMessage(`Test trigger failed: ${(err as Error).message}`);
+      setTestFeedback({
+        success: false,
+        message: (err as Error).message || "Failed triggering test alert.",
+      });
     } finally {
       setTestLoading(false);
     }
@@ -208,10 +209,10 @@ export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) =
           </div>
           <div>
             <h2 id="alerts-drawer-title" className="text-lg font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
-              Alert Channels & Escalation
+              Placement Push Alerts
             </h2>
             <p className="text-xs font-normal text-neutral-600 dark:text-neutral-400">
-              Guaranteed delivery for 11:59 PM deadlines and OA schedules.
+              Guaranteed mobile & browser alerts 48h, 24h, and 6h before primary deadlines.
             </p>
           </div>
         </div>
@@ -223,18 +224,18 @@ export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) =
           </div>
         )}
 
-        {/* Channel 1: Browser Web Push */}
+        {/* Channel: Browser & Mobile Web Push */}
         <div className="p-4 bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-800 rounded-lg space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Smartphone className="w-4 h-4 text-tpo-cobalt" />
               <span className="text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200">
-                Browser Web Push
+                Mobile & Desktop Push Alerts
               </span>
             </div>
             {pushEnabled ? (
               <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold uppercase tracking-wider rounded-sm">
-                Active
+                Active ({deviceCount} {deviceCount === 1 ? "device" : "devices"})
               </span>
             ) : (
               <span className="px-2 py-0.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 text-xs font-bold uppercase tracking-wider rounded-sm">
@@ -243,124 +244,100 @@ export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) =
             )}
           </div>
           <p className="text-xs font-normal text-neutral-600 dark:text-neutral-400">
-            Delivers instant notifications 24 hours and 3 hours prior to drive deadlines.
+            Delivers instant lock-screen notifications for application deadlines, online assessments, and interview schedules.
           </p>
-          {!pushEnabled && (
+
+          {!pushEnabled ? (
             <button
               type="button"
               onClick={handleEnablePush}
-              className="px-3.5 py-1.5 bg-tpo-cobalt hover:bg-tpo-cobalt-hover text-white text-xs font-bold uppercase tracking-wider rounded-md transition-colors cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt"
+              disabled={pushLoading}
+              className="w-full py-2.5 px-4 bg-tpo-cobalt hover:bg-tpo-cobalt-hover text-white text-xs font-bold uppercase tracking-wider rounded-md transition-colors cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt flex items-center justify-center gap-2"
             >
-              Enable Push Notifications
+              {pushLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Enabling Push Notifications...</span>
+                </>
+              ) : (
+                <>
+                  <Bell className="w-4 h-4" />
+                  <span>Enable Push Notifications on this Device</span>
+                </>
+              )}
             </button>
+          ) : (
+            <div className="flex items-center justify-between pt-1 text-xs text-neutral-600 dark:text-neutral-400">
+              <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
+                <CheckCircle2 className="w-4 h-4" />
+                This device is registered for deadline push alerts.
+              </span>
+            </div>
           )}
         </div>
 
-        {/* Channel 2: Telegram Bot Integration */}
-        <div className="p-4 bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-800 rounded-lg space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Send className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-              <span className="text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200">
-                Telegram Bot Escalation
-              </span>
+        {/* iOS PWA Add-To-Home-Screen Guide (Required by Apple for Web Push) */}
+        {isIOS && !isStandalone && (
+          <div className="p-4 bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 rounded-lg space-y-2 text-xs text-sky-900 dark:text-sky-300">
+            <div className="flex items-center gap-1.5 font-bold">
+              <Sparkles className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
+              <span>iPhone / iPad Setup Required</span>
             </div>
-            {isTelegramLinked ? (
-              <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold uppercase tracking-wider rounded-sm">
-                Linked
-              </span>
-            ) : (
-              <span className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-xs font-bold uppercase tracking-wider rounded-sm">
-                Recommended
-              </span>
-            )}
-          </div>
-          <p className="text-xs font-normal text-neutral-600 dark:text-neutral-400">
-            If push notifications go unacknowledged, alerts automatically escalate to your Telegram.
-          </p>
-          <div className="text-xs text-neutral-600 dark:text-neutral-400 bg-white dark:bg-neutral-800 p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-md space-y-1.5">
-            <div className="font-semibold text-neutral-800 dark:text-neutral-200">How to link your Telegram:</div>
-            <ol className="list-decimal pl-4 space-y-1 leading-relaxed">
-              <li>
-                Open{" "}
-                <a
-                  href="https://t.me/userinfobot"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-bold text-sky-600 dark:text-sky-400 hover:underline inline-flex items-center gap-0.5"
-                >
-                  @userinfobot <ExternalLink className="w-3 h-3" />
-                </a>{" "}
-                (or{" "}
-                <a
-                  href="https://t.me/PlacementTrackerBot"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-bold text-sky-600 dark:text-sky-400 hover:underline inline-flex items-center gap-0.5"
-                >
-                  @PlacementTrackerBot <ExternalLink className="w-3 h-3" />
-                </a>
-                ) and click <strong>Start</strong>.
+            <p className="leading-relaxed">
+              Apple requires web apps to be installed to the Home Screen to receive background push notifications:
+            </p>
+            <ol className="list-decimal pl-4 space-y-1 font-medium">
+              <li className="flex items-center gap-1.5">
+                <span>1. Tap the Share button in Safari</span>
+                <Share className="w-3.5 h-3.5 text-sky-600 inline" />
               </li>
-              <li>Copy your numeric <strong>Id</strong> (e.g. <code>987654321</code>) and paste below.</li>
-              <li>Click <strong>Link</strong>, then use <strong>Send Test Message</strong> to verify delivery.</li>
+              <li className="flex items-center gap-1.5">
+                <span>2. Select &quot;Add to Home Screen&quot;</span>
+                <PlusSquare className="w-3.5 h-3.5 text-sky-600 inline" />
+              </li>
+              <li>3. Open Placement Tracker from your Home Screen to enable alerts.</li>
             </ol>
           </div>
-          <form onSubmit={handleLinkTelegram} className="flex gap-2">
-            <input
-              type="text"
-              aria-label="Telegram Chat ID"
-              placeholder="Enter your Telegram Chat ID (e.g. 987654321)"
-              value={telegramChatId}
-              onChange={(e) => setTelegramChatId(e.target.value)}
-              className="flex-1 px-3 py-1.5 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-md text-xs text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-tpo-cobalt focus:border-tpo-cobalt font-mono"
-            />
-            <button
-              type="submit"
-              disabled={telegramLoading || !telegramChatId.trim()}
-              className="px-3.5 py-1.5 bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-900 rounded-md text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt"
-            >
-              {telegramLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Link"}
-            </button>
-          </form>
+        )}
 
-          {/* Direct Telegram Test Button & Real-time Diagnostic Feedback */}
-          {isTelegramLinked && (
-            <div className="pt-1 space-y-2">
-              <button
-                type="button"
-                onClick={handleTestTelegram}
-                disabled={telegramTestLoading}
-                className="w-full py-2 px-3 text-xs font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/40 hover:bg-sky-100 dark:hover:bg-sky-900/40 border border-sky-200 dark:border-sky-800 rounded-md transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-              >
-                {telegramTestLoading ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Sending Telegram Test Alert...</span>
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Send Test Telegram Message</span>
-                  </>
-                )}
-              </button>
-
-              {telegramTestFeedback && (
-                <div
-                  className={cn(
-                    "p-2.5 rounded-md text-xs border leading-relaxed",
-                    telegramTestFeedback.success
-                      ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300"
-                      : "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300"
-                  )}
-                >
-                  {telegramTestFeedback.message}
-                </div>
-              )}
+        {/* OEM Battery Optimization Warning for Android */}
+        {oemInfo && oemInfo.isAndroid && (
+          <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-md text-xs space-y-1.5">
+            <div className="flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-300">
+              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span>Android Background Protection ({oemInfo.oemName})</span>
             </div>
-          )}
-        </div>
+            <p className="text-xs text-amber-900 dark:text-amber-300/80 font-normal leading-relaxed">
+              {oemInfo.advice}
+            </p>
+            {oemInfo.unwhitelistUrl && (
+              <div className="pt-1">
+                <a
+                  href={oemInfo.unwhitelistUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-bold text-amber-800 dark:text-amber-300 hover:underline inline-flex items-center gap-1"
+                >
+                  Battery Whitelist Instructions ↗
+                </a>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Direct Mobile Test Feedback */}
+        {testFeedback && (
+          <div
+            className={cn(
+              "p-3 rounded-md text-xs border leading-relaxed",
+              testFeedback.success
+                ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300"
+                : "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300"
+            )}
+          >
+            {testFeedback.message}
+          </div>
+        )}
 
         {/* Delivery Health Verification */}
         {testStatus.has_tested && (
@@ -370,37 +347,24 @@ export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) =
           </div>
         )}
 
-        {/* OEM Battery Warning */}
-        {oemInfo && oemInfo.isAndroid && (
-          <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-md text-xs space-y-1.5">
-            <div className="flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-300">
-              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-              <span>OEM Battery Optimization Detected ({oemInfo.oemName})</span>
-            </div>
-            <p className="text-xs text-amber-900 dark:text-amber-300/80 font-normal leading-relaxed">
-              {oemInfo.advice}
-            </p>
-          </div>
-        )}
-
-        {/* Test Alert Button */}
+        {/* Actions / Test Button */}
         <div className="pt-2 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
           <div className="flex items-center gap-1 text-xs text-neutral-600 dark:text-neutral-400">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Encrypted webhooks & push keys</span>
+            <span>VAPID encrypted push</span>
           </div>
           <button
             type="button"
             onClick={handleTriggerTestAlert}
             disabled={testLoading}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 rounded-md text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-900 rounded-md text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt disabled:opacity-50"
           >
             {testLoading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-tpo-cobalt" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Send className="w-3.5 h-3.5 text-tpo-cobalt" />
+              <Bell className="w-3.5 h-3.5" />
             )}
-            <span>Send Test Alert</span>
+            <span>Send Test Push Notification</span>
           </button>
         </div>
       </div>

@@ -238,7 +238,7 @@ function TermsOfServiceContent({ onSwitchToPrivacy }: { onSwitchToPrivacy: () =>
           Notification Reliability & Best-Effort Delivery
         </h2>
         <p>
-          Deadline alert delivery via Web Push (VAPID) and the Telegram Bot API operates as an assistive reminder mechanism. Timely delivery depends on your browser’s service worker status, network availability, and device battery optimization policies (e.g. Android OEM background thread limits). DriveTrack cannot guarantee 100% receipt and shall not be held liable for delayed or suppressed push alerts.
+          Deadline alert delivery via Web Push (VAPID) operates as an assistive reminder mechanism. Timely delivery depends on your browser’s service worker status, network availability, and device battery optimization policies (e.g. Android OEM background thread limits). DriveTrack cannot guarantee 100% receipt and shall not be held liable for delayed or suppressed push alerts.
         </p>
       </section>
 
@@ -377,7 +377,7 @@ function PrivacyPolicyContent({ onSwitchToTerms }: { onSwitchToTerms: () => void
               Alert Identifiers
             </h3>
             <p className="text-xs text-neutral-600 dark:text-neutral-400">
-              Browser Web Push endpoints (VAPID) and optional Telegram Chat IDs used exclusively to dispatch scheduled deadline alerts.
+              Browser and Mobile Web Push endpoints (VAPID) used exclusively to dispatch scheduled deadline alerts.
             </p>
           </div>
         </div>
@@ -468,15 +468,7 @@ function PrivacyPolicyContent({ onSwitchToTerms }: { onSwitchToTerms: () => void
                   </a>
                 </td>
               </tr>
-              <tr>
-                <td className="p-2.5 font-bold">Telegram Bot API</td>
-                <td className="p-2.5">Opt-in Deadline Escalation Alerts</td>
-                <td className="p-2.5">
-                  <a href="https://telegram.org/privacy" target="_blank" rel="noopener noreferrer" className="text-tpo-cobalt hover:underline">
-                    telegram.org/privacy
-                  </a>
-                </td>
-              </tr>
+
               <tr>
                 <td className="p-2.5 font-bold">Sentry</td>
                 <td className="p-2.5">Error Monitoring & Crash Diagnostics</td>

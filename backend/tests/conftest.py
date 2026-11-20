@@ -1,6 +1,7 @@
 import os
 
 os.environ["SENTRY_DSN"] = ""
+os.environ["TESTING"] = "1"
 
 import pytest  # noqa: E402
 
