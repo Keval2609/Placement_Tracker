@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { X, Sparkles } from "lucide-react";
+import { X, FileText } from "lucide-react";
 import { IngestInput } from "./IngestInput";
 import { ConfirmationScreen } from "./ConfirmationScreen";
 import { ExtractionAPIResponse } from "../types/extraction";
@@ -58,24 +58,24 @@ export const IngestModal: React.FC<IngestModalProps> = ({
           type="button"
           aria-label="Close add placement drive modal"
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors cursor-pointer z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary"
+          className="absolute top-5 right-5 p-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors cursor-pointer z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Modal Header */}
-        <div className="flex items-center gap-3 border-b border-neutral-200 dark:border-neutral-800 pb-4">
-          <div className="w-10 h-10 bg-bmw-surface-dark border border-neutral-800 rounded-lg flex items-center justify-center text-white shrink-0">
-            <Sparkles className="w-5 h-5 text-bmw-primary" />
+        <div className="flex items-center gap-3 border-b border-registry-border dark:border-registry-dark-border pb-4">
+          <div className="w-10 h-10 bg-tpo-navy border border-neutral-800 rounded-lg flex items-center justify-center text-white shrink-0">
+            <FileText className="w-5 h-5 text-tpo-accent" />
           </div>
           <div>
-            <h2 id="ingest-modal-title" className="text-lg font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
-              {extractionResult ? "Review & Confirm Drive" : "Add Placement Drive"}
+            <h2 id="ingest-modal-title" className="text-lg font-serif font-bold text-neutral-900 dark:text-white">
+              {extractionResult ? "Review & Confirm Circular" : "TPO Circular & Application Dispatch"}
             </h2>
             <p className="text-xs font-normal text-neutral-600 dark:text-neutral-400">
               {extractionResult
-                ? "Verify extracted criteria, deadlines, and salary details before saving."
-                : "AI Parse WhatsApp placement circulars, PDFs, or record off-campus applications."}
+                ? "Verify extracted criteria, deadlines, and salary details before saving to registry."
+                : "Parse WhatsApp placement circulars, official PDFs, or record direct off-campus applications."}
             </p>
           </div>
         </div>

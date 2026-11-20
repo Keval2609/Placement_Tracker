@@ -142,7 +142,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      {/* BMW Navy Hero KPI Strip */}
+      {/* Cohort Registry Executive Metrics Strip */}
       <DashboardMetricsStrip
         drives={drives}
         onFilterUrgent={() => {
@@ -185,13 +185,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {/* Loading State */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-20 text-neutral-500 dark:text-neutral-400 gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-bmw-primary dark:text-blue-400" />
+          <Loader2 className="w-8 h-8 animate-spin text-tpo-cobalt dark:text-blue-400" />
           <span className="text-xs font-light">Fetching placement drives...</span>
         </div>
       ) : drives.length === 0 ? (
         <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-12 text-center rounded-xl space-y-4">
           <div className="w-14 h-14 bg-[#1a2129] rounded-lg text-white flex items-center justify-center mx-auto border border-[#262e38]">
-            <Layers className="w-7 h-7 text-bmw-primary dark:text-blue-400" />
+            <Layers className="w-7 h-7 text-tpo-cobalt dark:text-blue-400" />
           </div>
           <div className="space-y-1">
             <h3 className="text-base font-bold text-neutral-900 dark:text-white">No Placement Drives Recorded Yet</h3>
@@ -202,7 +202,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <button
             type="button"
             onClick={onOpenIngest}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-bmw-primary hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-[0.5px] rounded-md transition-colors cursor-pointer shadow-xs"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-tpo-cobalt hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-[0.5px] rounded-md transition-colors cursor-pointer shadow-xs"
           >
             <Sparkles className="w-4 h-4" />
             <span>Add Application / Drive</span>

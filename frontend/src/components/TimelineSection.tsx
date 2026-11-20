@@ -10,7 +10,7 @@ interface TimelineSectionProps {
 const SOURCE_ICONS: Record<string, React.ReactNode> = {
   whatsapp_text: <MessageSquare className="w-3.5 h-3.5 text-emerald-500" />,
   pdf: <FileText className="w-3.5 h-3.5 text-red-500" />,
-  docx: <File className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />,
+  docx: <File className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />,
 };
 
 export const TimelineSection: React.FC<TimelineSectionProps> = ({ timeline, onOpenAddUpdate }) => {
@@ -45,7 +45,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({ timeline, onOp
             <button
               type="button"
               onClick={onOpenAddUpdate}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-bmw-primary dark:text-blue-400 hover:text-white hover:bg-bmw-primary rounded-md border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/30 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-tpo-cobalt dark:text-blue-400 hover:text-white hover:bg-tpo-cobalt rounded-md border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/30 transition-colors cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add Update</span>
@@ -60,7 +60,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({ timeline, onOp
       <div className="relative pl-6 space-y-5 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-[2px] before:bg-neutral-200 dark:before:bg-neutral-800">
         {timeline.map((event, index) => {
           const isInitial = event.event_type === "initial_capture";
-          const icon = SOURCE_ICONS[event.source_type] || <MessageSquare className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />;
+          const icon = SOURCE_ICONS[event.source_type] || <MessageSquare className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />;
 
           return (
             <div key={event.id || index} className="relative group">
@@ -68,7 +68,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({ timeline, onOp
               <div
                 className={`absolute -left-6 top-1 w-5 h-5 rounded-full border flex items-center justify-center ${
                   isInitial
-                    ? "bg-bmw-primary border-bmw-primary text-white"
+                    ? "bg-tpo-cobalt border-tpo-cobalt text-white"
                     : "bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200"
                 }`}
               >
@@ -101,7 +101,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({ timeline, onOp
 
                 {event.raw_text && (
                   <details className="mt-2 text-[11px] text-neutral-500 dark:text-neutral-400">
-                    <summary className="cursor-pointer text-bmw-primary dark:text-blue-400 hover:underline select-none font-bold uppercase tracking-[1px] text-[10px]">
+                    <summary className="cursor-pointer text-tpo-cobalt dark:text-blue-400 hover:underline select-none font-bold uppercase tracking-[1px] text-[10px]">
                       View Raw Circular Snippet ›
                     </summary>
                     <pre className="mt-2 p-3 rounded-md bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-[10px] text-neutral-800 dark:text-neutral-200 font-mono whitespace-pre-wrap overflow-x-auto">

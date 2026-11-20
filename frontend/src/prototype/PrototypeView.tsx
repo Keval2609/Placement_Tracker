@@ -98,17 +98,17 @@ export const PrototypeView: React.FC<PrototypeViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950 text-neutral-800 dark:text-neutral-100 font-sans selection:bg-bmw-primary selection:text-white pb-16 transition-colors duration-150 overflow-x-hidden w-full max-w-full">
+    <div className="min-h-screen bg-registry-canvas dark:bg-registry-dark-canvas text-neutral-800 dark:text-neutral-100 font-sans selection:bg-tpo-cobalt selection:text-white pb-16 transition-colors duration-150 overflow-x-hidden w-full max-w-full">
       {/* Top Notification Bar */}
-      <div className="bg-neutral-50 dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 px-4 py-2.5 text-xs text-neutral-800 dark:text-neutral-200">
+      <div className="bg-registry-surface dark:bg-registry-dark-surface border-b border-registry-border dark:border-registry-dark-border px-4 py-2 text-xs text-neutral-800 dark:text-neutral-200">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-bmw-primary rounded-full" />
-            <span className="font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
-              DEMO SHOWCASE PREVIEW
+            <span className="w-2 h-2 bg-tpo-accent rounded-full" />
+            <span className="font-mono font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
+              COHORT SIMULATION SANDBOX
             </span>
             <span className="text-neutral-500 dark:text-neutral-400 font-normal hidden sm:inline">
-              — Interactive Prototype Showcase (Cards, Funnel Pipeline, Quick Filters, AI Parser & Detail Views)
+              — Interactive Verification Showcase (Simulated Candidate Drives, Pipeline & Ingestion)
             </span>
           </div>
 
@@ -116,9 +116,9 @@ export const PrototypeView: React.FC<PrototypeViewProps> = ({
             <button
               type="button"
               onClick={onExitPrototype}
-              className="px-3 py-1 bg-white dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border border-neutral-300 dark:border-neutral-700 rounded-md"
+              className="px-3 py-1 bg-white dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer border border-neutral-300 dark:border-neutral-700 rounded-md"
             >
-              Back to Live Dashboard
+              Back to Live Registry
             </button>
           </div>
         </div>
@@ -144,7 +144,7 @@ export const PrototypeView: React.FC<PrototypeViewProps> = ({
 
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
-        {/* Executive KPI Metrics - BMW Navy Hero Band */}
+        {/* Executive KPI Metrics - Registry Header Band */}
         <PrototypeMetricsStrip
           drives={drives}
           onFilterUrgent={() => {
@@ -267,7 +267,7 @@ export const PrototypeView: React.FC<PrototypeViewProps> = ({
       <footer className="mt-16 border-t border-neutral-200 dark:border-neutral-800 pt-8 pb-10 text-xs text-neutral-500 dark:text-neutral-400">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 bg-bmw-surface-dark rounded flex items-center justify-center font-bold text-white text-[10px] border border-neutral-800">
+            <div className="w-5 h-5 bg-tpo-navy rounded flex items-center justify-center font-bold text-white text-[10px] border border-neutral-800">
               PT
             </div>
             <span className="font-medium text-neutral-700 dark:text-neutral-300">
@@ -281,7 +281,7 @@ export const PrototypeView: React.FC<PrototypeViewProps> = ({
                 <button
                   type="button"
                   onClick={() => onOpenLegal("terms")}
-                  className="hover:text-bmw-primary transition-colors cursor-pointer"
+                  className="hover:text-tpo-cobalt transition-colors cursor-pointer"
                 >
                   Terms of Service
                 </button>
@@ -289,7 +289,7 @@ export const PrototypeView: React.FC<PrototypeViewProps> = ({
                 <button
                   type="button"
                   onClick={() => onOpenLegal("privacy")}
-                  className="hover:text-bmw-primary transition-colors cursor-pointer"
+                  className="hover:text-tpo-cobalt transition-colors cursor-pointer"
                 >
                   Privacy Policy
                 </button>
@@ -300,7 +300,7 @@ export const PrototypeView: React.FC<PrototypeViewProps> = ({
               href="https://github.com/Keval2609/Placement_Tracker"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-bmw-primary transition-colors"
+              className="hover:text-tpo-cobalt transition-colors"
             >
               GitHub
             </a>

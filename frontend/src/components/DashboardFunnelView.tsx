@@ -19,7 +19,7 @@ const COLUMNS: {
   { id: "applied", title: "Applied" },
   { id: "oa", title: "OA Scheduled" },
   { id: "interview", title: "Interview Round" },
-  { id: "offer", title: "Offer Secured 🎉" },
+  { id: "offer", title: "Offer Extended" },
 ];
 
 export const DashboardFunnelView: React.FC<DashboardFunnelViewProps> = ({
@@ -78,11 +78,11 @@ export const DashboardFunnelView: React.FC<DashboardFunnelViewProps> = ({
                     onSelectDrive(drive.id);
                   }
                 }}
-                className="group p-3.5 bg-white dark:bg-neutral-800/90 border border-neutral-200 dark:border-neutral-700 hover:border-bmw-primary dark:hover:border-bmw-primary rounded-md transition-all duration-200 cursor-pointer space-y-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bmw-primary shadow-xs"
+                className="group p-3.5 bg-white dark:bg-neutral-800/90 border border-neutral-200 dark:border-neutral-700 hover:border-tpo-cobalt dark:hover:border-blue-400 rounded-md transition-all duration-200 cursor-pointer space-y-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt shadow-xs"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h4 className="text-xs font-bold text-neutral-900 dark:text-white group-hover:text-bmw-primary transition-colors">
+                    <h4 className="text-sm font-serif font-bold text-neutral-900 dark:text-white group-hover:text-tpo-cobalt transition-colors">
                       {drive.company_name}
                     </h4>
                     <p className="text-xs text-neutral-600 dark:text-neutral-400 font-medium line-clamp-1">
@@ -120,10 +120,10 @@ export const DashboardFunnelView: React.FC<DashboardFunnelViewProps> = ({
                         e.stopPropagation();
                         onAddUpdate(drive.id);
                       }}
-                      className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400 hover:text-bmw-primary dark:hover:text-blue-400 cursor-pointer"
+                      className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400 hover:text-tpo-cobalt dark:hover:text-blue-400 cursor-pointer"
                       title="Add update notice"
                     >
-                      <Plus className="w-3 h-3 text-bmw-primary dark:text-blue-400" />
+                      <Plus className="w-3 h-3 text-tpo-cobalt dark:text-blue-400" />
                       <span>Update</span>
                     </button>
                   ) : <div />}
@@ -133,7 +133,7 @@ export const DashboardFunnelView: React.FC<DashboardFunnelViewProps> = ({
                       role="button"
                       tabIndex={0}
                       aria-label={`Advance ${drive.company_name} to next recruitment stage`}
-                      className="flex items-center gap-1 font-bold uppercase tracking-wider text-bmw-primary dark:text-blue-400 hover:text-bmw-primary-active focus-visible:outline-none focus-visible:underline cursor-pointer"
+                      className="flex items-center gap-1 font-bold uppercase tracking-wider text-tpo-cobalt dark:text-blue-400 hover:text-tpo-cobalt-hover focus-visible:outline-none focus-visible:underline cursor-pointer"
                       onClick={(e) => {
                         const nextMap: Record<string, ApplicationStatus> = {
                           not_applied: "applied",

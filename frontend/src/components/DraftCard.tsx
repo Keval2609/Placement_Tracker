@@ -116,7 +116,7 @@ export const DraftCard: React.FC<DraftCardProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-bold uppercase tracking-[1px] text-neutral-800 dark:text-neutral-200 mb-1 flex items-center gap-1.5">
-            <Building2 className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+            <Building2 className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
             Company Name *
           </label>
           <input
@@ -124,14 +124,14 @@ export const DraftCard: React.FC<DraftCardProps> = ({
             value={posting.company_name}
             onChange={(e) => handleFieldChange("company_name", e.target.value)}
             placeholder="e.g. Google India"
-            className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400"
+            className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-tpo-cobalt dark:focus:border-blue-400"
             required
           />
         </div>
 
         <div>
           <label className="block text-xs font-bold uppercase tracking-[1px] text-neutral-800 dark:text-neutral-200 mb-1 flex items-center gap-1.5">
-            <Briefcase className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+            <Briefcase className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
             Role Title *
           </label>
           <input
@@ -139,14 +139,14 @@ export const DraftCard: React.FC<DraftCardProps> = ({
             value={posting.role_title}
             onChange={(e) => handleFieldChange("role_title", e.target.value)}
             placeholder="e.g. Software Engineer / SDE Intern"
-            className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400"
+            className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-tpo-cobalt dark:focus:border-blue-400"
             required
           />
         </div>
 
         <div>
           <label className="block text-xs font-bold uppercase tracking-[1px] text-neutral-800 dark:text-neutral-200 mb-1 flex items-center gap-1.5">
-            <IndianRupee className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+            <IndianRupee className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
             Salary / CTC Package
           </label>
           <input
@@ -156,13 +156,13 @@ export const DraftCard: React.FC<DraftCardProps> = ({
               handleFieldChange("ctc_display", e.target.value || null)
             }
             placeholder="e.g. ₹34.5 LPA or 18 LPA"
-            className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400"
+            className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-tpo-cobalt dark:focus:border-blue-400"
           />
         </div>
 
         <div>
           <label className="block text-xs font-bold uppercase tracking-[1px] text-neutral-800 dark:text-neutral-200 mb-1 flex items-center gap-1.5">
-            <GraduationCap className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+            <GraduationCap className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
             Min CGPA Cutoff
           </label>
           <input
@@ -178,13 +178,13 @@ export const DraftCard: React.FC<DraftCardProps> = ({
               )
             }
             placeholder="e.g. 7.5"
-            className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400"
+            className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-tpo-cobalt dark:focus:border-blue-400"
           />
         </div>
 
         <div>
           <label className="block text-xs font-bold uppercase tracking-[1px] text-neutral-800 dark:text-neutral-200 mb-1 flex items-center gap-1.5">
-            <LinkIcon className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+            <LinkIcon className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
             Application Link
           </label>
           <input
@@ -194,13 +194,13 @@ export const DraftCard: React.FC<DraftCardProps> = ({
               handleFieldChange("application_link", e.target.value || null)
             }
             placeholder="https://..."
-            className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400"
+            className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-tpo-cobalt dark:focus:border-blue-400"
           />
         </div>
 
         <div className="md:col-span-2">
           <label className="block text-xs font-bold uppercase tracking-[1px] text-neutral-800 dark:text-neutral-200 mb-1 flex items-center gap-1.5">
-            <FileText className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+            <FileText className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
             Eligibility Summary
           </label>
           <input
@@ -210,7 +210,7 @@ export const DraftCard: React.FC<DraftCardProps> = ({
               handleFieldChange("eligibility_raw", e.target.value || null)
             }
             placeholder="e.g. 7.5 CGPA and above, CSE/IT branches only"
-            className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary dark:focus:border-blue-400"
+            className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-tpo-cobalt dark:focus:border-blue-400"
           />
         </div>
       </div>
@@ -224,7 +224,7 @@ export const DraftCard: React.FC<DraftCardProps> = ({
           <button
             type="button"
             onClick={() => setShowAddDateForm(!showAddDateForm)}
-            className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[0.5px] text-bmw-primary dark:text-blue-400 hover:underline transition-colors"
+            className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[0.5px] text-tpo-cobalt dark:text-blue-400 hover:underline transition-colors"
           >
             <Plus className="w-3.5 h-3.5" /> Add Date Manually
           </button>
@@ -245,7 +245,7 @@ export const DraftCard: React.FC<DraftCardProps> = ({
                 <select
                   value={newDateType}
                   onChange={(e) => setNewDateType(e.target.value as DateType)}
-                  className="w-full text-xs px-2.5 py-1.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary"
+                  className="w-full text-xs px-2.5 py-1.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-tpo-cobalt"
                 >
                   <option value="application_deadline">Application Deadline</option>
                   <option value="oa">Online Assessment (OA)</option>
@@ -264,7 +264,7 @@ export const DraftCard: React.FC<DraftCardProps> = ({
                   value={newDateLabel}
                   onChange={(e) => setNewDateLabel(e.target.value)}
                   placeholder="e.g. Round 1 OA"
-                  className="w-full text-xs px-2.5 py-1.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary"
+                  className="w-full text-xs px-2.5 py-1.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-tpo-cobalt"
                 />
               </div>
 
@@ -277,7 +277,7 @@ export const DraftCard: React.FC<DraftCardProps> = ({
                   value={newDateVal}
                   onChange={(e) => setNewDateVal(e.target.value)}
                   required
-                  className="w-full text-xs px-2.5 py-1.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-bmw-primary"
+                  className="w-full text-xs px-2.5 py-1.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-tpo-cobalt"
                 />
               </div>
             </div>
@@ -292,7 +292,7 @@ export const DraftCard: React.FC<DraftCardProps> = ({
               </button>
               <button
                 type="submit"
-                className="px-4 py-1.5 text-xs font-bold uppercase tracking-[0.5px] bg-bmw-primary hover:bg-blue-700 text-white rounded-md transition-colors"
+                className="px-4 py-1.5 text-xs font-bold uppercase tracking-[0.5px] bg-tpo-cobalt hover:bg-blue-700 text-white rounded-md transition-colors"
               >
                 Add Date
               </button>

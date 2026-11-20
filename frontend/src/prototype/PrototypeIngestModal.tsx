@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import {
   X,
-  Sparkles,
+  FileText,
   FileUp,
   MessageSquareText,
   Loader2,
@@ -139,14 +139,14 @@ export const PrototypeIngestModal: React.FC<PrototypeIngestModalProps> = ({
 
         {/* Modal Header */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#1a2129] rounded-md flex items-center justify-center text-white">
-            <Sparkles className="w-5 h-5 text-[#1c69d4] dark:text-blue-400" />
+          <div className="w-10 h-10 bg-tpo-navy rounded-md flex items-center justify-center text-white">
+            <FileText className="w-5 h-5 text-tpo-accent" />
           </div>
           <div>
-            <h2 className="text-lg font-bold uppercase tracking-[1px] text-neutral-900 dark:text-white">
-              AI Placement Notice Parser
+            <h2 className="text-lg font-serif font-bold text-neutral-900 dark:text-white">
+              TPO Circular Parser & Notice Extractor
             </h2>
-            <p className="text-xs font-light text-neutral-600 dark:text-neutral-400">
+            <p className="text-xs font-normal text-neutral-600 dark:text-neutral-400">
               Extract company, role, package, eligibility, and deadline from raw text or circular files.
             </p>
           </div>
@@ -160,7 +160,7 @@ export const PrototypeIngestModal: React.FC<PrototypeIngestModalProps> = ({
               onClick={() => setActiveTab("text")}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.5px] rounded-sm transition-all ${
                 activeTab === "text"
-                  ? "bg-[#1c69d4] text-white shadow-xs"
+                  ? "bg-tpo-cobalt text-white shadow-xs"
                   : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               }`}
             >
@@ -208,7 +208,7 @@ export const PrototypeIngestModal: React.FC<PrototypeIngestModalProps> = ({
                 type="button"
                 onClick={handleExtract}
                 disabled={!inputText.trim() || isAnalyzing}
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-[#1c69d4] hover:bg-blue-700 disabled:opacity-50 rounded-md transition-colors cursor-pointer shadow-sm"
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.5px] text-white bg-tpo-cobalt hover:bg-tpo-cobalt-hover disabled:opacity-50 rounded-md transition-colors cursor-pointer shadow-sm"
               >
                 {isAnalyzing ? (
                   <>
@@ -217,8 +217,8 @@ export const PrototypeIngestModal: React.FC<PrototypeIngestModalProps> = ({
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4" />
-                    <span>Analyze Notice</span>
+                    <FileText className="w-4 h-4" />
+                    <span>Extract Notice Data</span>
                   </>
                 )}
               </button>

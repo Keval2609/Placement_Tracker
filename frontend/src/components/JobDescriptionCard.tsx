@@ -41,7 +41,7 @@ export const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 dark:border-neutral-800 pb-4">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 bg-[#1a2129] rounded-md text-white flex items-center justify-center shrink-0">
-            <FileText className="w-4 h-4 text-bmw-primary dark:text-blue-400" />
+            <FileText className="w-4 h-4 text-tpo-cobalt dark:text-blue-400" />
           </div>
           <div>
             <h2 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-white uppercase tracking-[0.5px]">
@@ -70,7 +70,7 @@ export const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
               </>
             ) : (
               <>
-                <Copy className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+                <Copy className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
                 <span>Copy Description</span>
               </>
             )}
@@ -102,7 +102,7 @@ export const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
             <button
               type="button"
               onClick={onOpenAddUpdate}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-[0.5px] text-white bg-bmw-primary hover:bg-blue-700 rounded-md transition-colors cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-[0.5px] text-white bg-tpo-cobalt hover:bg-blue-700 rounded-md transition-colors cursor-pointer shadow-xs"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add Description or Circular</span>
@@ -127,7 +127,7 @@ export const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
         {/* Branches */}
         <div className="p-3 bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-800 rounded-md space-y-1">
           <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[1px] text-neutral-500 dark:text-neutral-400">
-            <GraduationCap className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+            <GraduationCap className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
             <span>Eligible Branches</span>
           </div>
           <div className="flex flex-wrap gap-1 mt-0.5">
@@ -149,7 +149,7 @@ export const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
         {/* Portal Link */}
         <div className="p-3 bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-800 rounded-md space-y-1">
           <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[1px] text-neutral-500 dark:text-neutral-400">
-            <ExternalLink className="w-3.5 h-3.5 text-bmw-primary dark:text-blue-400" />
+            <ExternalLink className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
             <span>Application Portal</span>
           </div>
           <div>
@@ -158,7 +158,7 @@ export const JobDescriptionCard: React.FC<JobDescriptionCardProps> = ({
                 href={drive.application_link}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 text-xs font-bold text-bmw-primary dark:text-blue-400 hover:underline break-all"
+                className="inline-flex items-center gap-1 text-xs font-bold text-tpo-cobalt dark:text-blue-400 hover:underline break-all"
               >
                 <span>Open Application Link</span>
                 <ExternalLink className="w-3 h-3 shrink-0" />

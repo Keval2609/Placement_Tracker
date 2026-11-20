@@ -146,7 +146,7 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
           <button
             type="button"
             onClick={onReset}
-            className="px-6 py-2.5 bg-bmw-primary hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-[0.5px] rounded-md transition-all cursor-pointer shadow-xs"
+            className="px-6 py-2.5 bg-tpo-cobalt hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-[0.5px] rounded-md transition-all cursor-pointer shadow-xs"
           >
             Ingest Another Notice
           </button>
@@ -164,7 +164,7 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
           onClick={onReset}
           className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs font-bold uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4 text-bmw-primary dark:text-blue-400" />
+          <ArrowLeft className="w-4 h-4 text-tpo-cobalt dark:text-blue-400" />
           <span>Start Over</span>
         </button>
 
@@ -185,15 +185,15 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
             onClick={handleAddEmptyPosting}
             className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.5px] px-3.5 py-1.5 bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 border border-neutral-300 dark:border-neutral-700 rounded-md transition-colors cursor-pointer"
           >
-            <Plus className="w-4 h-4 text-bmw-primary dark:text-blue-400" />
+            <Plus className="w-4 h-4 text-tpo-cobalt dark:text-blue-400" />
             <span>Add Another Posting</span>
           </button>
         </div>
       </div>
 
       {/* Trust & Verification Banner */}
-      <div className="p-4 bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-lg flex items-start gap-3 text-xs text-bmw-primary dark:text-blue-400">
-        <ShieldCheck className="w-5 h-5 text-bmw-primary dark:text-blue-400 shrink-0 mt-0.5" />
+      <div className="p-4 bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-lg flex items-start gap-3 text-xs text-tpo-cobalt dark:text-blue-400">
+        <ShieldCheck className="w-5 h-5 text-tpo-cobalt dark:text-blue-400 shrink-0 mt-0.5" />
         <div>
           <span className="font-bold text-neutral-900 dark:text-white block uppercase tracking-[0.5px]">Human-in-the-Loop Confirmation Gate</span>
           <span className="text-neutral-700 dark:text-neutral-300 font-light">Each AI-extracted date requires explicit confirmation or dismissal before saving to protect against missed deadlines.</span>
@@ -235,7 +235,7 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
           type="button"
           onClick={handleSave}
           disabled={!isSaveEnabled}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-bmw-primary hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-bmw-primary disabled:cursor-not-allowed text-white text-xs font-bold uppercase tracking-[0.5px] rounded-md transition-all cursor-pointer shadow-xs"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-tpo-cobalt hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-tpo-cobalt disabled:cursor-not-allowed text-white text-xs font-bold uppercase tracking-[0.5px] rounded-md transition-all cursor-pointer shadow-xs"
         >
           <Save className="w-4 h-4" />
           <span>Save Confirmed Drive(s)</span>

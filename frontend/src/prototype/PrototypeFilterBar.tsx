@@ -41,7 +41,7 @@ export const PrototypeFilterBar: React.FC<PrototypeFilterBarProps> = ({
     { id: "applied", label: "Applied" },
     { id: "oa", label: "OA Stage" },
     { id: "interview", label: "Interview" },
-    { id: "offer", label: "Offer 🎉" },
+    { id: "offer", label: "Offer" },
   ];
 
   const companyTypes = [

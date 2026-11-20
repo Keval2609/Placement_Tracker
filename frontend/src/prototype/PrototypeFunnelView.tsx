@@ -58,11 +58,11 @@ export const PrototypeFunnelView: React.FC<PrototypeFunnelViewProps> = ({
                     <div
                       key={drive.id}
                       onClick={() => onSelect(drive)}
-                      className="group p-3.5 rounded-md bg-white dark:bg-neutral-800/90 border border-neutral-200 dark:border-neutral-700/80 hover:border-[#1c69d4] dark:hover:border-blue-400 transition-all duration-200 cursor-pointer space-y-2.5 shadow-xs"
+                      className="group p-3.5 rounded-md bg-white dark:bg-neutral-800/90 border border-neutral-200 dark:border-neutral-700/80 hover:border-tpo-cobalt dark:hover:border-blue-400 transition-all duration-200 cursor-pointer space-y-2.5 shadow-xs"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
-                          <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100 group-hover:text-[#1c69d4] dark:group-hover:text-blue-400 transition-colors truncate">
+                          <h4 className="text-sm font-serif font-bold text-neutral-900 dark:text-neutral-100 group-hover:text-tpo-cobalt dark:group-hover:text-blue-400 transition-colors truncate">
                             {drive.company_name}
                           </h4>
                           <p className="text-[11px] text-neutral-600 dark:text-neutral-300 font-light truncate">
