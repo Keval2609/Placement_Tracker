@@ -24,15 +24,12 @@ class Settings(BaseSettings):
     ollama_model: str = "qwen2.5:7b"
 
     # Sentry Error Tracking Configuration
-    sentry_dsn: str = "https://25ac8a51008ac0549d9858ed9e5d5ca4@o4511879102332928.ingest.de.sentry.io/4511879109083216"
+    sentry_dsn: str = ""
 
     # Web Push VAPID Configuration
     vapid_private_key: str = ""
     vapid_public_key: str = ""
     vapid_claim_email: str = "mailto:admin@placementtracker.app"
-
-    # Telegram Bot Configuration
-    telegram_bot_token: str = ""
 
     # Comma-separated list of allowed CORS origins for the frontend.
     cors_origins: str = (

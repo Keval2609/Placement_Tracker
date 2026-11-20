@@ -1,6 +1,7 @@
 """FastAPI application entrypoint with APScheduler background jobs."""
 
 import logging
+import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any
@@ -25,7 +26,6 @@ from app.sentry_setup import init_sentry
 from app.services.alert_service import (
     get_scheduler_health,
     run_deadline_check_job,
-    run_escalation_job,
 )
 
 setup_logging()
@@ -38,12 +38,12 @@ scheduler = AsyncIOScheduler() if AsyncIOScheduler is not None else None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Lifespan manager starting APScheduler background jobs for alerts & escalations."""
-    if scheduler is not None:
+    """Lifespan manager starting APScheduler background jobs for deadline alerts."""
+    is_testing = os.environ.get("TESTING") == "1"
+    if scheduler is not None and not is_testing:
         scheduler.add_job(run_deadline_check_job, "interval", minutes=5, id="deadline_check")
-        scheduler.add_job(run_escalation_job, "interval", minutes=1, id="escalation_check")
         scheduler.start()
-        logger.info("APScheduler started for deadline checks & escalations.")
+        logger.info("APScheduler started for deadline checks.")
     yield
     if scheduler is not None and getattr(scheduler, "running", False):
         scheduler.shutdown()

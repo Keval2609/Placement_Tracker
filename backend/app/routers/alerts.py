@@ -1,19 +1,19 @@
-"""FastAPI router for Web Push (VAPID), Telegram Bot linking, ACKs, and Onboarding Self-Test."""
+"""FastAPI router for Web Push (VAPID), Push Subscription Management, ACKs, and Testing."""
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, status
 from pydantic import BaseModel
 
 from app.dependencies import get_current_user_id
 from app.services.alert_service import (
     get_onboarding_test_status,
-    get_telegram_link,
+    get_user_subscriptions,
     get_vapid_public_key,
-    link_telegram_chat,
     record_push_ack,
+    remove_push_subscription,
     save_push_subscription,
-    send_telegram_test_message_async,
+    send_test_push_async,
     trigger_onboarding_test,
 )
 
@@ -21,23 +21,17 @@ router = APIRouter(prefix="", tags=["Alerts"])
 
 
 class PushSubscriptionRequest(BaseModel):
-    """Client Web Push subscription object from registration.pushManager.subscribe()."""
+    """Client Web Push subscription payload from registration.pushManager.subscribe()."""
 
     endpoint: str
     expirationTime: float | None = None
     keys: dict[str, str]
 
 
-class TelegramLinkRequest(BaseModel):
-    """Payload for linking user's Telegram chat_id."""
+class PushUnsubscribeRequest(BaseModel):
+    """Client Web Push unsubscription payload."""
 
-    chat_id: str
-
-
-class TelegramTestRequest(BaseModel):
-    """Optional payload for dispatching a test message to specific Telegram chat_id."""
-
-    chat_id: str | None = None
+    endpoint: str
 
 
 class PushAckRequest(BaseModel):
@@ -63,9 +57,53 @@ async def fetch_vapid_public_key() -> dict[str, str]:
 async def subscribe_push(
     payload: PushSubscriptionRequest,
     user_id: Annotated[str, Depends(get_current_user_id)],
+    user_agent: Annotated[str | None, Header(alias="user-agent")] = None,
 ) -> dict[str, str]:
-    save_push_subscription(user_id=user_id, subscription=payload.model_dump())
+    save_push_subscription(
+        user_id=user_id,
+        subscription=payload.model_dump(),
+        user_agent=user_agent,
+    )
     return {"message": "Push subscription saved successfully"}
+
+
+@router.post(
+    "/push/unsubscribe",
+    status_code=status.HTTP_200_OK,
+    summary="Unregister Web Push subscription for current device",
+)
+async def unsubscribe_push(
+    payload: PushUnsubscribeRequest,
+    user_id: Annotated[str, Depends(get_current_user_id)],
+) -> dict[str, str]:
+    remove_push_subscription(user_id=user_id, endpoint=payload.endpoint)
+    return {"message": "Push subscription removed successfully"}
+
+
+@router.get(
+    "/push/status",
+    status_code=status.HTTP_200_OK,
+    summary="Get push notification subscription count and status for current user",
+)
+async def fetch_push_status(
+    user_id: Annotated[str, Depends(get_current_user_id)],
+) -> dict[str, Any]:
+    subs = get_user_subscriptions(user_id=user_id)
+    return {
+        "is_enabled": len(subs) > 0,
+        "device_count": len(subs),
+    }
+
+
+@router.post(
+    "/push/test",
+    status_code=status.HTTP_200_OK,
+    summary="Trigger immediate mobile verification push notification",
+)
+async def trigger_test_push_notification(
+    user_id: Annotated[str, Depends(get_current_user_id)],
+) -> dict[str, Any]:
+    return send_test_push_async(user_id=user_id)
 
 
 @router.post(
@@ -78,55 +116,6 @@ async def acknowledge_push(
 ) -> dict[str, Any]:
     success = record_push_ack(alert_id=payload.alert_id)
     return {"acknowledged": success, "alert_id": payload.alert_id}
-
-
-@router.post(
-    "/telegram/link",
-    status_code=status.HTTP_200_OK,
-    summary="Link Telegram account chat_id for escalation fallback",
-)
-async def link_telegram(
-    payload: TelegramLinkRequest,
-    user_id: Annotated[str, Depends(get_current_user_id)],
-) -> dict[str, str]:
-    link_telegram_chat(user_id=user_id, chat_id=payload.chat_id)
-    return {
-        "message": f"Telegram chat_id {payload.chat_id} linked successfully.",
-        "chat_id": payload.chat_id,
-    }
-
-
-@router.get(
-    "/telegram/status",
-    status_code=status.HTTP_200_OK,
-    summary="Get linked Telegram account status",
-)
-async def fetch_telegram_status(
-    user_id: Annotated[str, Depends(get_current_user_id)],
-) -> dict[str, Any]:
-    chat_id = get_telegram_link(user_id=user_id)
-    return {"is_linked": chat_id is not None, "chat_id": chat_id}
-
-
-@router.post(
-    "/telegram/test",
-    status_code=status.HTTP_200_OK,
-    summary="Dispatch immediate test alert to linked Telegram chat",
-)
-async def trigger_test_telegram(
-    user_id: Annotated[str, Depends(get_current_user_id)],
-    payload: TelegramTestRequest | None = None,
-) -> dict[str, Any]:
-    chat_id = payload.chat_id if payload else None
-    success, message = await send_telegram_test_message_async(
-        user_id=user_id, chat_id=chat_id
-    )
-    if not success:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=message,
-        )
-    return {"success": True, "message": message}
 
 
 @router.post(

@@ -264,37 +264,32 @@ export async function savePushSubscription(
   }
 }
 
-export async function linkTelegramChat(chatId: string): Promise<string> {
-  const response = await apiFetch(`${API_BASE_URL}/telegram/link`, {
+export async function unsubscribePush(endpoint: string): Promise<void> {
+  const response = await apiFetch(`${API_BASE_URL}/push/unsubscribe`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId }),
+    body: JSON.stringify({ endpoint }),
   });
   if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.detail || "Failed linking Telegram chat");
+    throw new Error("Failed removing push subscription");
   }
-  const data = await response.json();
-  return data.chat_id;
 }
 
-export async function fetchTelegramStatus(): Promise<{ is_linked: boolean; chat_id: string | null }> {
-  const response = await apiFetch(`${API_BASE_URL}/telegram/status`);
+export async function fetchPushStatus(): Promise<{ is_enabled: boolean; device_count: number }> {
+  const response = await apiFetch(`${API_BASE_URL}/push/status`);
   if (!response.ok) {
-    return { is_linked: false, chat_id: null };
+    return { is_enabled: false, device_count: 0 };
   }
   return response.json();
 }
 
-export async function triggerTelegramTest(chatId?: string): Promise<{ success: boolean; message: string }> {
-  const response = await apiFetch(`${API_BASE_URL}/telegram/test`, {
+export async function triggerPushTest(): Promise<{ success: boolean; device_count: number; message: string }> {
+  const response = await apiFetch(`${API_BASE_URL}/push/test`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId || null }),
   });
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(err.detail || "Failed sending Telegram test message");
+    throw new Error(err.detail || "Failed sending test push notification");
   }
   return response.json();
 }
