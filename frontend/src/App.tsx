@@ -274,7 +274,7 @@ function App() {
               aria-label="Open alert channel settings"
               onClick={() => setIsAlertsDrawerOpen(true)}
               className="inline-flex items-center justify-center gap-1.5 p-2 sm:px-3 sm:py-2 w-8 h-8 sm:w-auto sm:h-auto text-xs font-semibold text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-md transition-colors cursor-pointer relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt"
-              title="Configure Telegram & Web Push notification channels"
+              title="Configure Mobile & Web Push notifications"
             >
               <Bell className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
               <span className="hidden sm:inline">Alert Channels</span>

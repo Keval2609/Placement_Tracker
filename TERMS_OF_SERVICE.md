@@ -25,7 +25,7 @@ If you do not agree to these Terms, please do not use the Service.
 * **Campus Drives**: Users may submit unstructured campus placement announcements (such as text notices, WhatsApp messages, or `.pdf`/`.docx` circulars) for automated extraction into structured drafts via Large Language Model (LLM) inference.
 * **Off-Campus Applications**: Users may manually log direct recruitment applications without AI processing.
 
-2.3. **Notification Channels**: The Service provides deadline alert evaluation and notification dispatch through Web Push (VAPID) and optional fallback escalation via the Telegram Bot API.
+2.3. **Notification Channels**: The Service provides deadline alert evaluation and notification dispatch through Web Push (VAPID) across desktop and mobile devices.
 
 ---
 
@@ -61,7 +61,7 @@ You agree not to use the Service to:
 
 ## 6. Service Availability & Notification Reliability
 
-6.1. **Best-Effort Delivery**: Deadline alerts (Web Push notifications and Telegram messages) are provided on a best-effort basis. Timely delivery depends on network connectivity, browser service worker lifecycles, and third-party operating system power managers (e.g., aggressive OEM background task termination on mobile devices).
+6.1. **Best-Effort Delivery**: Deadline alerts (Web Push notifications) are provided on a best-effort basis. Timely delivery depends on network connectivity, browser service worker lifecycles, and third-party operating system power managers (e.g., aggressive OEM background task termination on mobile devices).
 
 6.2. **No Guarantee of Delivery**: DriveTrack and its developers shall not be liable for missed recruitment deadlines, disqualified applications, or lost employment opportunities resulting from suppressed notifications or network interruptions.
 

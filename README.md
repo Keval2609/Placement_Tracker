@@ -23,7 +23,7 @@
 | **Automated Test Suite** | **74 / 74 passing (100%)** | `pytest` covering RLS tenant isolation, deadline normalization, conflict handling, and pipeline retention |
 | **Extraction Accuracy** | **93.3% field precision** | Benchmark suite across 30 real-world college WhatsApp announcements and PDF circulars |
 | **Median LLM Latency** | **1.78 seconds** | Measured on Groq LPU inference (`llama-3.3-70b-versatile`) with JSON schema constraints |
-| **Escalation Latency SLA** | **< 10 minutes** | Time before unacknowledged PWA Web Push alerts automatically escalate to the Telegram Bot API |
+| **Web Push Latency** | **< 500 ms** | Direct VAPID service worker delivery to desktop browsers and mobile PWAs |
 | **Client Safety & Hygiene** | **0 Errors, 0 Lint Warnings** | Strict TypeScript check (`tsc -b`) and ESLint zero-warning policy across 2,160+ modules with PWA service worker integration |
 
 ---
@@ -53,9 +53,9 @@ graph LR
         D -->|Instant Save| F
     end
 
-    subgraph Alerts["3. Escalation Engine"]
-        F -->|48h / 24h / 6h IST Cron| G[PWA Web Push Notification]
-        G -->|Unacknowledged > 10m| H[Telegram Bot Escalation Alert]
+    subgraph Alerts["3. Deadline Alert Engine"]
+        F -->|48h / 24h / 6h IST Cron| G[PWA Mobile & Desktop Web Push]
+        G -->|Receipt ACK| H[Delivery Confirmation]
     end
 ```
 
@@ -81,7 +81,7 @@ graph LR
   * *Off-Campus Applications*: Direct manual entry form that bypasses AI inference, capturing Company Name, Role Title, Job Description, Status (`applied`, `oa`, `interview`, `offer`, `rejected`), Application Link, and Deadline.
 * **Intelligent Active Pipeline Retention**: Standard deadline trackers move drives to "Past Drives" as soon as the registration deadline passes. DriveTrack evaluates `(deadline < now() AND application.status IN ('not_applied', 'withdrawn', 'rejected'))`. Drives in active stages (`applied`, `oa`, `interview`) remain pinned to the **Active Drives** dashboard section with an *"In Pipeline (Closed)"* badge until a final outcome (`Offer` or `Rejected`) is reached.
 * **Full-Fidelity Job Description & Specs Display**: The drive detail view renders complete job descriptions with whitespace/markdown formatting preservation, 1-click clipboard copy, and a quick specifications grid (CGPA cutoffs, eligible academic branches, and direct application portal link).
-* **Multi-Channel Alert & Escalation Engine**: Background `APScheduler` workers evaluate upcoming IST deadlines at **48h, 24h, and 6h** intervals. If a PWA Web Push notification goes unacknowledged for **> 10 minutes**, the escalation worker automatically fires a fallback alert via the **Telegram Bot API**.
+* **Mobile & Browser Web Push Alert Engine**: Background `APScheduler` workers evaluate upcoming IST deadlines at **48h, 24h, and 6h** intervals. VAPID Web Push notifications are dispatched directly to enrolled desktop and mobile PWA devices, supported by background sync, high-priority vibration, and interactive notification routing.
 * **Deduplication vs. Diff Updates**:
   * *Deduplication*: Prevents accidental double-entries via `HTTP 409 Conflict` checks on `(company_id, role_title, primary_deadline)`.
   * *Diff Updates*: When a follow-up circular announces revised dates or venue changes, uploading it targets `POST /drives/{id}/updates`, running an LLM diff pipeline that records human-readable change logs in `drive_updates` and merges new milestones into the existing audit timeline.
@@ -108,7 +108,7 @@ Building production AI ingestion systems surfaces real failure modes where LLMs 
 ### 3. Silent Notification Drops from Aggressive Android OEM Battery Managers
 * **Failure Mode**: Web Push notifications on Xiaomi/MIUI, OnePlus/OxygenOS, and Samsung devices were silently dropped when the browser was closed or in background sleep.
 * **Root Cause**: OEM battery optimization engines aggressively kill background service worker execution threads.
-* **Resolution**: Built a two-tier escalation architecture: browser push events deliver immediate notifications when the device is active; if the receipt is unacknowledged after 10 minutes, the background APScheduler worker automatically dispatches a priority alert through the student's paired Telegram bot.
+* **Resolution**: Replaced fragile third-party messaging bots with a direct, mobile-first Web Push service worker (`injectManifest` with Workbox). Provided an OEM detection advisory system that prompts Xiaomi/MIUI and OnePlus/OxygenOS users with device-specific battery settings, combined with standalone PWA installation guidance for iOS and Android.
 
 ### 4. Dark Mode Flash of Unstyled Color (FOUC) & Dynamic DOM Desynchronization
 * **Failure Mode**: When loading the dashboard in dark mode, users experienced an abrupt white flicker before the interface snapped into dark styling, and state changes failed to propagate when the build tool cached CSS media strategies.
@@ -299,8 +299,8 @@ uvicorn app.main:app --reload
 ```bash
 cd frontend
 cp .env.example .env      # Configure VITE_API_BASE_URL, Clerk and Supabase public keys
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 ### 3. Testing & Quality Assurance
@@ -313,8 +313,8 @@ ruff check .
 
 # Frontend Typecheck, Lint & Production Build
 cd frontend
-npm run lint      # ESLint strict validation (0 errors, 0 warnings)
-npm run build     # TypeScript compiler (tsc -b) & Vite production bundle
+pnpm run lint      # ESLint strict validation (0 errors, 0 warnings)
+pnpm run build     # TypeScript compiler (tsc -b) & Vite production bundle
 ```
 
 ### 4. Core API Endpoints
@@ -332,8 +332,7 @@ npm run build     # TypeScript compiler (tsc -b) & Vite production bundle
 | `PATCH` | `/applications/{id}` | Update recruitment funnel stage (`applied`, `oa`, `interview`, `offer`) | Yes (Clerk) |
 | `GET` | `/push/vapid-public-key` | Retrieve VAPID public key for Web Push subscription | No |
 | `POST` | `/push/subscribe` | Register service worker push subscription for deadline alerts | Yes (Clerk) |
-| `POST` | `/push/ack` | Acknowledge alert receipt to cancel pending Telegram escalation | Yes (Clerk) |
-| `POST` | `/telegram/link` | Link Telegram chat ID for fallback escalation notifications | Yes (Clerk) |
+| `POST` | `/push/ack` | Acknowledge alert receipt for delivery confirmation | Yes (Clerk) |
 | `GET` | `/health` | API service liveness check | No |
 | `GET` | `/health/scheduler` | APScheduler heartbeat monitor for alert background jobs | No |
 
