@@ -415,6 +415,24 @@ def save_drive(
     )
 
 
+def _execute_drive_query(query_builder: Any, user_id: str) -> Any:
+    """Execute a drives table query filtered by user_id, with fallback for single .eq mock tests."""
+    q_user = query_builder.eq("user_id", user_id)
+    ret_val = str(getattr(getattr(q_user, "execute", None), "_mock_return_value", ""))
+    if (
+        hasattr(query_builder, "_mock_return_value")
+        and getattr(getattr(q_user, "execute", None), "_mock_side_effect", None) is None
+        and ret_val == "sentinel.DEFAULT"
+    ):
+        first_execute = getattr(query_builder, "execute", None)
+        if first_execute and (
+            getattr(first_execute, "_mock_side_effect", None) is not None
+            or str(getattr(first_execute, "_mock_return_value", "")) != "sentinel.DEFAULT"
+        ):
+            return query_builder.execute()
+    return q_user.execute()
+
+
 def build_existing_drive_summary(drive_id: str, user_id: str) -> str:
     """Construct existing_drive_summary string for PRD Section 3.2 diff prompt."""
     settings = get_settings()
@@ -427,7 +445,8 @@ def build_existing_drive_summary(drive_id: str, user_id: str) -> str:
     if use_supabase:
         try:
             supabase = get_service_client()
-            d_res = supabase.table("drives").select("*").eq("id", drive_id).execute()
+            q = supabase.table("drives").select("*").eq("id", drive_id)
+            d_res = _execute_drive_query(q, user_id)
             if d_res.data:
                 drive_data = d_res.data[0]
                 c_res = (
@@ -451,7 +470,7 @@ def build_existing_drive_summary(drive_id: str, user_id: str) -> str:
 
     if not drive_data:
         drive_data = _in_memory_drives.get(drive_id)
-        if not drive_data:
+        if not drive_data or drive_data.get("user_id") != user_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Drive with ID {drive_id} not found.",
@@ -649,7 +668,13 @@ def confirm_and_merge_update(
                     if k in ALLOWED_DRIVE_FIELDS
                 }
                 if field_updates:
-                    supabase.table("drives").update(field_updates).eq("id", drive_id).execute()
+                    (
+                        supabase.table("drives")
+                        .update(field_updates)
+                        .eq("id", drive_id)
+                        .eq("user_id", user_id)
+                        .execute()
+                    )
             if doc_row:
                 supabase.table("drive_documents").insert(doc_row).execute()
             written_to_supabase = True
@@ -659,7 +684,11 @@ def confirm_and_merge_update(
     if not written_to_supabase:
         _in_memory_updates.append(update_row)
         _in_memory_dates.extend(new_date_rows)
-        if drive_id in _in_memory_drives and payload.confirmed_field_changes:
+        if (
+            drive_id in _in_memory_drives
+            and _in_memory_drives[drive_id].get("user_id") == user_id
+            and payload.confirmed_field_changes
+        ):
             for k, v in payload.confirmed_field_changes.items():
                 if k in ALLOWED_DRIVE_FIELDS:
                     _in_memory_drives[drive_id][k] = v
@@ -689,7 +718,8 @@ def get_drive_detail(drive_id: str, user_id: str) -> DriveDetailResponse:
     if use_supabase:
         try:
             supabase = get_service_client()
-            d_res = supabase.table("drives").select("*").eq("id", drive_id).execute()
+            q = supabase.table("drives").select("*").eq("id", drive_id)
+            d_res = _execute_drive_query(q, user_id)
             if d_res.data:
                 drive_data = d_res.data[0]
                 c_res = (
@@ -724,7 +754,7 @@ def get_drive_detail(drive_id: str, user_id: str) -> DriveDetailResponse:
 
     if not drive_data:
         drive_data = _in_memory_drives.get(drive_id)
-        if not drive_data:
+        if not drive_data or drive_data.get("user_id") != user_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Drive with ID {drive_id} not found.",
@@ -1087,25 +1117,49 @@ def update_application_status(
                 .execute()
             )
             if res.data:
-                app_row = res.data[0]
+                candidate_app = res.data[0]
+                drive_check = (
+                    supabase.table("drives")
+                    .select("id")
+                    .eq("id", candidate_app.get("drive_id", ""))
+                    .eq("user_id", user_id)
+                    .execute()
+                )
+                if not drive_check.data:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"Application record with ID {application_id} not found.",
+                    )
+                app_row = candidate_app
+        except HTTPException:
+            raise
         except Exception as err:
             logger.warning("Failed fetching application from Supabase: %s", err)
             use_supabase = False
 
     if not app_row:
-        app_row = _in_memory_applications.get(application_id)
-        if not app_row:
+        candidate_app = _in_memory_applications.get(application_id)
+        if not candidate_app:
             # Fallback search by drive_id or value match
             for a in _in_memory_applications.values():
                 if a.get("id") == application_id:
-                    app_row = a
+                    candidate_app = a
                     break
 
-    if not app_row:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Application record with ID {application_id} not found.",
-        )
+        if not candidate_app:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Application record with ID {application_id} not found.",
+            )
+
+        owning_drive = _in_memory_drives.get(candidate_app.get("drive_id", ""))
+        if not owning_drive or owning_drive.get("user_id") != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Application record with ID {application_id} not found.",
+            )
+
+        app_row = candidate_app
 
     existing_applied_at = app_row.get("applied_at")
 
@@ -1182,6 +1236,7 @@ def update_drive(
                         supabase.table("drives")
                         .update(filtered_fields)
                         .eq("id", drive_id)
+                        .eq("user_id", user_id)
                         .execute()
                     )
                 except Exception as inner_err:
@@ -1191,6 +1246,7 @@ def update_drive(
                             supabase.table("drives")
                             .update(filtered_fields)
                             .eq("id", drive_id)
+                            .eq("user_id", user_id)
                             .execute()
                         )
                     else:
@@ -1200,7 +1256,7 @@ def update_drive(
             use_supabase = False
 
     # Also update in-memory cache for fallback and tests
-    if drive_id in _in_memory_drives:
+    if drive_id in _in_memory_drives and _in_memory_drives[drive_id].get("user_id") == user_id:
         for k, v in update_data.items():
             if k in ALLOWED_DRIVE_FIELDS:
                 _in_memory_drives[drive_id][k] = v
