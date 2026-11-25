@@ -15,7 +15,6 @@ import {
   Layers,
 } from "lucide-react";
 import { setTokenGetter } from "./services/api";
-import { setSupabaseAuth } from "./lib/supabase";
 
 const getInitialLegalTab = (): LegalTab | null => {
   if (typeof window === "undefined") return null;
@@ -82,16 +81,6 @@ function App() {
       return null;
     }
   });
-
-  useEffect(() => {
-    if (isSignedIn) {
-      getToken({ template: "supabase" })
-        .then(setSupabaseAuth)
-        .catch(() => setSupabaseAuth(null));
-    } else {
-      setSupabaseAuth(null);
-    }
-  }, [isSignedIn, getToken]);
 
   const [showPrototype, setShowPrototype] = useState<boolean>(isDemoEnvironment);
   const [legalTab, setLegalTab] = useState<LegalTab | null>(getInitialLegalTab);

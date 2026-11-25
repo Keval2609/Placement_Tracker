@@ -50,6 +50,7 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
   const [isAddUpdateOpen, setIsAddUpdateOpen] = useState<boolean>(false);
   const [isEditDriveOpen, setIsEditDriveOpen] = useState<boolean>(false);
@@ -124,6 +125,7 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
     if (!drive) return;
     const newStatus = e.target.value as ApplicationStatus;
     setIsUpdatingStatus(true);
+    setStatusError(null);
     try {
       const targetAppId = applicationId || drive.application_id || drive.id;
       await updateApplicationStatus(targetAppId, newStatus);
@@ -132,7 +134,7 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
       await loadData();
     } catch (err: unknown) {
       console.error("Failed updating application status:", err);
-      setError(`Failed to update status: ${(err as Error).message || "Unknown error"}`);
+      setStatusError(`Failed to update status: ${(err as Error).message || "Unknown error"}`);
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -193,6 +195,18 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
           </div>
         ) : (
           <div className="space-y-6">
+            {statusError && (
+              <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg text-xs text-red-700 dark:text-red-400 flex items-center justify-between">
+                <span>{statusError}</span>
+                <button
+                  type="button"
+                  onClick={() => setStatusError(null)}
+                  className="font-bold hover:text-red-900 dark:hover:text-red-200 ml-2"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
             {/* Top Header Section */}
             <div className="flex flex-wrap items-start justify-between gap-4 pt-2 border-b border-neutral-200 dark:border-neutral-800 pb-5">
               <div className="flex items-start gap-4 min-w-0 flex-1">
