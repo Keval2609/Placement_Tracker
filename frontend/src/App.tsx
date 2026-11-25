@@ -1,11 +1,22 @@
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, lazy, useEffect, useState, useCallback } from "react";
 import { SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/react";
 import { DashboardPage } from "./components/DashboardPage";
-import { IngestModal } from "./components/IngestModal";
-import { AlertsDrawer } from "./components/AlertsDrawer";
 import { ThemeToggle } from "./components/ThemeToggle";
-import { LegalPage, LegalTab } from "./components/LegalPage";
-import { PrototypeView } from "./prototype/PrototypeView";
+import { LegalTab } from "./components/LegalPage";
+import { PageSkeleton } from "./components/Skeleton";
+
+const IngestModal = lazy(() =>
+  import("./components/IngestModal").then((m) => ({ default: m.IngestModal }))
+);
+const AlertsDrawer = lazy(() =>
+  import("./components/AlertsDrawer").then((m) => ({ default: m.AlertsDrawer }))
+);
+const LegalPage = lazy(() =>
+  import("./components/LegalPage").then((m) => ({ default: m.LegalPage }))
+);
+const PrototypeView = lazy(() =>
+  import("./prototype/PrototypeView").then((m) => ({ default: m.PrototypeView }))
+);
 import {
   LogIn,
   Loader2,
@@ -143,29 +154,33 @@ function App() {
 
   if (legalTab) {
     return (
-      <LegalPage
-        initialTab={legalTab}
-        onBack={handleCloseLegal}
-      />
+      <Suspense fallback={<PageSkeleton />}>
+        <LegalPage
+          initialTab={legalTab}
+          onBack={handleCloseLegal}
+        />
+      </Suspense>
     );
   }
 
   if (showPrototype) {
     return (
-      <PrototypeView
-        onExitPrototype={() => {
-          setShowPrototype(false);
-          if (
-            window.location.search.includes("demo") ||
-            window.location.search.includes("mock") ||
-            window.location.hash.includes("demo") ||
-            window.location.hash.includes("mock")
-          ) {
-            window.history.replaceState({}, "", window.location.pathname);
-          }
-        }}
-        onOpenLegal={handleOpenLegal}
-      />
+      <Suspense fallback={<PageSkeleton />}>
+        <PrototypeView
+          onExitPrototype={() => {
+            setShowPrototype(false);
+            if (
+              window.location.search.includes("demo") ||
+              window.location.search.includes("mock") ||
+              window.location.hash.includes("demo") ||
+              window.location.hash.includes("mock")
+            ) {
+              window.history.replaceState({}, "", window.location.pathname);
+            }
+          }}
+          onOpenLegal={handleOpenLegal}
+        />
+      </Suspense>
     );
   }
 
@@ -468,17 +483,25 @@ function App() {
       </footer>
 
       {/* Modal-First Ingest Wizard */}
-      <IngestModal
-        isOpen={isIngestModalOpen}
-        onClose={() => setIsIngestModalOpen(false)}
-        onDriveCreated={() => setRefreshKey((k) => k + 1)}
-      />
+      {isIngestModalOpen && (
+        <Suspense fallback={null}>
+          <IngestModal
+            isOpen={isIngestModalOpen}
+            onClose={() => setIsIngestModalOpen(false)}
+            onDriveCreated={() => setRefreshKey((k) => k + 1)}
+          />
+        </Suspense>
+      )}
 
       {/* Alerts & Notification Channels Drawer */}
-      <AlertsDrawer
-        isOpen={isAlertsDrawerOpen}
-        onClose={() => setIsAlertsDrawerOpen(false)}
-      />
+      {isAlertsDrawerOpen && (
+        <Suspense fallback={null}>
+          <AlertsDrawer
+            isOpen={isAlertsDrawerOpen}
+            onClose={() => setIsAlertsDrawerOpen(false)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
