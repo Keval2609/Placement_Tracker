@@ -1,8 +1,10 @@
 """Sentry Error Tracking Initialization."""
 
 import logging
+from typing import Any
 
 import sentry_sdk
+from sentry_sdk.consts import DEFAULT_OPTIONS
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 
 from app.config import get_settings
@@ -18,13 +20,20 @@ def init_sentry() -> None:
         logger.info("Sentry DSN not provided; Sentry initialization skipped.")
         return
 
-    sentry_sdk.init(
-        dsn=dsn,
-        integrations=[FastApiIntegration()],
-        send_default_pii=False,
-        enable_logs=True,
-        traces_sample_rate=0.2,
-        profile_session_sample_rate=0.2,
-        profile_lifecycle="trace",
-    )
+    options: dict[str, Any] = {
+        "dsn": dsn,
+        "integrations": [FastApiIntegration()],
+        "traces_sample_rate": 0.2,
+    }
+    optional_options: dict[str, Any] = {
+        "send_default_pii": False,
+        "enable_logs": True,
+        "profile_session_sample_rate": 0.2,
+        "profile_lifecycle": "trace",
+    }
+    for key, val in optional_options.items():
+        if key in DEFAULT_OPTIONS:
+            options[key] = val
+
+    sentry_sdk.init(**options)
     logger.info("Sentry SDK initialized successfully.")
