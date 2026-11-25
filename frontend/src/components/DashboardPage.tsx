@@ -1,15 +1,34 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { Suspense, lazy, useEffect, useState, useMemo } from "react";
 import { useAuth } from "@clerk/react";
-import { Loader2, AlertCircle, Sparkles, FolderArchive, Layers } from "lucide-react";
+import { AlertCircle, Sparkles, FolderArchive, Layers } from "lucide-react";
 import { DashboardFilterBar, DashboardViewMode, DeadlineFilterType } from "./DashboardFilterBar";
 import { DriveCardComponent } from "./DriveCardComponent";
-import { DashboardFunnelView } from "./DashboardFunnelView";
-import { DashboardTableView } from "./DashboardTableView";
 import { DashboardMetricsStrip } from "./DashboardMetricsStrip";
-import { DriveDetailModal } from "./DriveDetailModal";
-import { AddUpdateModal } from "./AddUpdateModal";
+import {
+  DriveCardSkeletonGrid,
+  DashboardTableSkeleton,
+  DashboardFunnelSkeleton,
+  DriveDetailModalSkeleton,
+} from "./Skeleton";
 import { ApplicationStatus, DriveCard } from "../types/drive";
 import { fetchDashboardDrives } from "../services/api";
+
+const DashboardFunnelView = lazy(() =>
+  import("./DashboardFunnelView").then((m) => ({
+    default: m.DashboardFunnelView,
+  }))
+);
+const DashboardTableView = lazy(() =>
+  import("./DashboardTableView").then((m) => ({
+    default: m.DashboardTableView,
+  }))
+);
+const DriveDetailModal = lazy(() =>
+  import("./DriveDetailModal").then((m) => ({ default: m.DriveDetailModal }))
+);
+const AddUpdateModal = lazy(() =>
+  import("./AddUpdateModal").then((m) => ({ default: m.AddUpdateModal }))
+);
 
 interface DashboardPageProps {
   onSelectDrive?: (driveId: string) => void;
@@ -190,10 +209,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
       {/* Loading State */}
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-20 text-neutral-500 dark:text-neutral-400 gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-tpo-cobalt dark:text-blue-400" />
-          <span className="text-xs font-light">Fetching placement drives...</span>
-        </div>
+        viewMode === "table" ? (
+          <DashboardTableSkeleton />
+        ) : viewMode === "funnel" ? (
+          <DashboardFunnelSkeleton />
+        ) : (
+          <DriveCardSkeletonGrid />
+        )
       ) : drives.length === 0 ? (
         <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-12 text-center rounded-xl space-y-4">
           <div className="w-14 h-14 bg-[#1a2129] rounded-lg text-white flex items-center justify-center mx-auto border border-[#262e38]">
@@ -218,18 +240,22 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         <div className="space-y-8">
           {/* Main Content Area based on ViewMode */}
           {viewMode === "funnel" ? (
-            <DashboardFunnelView
-              drives={filteredDrives}
-              onSelectDrive={handleDriveCardClick}
-              onStatusUpdated={loadDrives}
-              onAddUpdate={(id) => setAddUpdateDriveId(id)}
-            />
+            <Suspense fallback={<DashboardFunnelSkeleton />}>
+              <DashboardFunnelView
+                drives={filteredDrives}
+                onSelectDrive={handleDriveCardClick}
+                onStatusUpdated={loadDrives}
+                onAddUpdate={(id) => setAddUpdateDriveId(id)}
+              />
+            </Suspense>
           ) : viewMode === "table" ? (
-            <DashboardTableView
-              drives={filteredDrives}
-              onSelectDrive={handleDriveCardClick}
-              onAddUpdate={(id) => setAddUpdateDriveId(id)}
-            />
+            <Suspense fallback={<DashboardTableSkeleton />}>
+              <DashboardTableView
+                drives={filteredDrives}
+                onSelectDrive={handleDriveCardClick}
+                onAddUpdate={(id) => setAddUpdateDriveId(id)}
+              />
+            </Suspense>
           ) : (
             <div className="space-y-8">
               {/* Active Drives Section */}
@@ -285,26 +311,40 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       )}
 
       {/* Modal-First Drive Detail Overlay */}
-      <DriveDetailModal
-        driveId={modalDriveId}
-        applicationId={
-          drives.find((d) => d.id === modalDriveId)?.application_id
-        }
-        onClose={() => setModalDriveId(null)}
-        onStatusUpdated={loadDrives}
-      />
+      {modalDriveId && (
+        <Suspense
+          fallback={
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-sm">
+              <div className="relative w-full max-w-4xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-2xl p-6 sm:p-8 rounded-xl">
+                <DriveDetailModalSkeleton />
+              </div>
+            </div>
+          }
+        >
+          <DriveDetailModal
+            driveId={modalDriveId}
+            applicationId={
+              drives.find((d) => d.id === modalDriveId)?.application_id
+            }
+            onClose={() => setModalDriveId(null)}
+            onStatusUpdated={loadDrives}
+          />
+        </Suspense>
+      )}
 
       {/* 1-Click Direct Add Update Modal */}
       {addUpdateDriveId && (
-        <AddUpdateModal
-          driveId={addUpdateDriveId}
-          isOpen={true}
-          onClose={() => setAddUpdateDriveId(null)}
-          onUpdateConfirmed={async () => {
-            setAddUpdateDriveId(null);
-            await loadDrives();
-          }}
-        />
+        <Suspense fallback={null}>
+          <AddUpdateModal
+            driveId={addUpdateDriveId}
+            isOpen={true}
+            onClose={() => setAddUpdateDriveId(null)}
+            onUpdateConfirmed={async () => {
+              setAddUpdateDriveId(null);
+              await loadDrives();
+            }}
+          />
+        </Suspense>
       )}
     </div>
   );

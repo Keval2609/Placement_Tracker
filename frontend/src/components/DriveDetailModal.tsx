@@ -11,6 +11,7 @@ import {
   Pencil,
   Check,
 } from "lucide-react";
+import { DriveDetailModalSkeleton } from "./Skeleton";
 import { DriveDetail, TimelineEvent, ApplicationStatus } from "../types/drive";
 import {
   fetchDriveDetail,
@@ -183,10 +184,7 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
         </button>
 
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-neutral-600 dark:text-neutral-400 gap-3">
-            <Loader2 className="w-8 h-8 animate-spin text-tpo-cobalt" />
-            <span className="text-sm font-medium">Loading drive details...</span>
-          </div>
+          <DriveDetailModalSkeleton />
         ) : error || !drive ? (
           <div className="p-8 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg text-center space-y-2">
             <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400 mx-auto" />
