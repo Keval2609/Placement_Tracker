@@ -9,7 +9,21 @@ export default {
         sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
         mono: ['"Space Mono"', 'monospace'],
       },
+      boxShadow: {
+        xs: "0 1px 2px 0 rgb(0 0 0 / 0.03)",
+      },
+      borderRadius: {
+        xs: "0.125rem",
+      },
+      spacing: {
+        "4.5": "1.125rem",
+        "0.2": "0.05rem",
+      },
       colors: {
+        neutral: {
+          750: "#333338",
+          850: "#1f1f23",
+        },
         registry: {
           canvas: "#faf9f6",
           surface: "#ffffff",

@@ -72,6 +72,9 @@ importers:
       vite-plugin-pwa:
         specifier: ^0.20.1
         version: 0.20.5(vite@5.4.21(terser@5.49.1))(workbox-build@7.4.1(@types/babel__core@7.20.5))(workbox-window@7.4.1)
+      workbox-precaching:
+        specifier: ^7.4.1
+        version: 7.4.1
 
 packages:
 
