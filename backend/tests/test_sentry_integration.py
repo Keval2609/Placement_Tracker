@@ -10,10 +10,10 @@ from app.sentry_setup import init_sentry
 client = TestClient(app, raise_server_exceptions=False)
 
 
-def test_sentry_debug_route_triggers_exception() -> None:
-    """GET /sentry-debug triggers a 500 error (ZeroDivisionError)."""
+def test_sentry_debug_route_removed() -> None:
+    """GET /sentry-debug is removed and returns 404."""
     response = client.get("/sentry-debug")
-    assert response.status_code == 500
+    assert response.status_code == 404
 
 
 @patch("sentry_sdk.capture_exception")
@@ -44,4 +44,4 @@ def test_init_sentry_with_dsn(mock_sentry_init: MagicMock) -> None:
         mock_sentry_init.assert_called_once()
         kwargs = mock_sentry_init.call_args.kwargs
         assert kwargs["dsn"] == "https://fake_dsn@sentry.io/12345"
-        assert kwargs["send_default_pii"] is True
+        assert kwargs["send_default_pii"] is False

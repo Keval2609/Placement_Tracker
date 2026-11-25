@@ -27,13 +27,11 @@ class RequestLoggingMiddleware:
         headers_list = scope.get("headers", [])
         user_id = ""
         for raw_k, raw_v in headers_list:
-            if raw_k.lower() == b"x-user-id":
-                user_id = raw_v.decode("latin1", errors="replace")
-                break
-            elif raw_k.lower() == b"authorization":
+            if raw_k.lower() == b"authorization":
                 auth_str = raw_v.decode("latin1", errors="replace")
                 if auth_str.startswith("Bearer ") and len(auth_str) > 10:
                     user_id = "authenticated_user"
+                    break
 
         status_code = 200
 

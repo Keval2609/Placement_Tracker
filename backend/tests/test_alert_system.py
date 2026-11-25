@@ -2,6 +2,7 @@
 
 import zoneinfo
 from datetime import datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -98,10 +99,12 @@ def test_push_test_endpoint(client: TestClient) -> None:
     }
     client.post("/push/subscribe", json=sub_payload)
 
-    resp2 = client.post("/push/test")
+    with patch("app.services.alert_service.webpush") as mock_webpush:
+        resp2 = client.post("/push/test")
     assert resp2.status_code == 200
     assert resp2.json()["success"] is True
     assert resp2.json()["device_count"] == 1
+    mock_webpush.assert_called_once()
 
 
 def test_push_unsubscribe(client: TestClient) -> None:
@@ -153,8 +156,10 @@ def test_deadline_check_fires_push_alert(client: TestClient) -> None:
     )
 
     # 3. Run scheduled deadline check -> fires Web Push alert
-    run_deadline_check_job()
+    with patch("app.services.alert_service.webpush") as mock_webpush:
+        run_deadline_check_job()
 
+    mock_webpush.assert_called_once()
     assert len(_alert_history) == 1
     alert_id = list(_alert_history.keys())[0]
     rec = _alert_history[alert_id]

@@ -22,7 +22,7 @@ router = APIRouter(prefix="/applications", tags=["Applications"])
         "first time, leaving applied_at untouched on subsequent status changes."
     ),
 )
-async def update_status(
+def update_status(
     id: str,
     payload: ApplicationStatusUpdate,
     user_id: Annotated[str, Depends(get_current_user_id)],

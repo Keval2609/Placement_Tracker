@@ -1,9 +1,10 @@
 """FastAPI router for /drives endpoints (creation, updates, timeline, documents, dashboard list)."""
 
+import asyncio
 import json
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse, Response
 
 from app.dependencies import get_current_user_id
@@ -29,6 +30,7 @@ from app.services.drive_service import (
     save_drive,
     update_drive,
 )
+from app.services.parsers import MAX_FILE_SIZE_BYTES
 
 router = APIRouter(prefix="/drives", tags=["Drives"])
 
@@ -43,7 +45,7 @@ router = APIRouter(prefix="/drives", tags=["Drives"])
         "Calculates days_left and is_overdue for each drive card."
     ),
 )
-async def fetch_dashboard_drives(
+def fetch_dashboard_drives(
     user_id: Annotated[str, Depends(get_current_user_id)],
 ) -> DriveListResponse:
     return list_drives_for_dashboard(user_id=user_id)
@@ -97,13 +99,19 @@ async def create_drive(
         if uploaded_file and hasattr(uploaded_file, "read"):
             filename = getattr(uploaded_file, "filename", "document.pdf")
             file_content_type = getattr(uploaded_file, "content_type", "application/octet-stream")
-            file_bytes = await uploaded_file.read()
+            file_bytes = await uploaded_file.read(MAX_FILE_SIZE_BYTES + 1)
+            if len(file_bytes) > MAX_FILE_SIZE_BYTES:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="File size exceeds the 10MB limit.",
+                )
     else:
         body_bytes = await request.body()
         payload = CreateDriveRequest.model_validate_json(body_bytes)
 
     try:
-        response = save_drive(
+        response = await asyncio.to_thread(
+            save_drive,
             payload=payload,
             user_id=user_id,
             file_bytes=file_bytes,
@@ -134,7 +142,7 @@ async def create_drive(
     status_code=status.HTTP_200_OK,
     summary="Get drive detail header & confirmed dates",
 )
-async def fetch_drive_detail(
+def fetch_drive_detail(
     id: str,
     user_id: Annotated[str, Depends(get_current_user_id)],
 ) -> DriveDetailResponse:
@@ -147,7 +155,7 @@ async def fetch_drive_detail(
     status_code=status.HTTP_200_OK,
     summary="Directly edit drive details (CTC package, role, criteria, link)",
 )
-async def update_drive_details(
+def update_drive_details(
     id: str,
     payload: UpdateDriveRequest,
     user_id: Annotated[str, Depends(get_current_user_id)],
@@ -161,7 +169,7 @@ async def update_drive_details(
     status_code=status.HTTP_200_OK,
     summary="Get chronological timeline history for drive",
 )
-async def fetch_drive_timeline(
+def fetch_drive_timeline(
     id: str,
     user_id: Annotated[str, Depends(get_current_user_id)],
 ) -> DriveTimelineResponse:
@@ -174,7 +182,7 @@ async def fetch_drive_timeline(
     status_code=status.HTTP_200_OK,
     summary="Get attached documents with 5-minute signed download URLs",
 )
-async def fetch_drive_documents(
+def fetch_drive_documents(
     id: str,
     user_id: Annotated[str, Depends(get_current_user_id)],
 ) -> DriveDocumentsResponse:
@@ -186,7 +194,7 @@ async def fetch_drive_documents(
     status_code=status.HTTP_200_OK,
     summary="Fallback document download handler",
 )
-async def download_drive_document(doc_id: str) -> Response:
+def download_drive_document(doc_id: str) -> Response:
     return Response(
         content=f"Dummy binary content for document ID: {doc_id}".encode(),
         media_type="application/octet-stream",
@@ -219,14 +227,20 @@ async def propose_drive_update(
         if uploaded_file and hasattr(uploaded_file, "read"):
             filename = getattr(uploaded_file, "filename", "update_document.pdf")
             file_content_type = getattr(uploaded_file, "content_type", "application/octet-stream")
-            file_bytes = await uploaded_file.read()
+            file_bytes = await uploaded_file.read(MAX_FILE_SIZE_BYTES + 1)
+            if len(file_bytes) > MAX_FILE_SIZE_BYTES:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="File size exceeds the 10MB limit.",
+                )
     else:
         body_bytes = await request.body()
         if body_bytes:
             data = json.loads(body_bytes.decode("utf-8"))
             text = data.get("text")
 
-    return create_update_draft(
+    return await asyncio.to_thread(
+        create_update_draft,
         drive_id=id,
         user_id=user_id,
         text=text,
@@ -242,7 +256,7 @@ async def propose_drive_update(
     status_code=status.HTTP_200_OK,
     summary="Confirm and merge drive update",
 )
-async def confirm_drive_update(
+def confirm_drive_update(
     id: str,
     update_id: str,
     payload: ConfirmUpdatePayload,

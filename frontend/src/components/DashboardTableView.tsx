@@ -14,7 +14,8 @@ export const DashboardTableView: React.FC<DashboardTableViewProps> = ({
   onSelectDrive,
   onAddUpdate,
 }) => {
-  const formatDate = (isoStr: string) => {
+  const formatDate = (isoStr: string | null) => {
+    if (!isoStr) return "No Deadline";
     try {
       const d = new Date(isoStr);
       return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
@@ -49,6 +50,7 @@ export const DashboardTableView: React.FC<DashboardTableViewProps> = ({
               drives.map((drive) => {
                 const isUrgent =
                   !drive.is_overdue &&
+                  drive.days_left !== null &&
                   drive.days_left <= 2 &&
                   drive.application_status === "not_applied";
                 return (
@@ -59,6 +61,7 @@ export const DashboardTableView: React.FC<DashboardTableViewProps> = ({
                     aria-label={`View drive details for ${drive.company_name}, ${drive.role_title}`}
                     onClick={() => onSelectDrive(drive.id)}
                     onKeyDown={(e) => {
+                      if (e.target !== e.currentTarget) return;
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
                         onSelectDrive(drive.id);
@@ -129,7 +132,9 @@ export const DashboardTableView: React.FC<DashboardTableViewProps> = ({
                       >
                         <Clock className="w-3.5 h-3.5 text-neutral-500" />
                         <span>
-                          {drive.is_overdue
+                          {drive.days_left === null
+                            ? "No Deadline"
+                            : drive.is_overdue
                             ? "Closed"
                             : drive.days_left === 0
                             ? "Today"

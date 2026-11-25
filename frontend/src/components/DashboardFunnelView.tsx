@@ -73,6 +73,7 @@ export const DashboardFunnelView: React.FC<DashboardFunnelViewProps> = ({
                 aria-label={`View drive details for ${drive.company_name}, ${drive.role_title}`}
                 onClick={() => onSelectDrive(drive.id)}
                 onKeyDown={(e) => {
+                  if (e.target !== e.currentTarget) return;
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     onSelectDrive(drive.id);
@@ -97,7 +98,9 @@ export const DashboardFunnelView: React.FC<DashboardFunnelViewProps> = ({
                 <div className="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400">
                   <span className="flex items-center gap-1 font-mono font-medium">
                     <Clock className="w-3.5 h-3.5 text-neutral-500" />
-                    {drive.is_overdue
+                    {drive.days_left === null
+                      ? "No Deadline"
+                      : drive.is_overdue
                       ? "Closed"
                       : drive.days_left === 0
                       ? "Today"

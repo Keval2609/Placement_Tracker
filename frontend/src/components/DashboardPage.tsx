@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useState, useMemo } from "react";
+import React, { Suspense, lazy, useCallback, useEffect, useState, useMemo } from "react";
 import { useAuth } from "@clerk/react";
 import { AlertCircle, Sparkles, FolderArchive, Layers } from "lucide-react";
 import { DashboardFilterBar, DashboardViewMode, DeadlineFilterType } from "./DashboardFilterBar";
@@ -64,8 +64,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [selectedCompanyType, setSelectedCompanyType] = useState<string>("all");
   const [deadlineFilter, setDeadlineFilter] = useState<DeadlineFilterType>("all");
 
-  const loadDrives = async () => {
-    setIsLoading(true);
+  const loadDrives = useCallback(async (silent = false) => {
+    if (!silent) {
+      setIsLoading(true);
+    }
     setError(null);
     try {
       const data = await fetchDashboardDrives();
@@ -73,9 +75,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     } catch (err: unknown) {
       setError((err as Error).message || "Failed to load dashboard placement drives.");
     } finally {
-      setIsLoading(false);
+      if (!silent) {
+        setIsLoading(false);
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
@@ -83,7 +87,21 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     } else if (isLoaded && !isSignedIn) {
       setIsLoading(false);
     }
-  }, [isLoaded, isSignedIn, refreshKey]);
+  }, [isLoaded, isSignedIn, refreshKey, loadDrives]);
+
+  // Open drive detail modal when launched from a notification deep-link (?drive=<id>)
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const deepLinkDriveId = params.get("drive");
+    if (deepLinkDriveId) {
+      setModalDriveId(deepLinkDriveId);
+      params.delete("drive");
+      const remaining = params.toString();
+      const nextUrl = `${window.location.pathname}${remaining ? `?${remaining}` : ""}${window.location.hash}`;
+      window.history.replaceState({}, "", nextUrl);
+    }
+  }, [isLoaded, isSignedIn]);
 
   // Keep parent navbar updated with live counts
   useEffect(() => {
@@ -93,7 +111,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       (d) => !d.is_overdue || isPipelineActive(d.application_status)
     ).length;
     const urgent = drives.filter(
-      (d) => !d.is_overdue && d.days_left <= 3 && d.application_status === "not_applied"
+      (d) =>
+        !d.is_overdue &&
+        d.days_left !== null &&
+        d.days_left <= 3 &&
+        d.application_status === "not_applied"
     ).length;
     if (onDriveCountChange) {
       onDriveCountChange(active, urgent);
@@ -131,11 +153,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
       // 4. Deadline Window Filter
       if (deadlineFilter === "urgent_72h") {
-        if (drive.is_overdue || drive.days_left > 3 || drive.application_status !== "not_applied") return false;
+        if (
+          drive.is_overdue ||
+          drive.days_left === null ||
+          drive.days_left > 3 ||
+          drive.application_status !== "not_applied"
+        )
+          return false;
       } else if (deadlineFilter === "next_7d") {
-        if (drive.is_overdue || drive.days_left > 7) return false;
+        if (drive.is_overdue || drive.days_left === null || drive.days_left > 7) return false;
       } else if (deadlineFilter === "next_30d") {
-        if (drive.is_overdue || drive.days_left > 30) return false;
+        if (drive.is_overdue || drive.days_left === null || drive.days_left > 30) return false;
       }
 
       return true;
@@ -244,7 +272,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <DashboardFunnelView
                 drives={filteredDrives}
                 onSelectDrive={handleDriveCardClick}
-                onStatusUpdated={loadDrives}
+                onStatusUpdated={() => loadDrives(true)}
                 onAddUpdate={(id) => setAddUpdateDriveId(id)}
               />
             </Suspense>
@@ -276,7 +304,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         key={drive.id}
                         drive={drive}
                         onSelectDrive={handleDriveCardClick}
-                        onStatusUpdated={loadDrives}
+                        onStatusUpdated={() => loadDrives(true)}
                         onAddUpdate={(id) => setAddUpdateDriveId(id)}
                       />
                     ))}
@@ -298,7 +326,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         key={drive.id}
                         drive={drive}
                         onSelectDrive={handleDriveCardClick}
-                        onStatusUpdated={loadDrives}
+                        onStatusUpdated={() => loadDrives(true)}
                         onAddUpdate={(id) => setAddUpdateDriveId(id)}
                       />
                     ))}
@@ -327,7 +355,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               drives.find((d) => d.id === modalDriveId)?.application_id
             }
             onClose={() => setModalDriveId(null)}
-            onStatusUpdated={loadDrives}
+            onStatusUpdated={() => loadDrives(true)}
           />
         </Suspense>
       )}
@@ -341,7 +369,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             onClose={() => setAddUpdateDriveId(null)}
             onUpdateConfirmed={async () => {
               setAddUpdateDriveId(null);
-              await loadDrives();
+              await loadDrives(true);
             }}
           />
         </Suspense>

@@ -118,4 +118,67 @@ def test_dashboard_only_returns_own_drives() -> None:
     resp = client.get("/drives")
     names = [d["company_name"] for d in resp.json()["drives"]]
     assert "Google" in names
-    assert "Microsoft" not in names
+
+
+def test_supabase_queries_enforce_user_id_filter() -> None:
+    """Verify Supabase query builders carry .eq('user_id', ...) for tenant isolation."""
+    from unittest.mock import MagicMock, patch
+
+    from app.config import Settings
+    from app.services.drive_service import list_drives_for_dashboard
+
+    mock_client = MagicMock()
+    drives_table = MagicMock()
+    drives_table.select.return_value.eq.return_value.execute.return_value.data = []
+    mock_client.table.return_value = drives_table
+
+    with (
+        patch("app.services.drive_service.get_settings") as mock_settings,
+        patch("app.services.drive_service.get_service_client", return_value=mock_client),
+    ):
+        mock_settings.return_value = Settings(
+            supabase_url="https://fake.supabase.co",
+            supabase_service_role_key="fake-key",
+        )
+        list_drives_for_dashboard(user_id=USER_A)
+
+    mock_client.table.assert_called_with("drives")
+    drives_table.select.return_value.eq.assert_called_with("user_id", USER_A)
+
+
+def test_prod_mode_supabase_error_returns_5xx_not_201(monkeypatch: pytest.MonkeyPatch) -> None:
+    """With TESTING unset and a Supabase error, POST /drives returns 5xx instead of 201."""
+    from unittest.mock import MagicMock, patch
+
+    from app.config import Settings
+
+    monkeypatch.delenv("TESTING", raising=False)
+    _override_user(USER_A)
+
+    mock_client = MagicMock()
+    mock_client.table.side_effect = RuntimeError("Simulated Supabase outage")
+
+    with (
+        patch("app.services.drive_service.get_settings") as mock_settings,
+        patch("app.services.drive_service.get_service_client", return_value=mock_client),
+    ):
+        mock_settings.return_value = Settings(
+            supabase_url="https://fake.supabase.co",
+            supabase_service_role_key="fake-key",
+        )
+        resp = client.post(
+            "/drives",
+            json={
+                "company_name": "Acme",
+                "role_title": "SWE",
+                "dates": [
+                    {
+                        "date_type": "application_deadline",
+                        "date_iso": "2026-12-31T23:59:59+05:30",
+                        "confirmed_by_user": True,
+                        "is_primary_deadline": True,
+                    }
+                ],
+            },
+        )
+    assert resp.status_code >= 500

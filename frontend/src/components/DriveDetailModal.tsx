@@ -108,9 +108,9 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
     }
   }, [driveId, loadData]);
 
-  // Handle Escape Key to dismiss modal
+  // Handle Escape Key to dismiss modal (unless a child modal is open)
   useEffect(() => {
-    if (!driveId) return;
+    if (!driveId || isAddUpdateOpen || isEditDriveOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
@@ -118,7 +118,7 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [driveId, onClose]);
+  }, [driveId, isAddUpdateOpen, isEditDriveOpen, onClose]);
 
   if (!driveId) return null;
 
@@ -132,7 +132,6 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
       await updateApplicationStatus(targetAppId, newStatus);
       setDrive({ ...drive, application_status: newStatus });
       if (onStatusUpdated) onStatusUpdated();
-      await loadData();
     } catch (err: unknown) {
       console.error("Failed updating application status:", err);
       setStatusError(`Failed to update status: ${(err as Error).message || "Unknown error"}`);

@@ -5,11 +5,11 @@
 
 import json
 import logging
-import re
+import threading
 import zoneinfo
-from datetime import datetime
 
 import httpx
+from fastapi import HTTPException, status
 from pydantic import ValidationError
 
 from app.config import Settings, get_settings
@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 KOLKATA_TZ = zoneinfo.ZoneInfo("Asia/Kolkata")
 PII_SAFE_PROVIDERS = {"groq", "ollama"}
+_LLM_SEMAPHORE = threading.BoundedSemaphore(6)
 
 
 def validate_provider_guard(provider: str, contains_personal_data: bool = True) -> None:
@@ -45,7 +46,7 @@ def _call_groq(
     try:
         from groq import Groq
 
-        client = Groq(api_key=settings.groq_api_key)
+        client = Groq(api_key=settings.groq_api_key, timeout=20.0, max_retries=0)
         completion = client.chat.completions.create(
             model=settings.groq_model,
             messages=[
@@ -77,7 +78,7 @@ def _call_groq(
             "response_format": {"type": "json_object"},
             "temperature": 0.1,
         }
-        with httpx.Client(timeout=30.0) as http_client:
+        with httpx.Client(timeout=20.0) as http_client:
             resp = http_client.post(url, headers=headers, json=payload)
             resp.raise_for_status()
             data = resp.json()
@@ -123,12 +124,22 @@ def call_llm(
     # Enforce PII guard
     validate_provider_guard(selected_provider, contains_personal_data=True)
 
-    if selected_provider == "groq":
-        return _call_groq(system_prompt, raw_text, settings)
-    elif selected_provider == "ollama":
-        return _call_ollama(system_prompt, raw_text, settings, schema_dict=schema_dict)
-    else:
-        raise ValueError(f"Unsupported provider: {selected_provider}")
+    acquired = _LLM_SEMAPHORE.acquire(timeout=2.0)
+    if not acquired:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LLM extraction capacity reached; please retry shortly.",
+        )
+
+    try:
+        if selected_provider == "groq":
+            return _call_groq(system_prompt, raw_text, settings)
+        elif selected_provider == "ollama":
+            return _call_ollama(system_prompt, raw_text, settings, schema_dict=schema_dict)
+        else:
+            raise ValueError(f"Unsupported provider: {selected_provider}")
+    finally:
+        _LLM_SEMAPHORE.release()
 
 
 def _clean_json_string(raw: str) -> str:
@@ -166,7 +177,6 @@ def normalize_extraction_payload(
     else:
         payload = {"postings": []}
 
-    ref_iso = reference_date_iso or datetime.now(KOLKATA_TZ).isoformat()
     valid_date_types = {
         "application_deadline",
         "oa",
@@ -202,7 +212,7 @@ def normalize_extraction_payload(
                 or "Unknown Company"
             )
 
-        # Normalize dates
+        # Normalize dates without fabricating missing date_iso
         raw_dates = posting.get("dates")
         if not isinstance(raw_dates, list):
             raw_dates = []
@@ -222,26 +232,15 @@ def normalize_extraction_payload(
                 dtype = "other"
             date_dict["date_type"] = dtype
             date_dict["label"] = date_dict.get("label") or None
-            date_dict["date_raw"] = str(
-                date_dict.get("date_raw")
-                or date_dict.get("date")
-                or date_dict.get("label")
-                or "Deadline announced"
-            )
+            raw_str = date_dict.get("date_raw") or date_dict.get("date") or date_dict.get("label")
+            date_dict["date_raw"] = str(raw_str) if raw_str else None
 
             date_iso = date_dict.get("date_iso")
-            if not date_iso or not isinstance(date_iso, str) or len(date_iso) < 10:
-                date_iso = ref_iso
-            date_dict["date_iso"] = str(date_iso)
+            if not date_iso or not isinstance(date_iso, str) or len(date_iso.strip()) < 10:
+                date_dict["date_iso"] = None
+            else:
+                date_dict["date_iso"] = str(date_iso).strip()
             norm_dates.append(date_dict)
-
-        if not norm_dates:
-            norm_dates.append({
-                "date_type": "application_deadline",
-                "label": "Registration Deadline",
-                "date_iso": ref_iso,
-                "date_raw": "See announcement notice",
-            })
 
         posting["dates"] = norm_dates
 
@@ -289,74 +288,6 @@ def normalize_extraction_payload(
     return payload
 
 
-def _heuristic_fallback_extraction(
-    raw_text: str,
-    reference_date_iso: str,
-) -> ExtractionResult:
-    """Fallback extractor if AI provider is unavailable or output cannot be decoded."""
-    lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
-    company_name = "Placement Drive"
-    role_title = "Full Time Position"
-    app_link = None
-
-    url_match = re.search(r"https?://[^\s\"'<>]+", raw_text)
-    if url_match:
-        app_link = url_match.group(0).rstrip(".,)")
-
-    for line in lines[:6]:
-        cleaned = line.strip("*_:#- ")
-        match = re.search(
-            r"(?:CAMPUS|RECRUITMENT|DRIVE|FOR)\s*[-:]?\s*([A-Za-z0-9\s&.]+)",
-            cleaned,
-            re.IGNORECASE,
-        )
-        if match and len(match.group(1).strip()) > 2:
-            company_name = match.group(1).strip()
-            break
-        elif any(kw in cleaned.lower() for kw in ["hiring", "visiting", "drive"]):
-            words = cleaned.split()
-            if words and len(words[0]) > 2:
-                company_name = words[0].strip("*_:#")
-                break
-
-    for line in lines:
-        lower = line.lower()
-        if "role:" in lower or "position:" in lower or "profile:" in lower:
-            parts = re.split(r"[:\-]", line, maxsplit=1)
-            if len(parts) > 1 and parts[1].strip():
-                role_title = parts[1].strip("*_ ")
-                break
-
-    ref_iso = reference_date_iso or datetime.now(KOLKATA_TZ).isoformat()
-    ctc_val = None
-    ctc_match = re.search(
-        r"(?:package\s*\(ctc\)|package|ctc|salary|stipend)\s*[:\-]\s*([^\n\r]+)",
-        raw_text,
-        re.IGNORECASE,
-    )
-    if ctc_match:
-        ctc_val = ctc_match.group(1).strip("*_ ")
-
-    posting = {
-        "company_name": company_name,
-        "role_title": role_title,
-        "eligibility_raw": raw_text,
-        "min_cgpa": None,
-        "eligible_branches": [],
-        "application_link": app_link,
-        "ctc_display": ctc_val,
-        "dates": [
-            {
-                "date_type": "application_deadline",
-                "label": "Registration Deadline",
-                "date_iso": ref_iso,
-                "date_raw": "Check announcement text",
-            }
-        ],
-    }
-    return ExtractionResult.model_validate({"postings": [posting]})
-
-
 def extract_with_retry(
     raw_text: str,
     reference_date_iso: str,
@@ -393,6 +324,8 @@ def extract_with_retry(
             if result.postings:
                 return result, "success", None
             last_error = "LLM returned empty postings list."
+        except HTTPException:
+            raise
         except (
             ValidationError,
             ValueError,
@@ -413,6 +346,60 @@ def extract_with_retry(
     return ExtractionResult(postings=[]), "failed", last_error or "Unknown extraction failure"
 
 
+
+
+def _normalize_update_diff_payload(data: object) -> dict:
+    """Normalize raw diff JSON output so fences/missing fields don't drop diffs."""
+    if not isinstance(data, dict):
+        return {"new_dates": [], "field_changes": {}, "summary_of_changes": "Update parsed."}
+
+    valid_date_types = {
+        "application_deadline",
+        "oa",
+        "interview",
+        "ppt",
+        "result",
+        "joining",
+        "other",
+    }
+
+    raw_dates = data.get("new_dates")
+    if not isinstance(raw_dates, list):
+        raw_dates = []
+
+    norm_dates = []
+    for d in raw_dates:
+        if not isinstance(d, dict):
+            continue
+        dd = dict(d)
+        dtype = dd.get("date_type") or dd.get("type") or dd.get("category") or "other"
+        if dtype not in valid_date_types:
+            dtype = "other"
+        dd["date_type"] = dtype
+        dd["label"] = dd.get("label") or None
+        raw_str = dd.get("date_raw") or dd.get("date") or dd.get("label")
+        dd["date_raw"] = str(raw_str) if raw_str else None
+        date_iso = dd.get("date_iso")
+        dd["date_iso"] = (
+            str(date_iso).strip()
+            if isinstance(date_iso, str) and len(date_iso.strip()) >= 10
+            else None
+        )
+        norm_dates.append(dd)
+
+    field_changes = data.get("field_changes")
+    if not isinstance(field_changes, dict):
+        field_changes = {}
+
+    summary = data.get("summary_of_changes")
+    if not isinstance(summary, str) or not summary.strip():
+        summary = "Update details extracted."
+
+    return {
+        "new_dates": norm_dates,
+        "field_changes": field_changes,
+        "summary_of_changes": summary.strip(),
+    }
 
 
 def extract_update_diff(
@@ -447,8 +434,13 @@ def extract_update_diff(
                 settings=settings,
                 schema_dict=UpdateResult.model_json_schema(),
             )
-            result = UpdateResult.model_validate_json(raw_json)
+            cleaned = _clean_json_string(raw_json)
+            parsed = json.loads(cleaned)
+            normalized = _normalize_update_diff_payload(parsed)
+            result = UpdateResult.model_validate(normalized)
             return result, "success", None
+        except HTTPException:
+            raise
         except (ValidationError, ValueError, httpx.HTTPError, Exception) as err:
             last_error = str(err)
             logger.warning(

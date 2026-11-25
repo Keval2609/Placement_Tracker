@@ -31,8 +31,8 @@ export interface DriveCard {
   application_id: string;
   application_status: ApplicationStatus;
   applied_at?: string | null;
-  primary_deadline_iso: string;
-  days_left: number;
+  primary_deadline_iso: string | null;
+  days_left: number | null;
   is_overdue: boolean;
   created_at: string;
   location?: string | null;

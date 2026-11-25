@@ -51,6 +51,13 @@ export const DriveCardComponent: React.FC<DriveCardComponentProps> = ({
   };
 
   const formatDaysLeft = () => {
+    if (drive.days_left === null || drive.primary_deadline_iso === null) {
+      return {
+        label: "No Deadline",
+        style: "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700 font-medium",
+      };
+    }
+
     const isPipelineActive = ["applied", "oa", "interview"].includes(currentStatus);
     if (drive.is_overdue) {
       if (isPipelineActive) {
@@ -98,7 +105,8 @@ export const DriveCardComponent: React.FC<DriveCardComponentProps> = ({
 
   const daysChip = formatDaysLeft();
 
-  const formatDate = (isoStr: string) => {
+  const formatDate = (isoStr: string | null) => {
+    if (!isoStr) return "No Deadline";
     try {
       const d = new Date(isoStr);
       return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
@@ -135,6 +143,7 @@ export const DriveCardComponent: React.FC<DriveCardComponentProps> = ({
       aria-label={`View placement drive details for ${drive.company_name}, ${drive.role_title}`}
       onClick={() => onSelectDrive(drive.id)}
       onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           onSelectDrive(drive.id);

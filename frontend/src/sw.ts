@@ -8,6 +8,11 @@ declare let self: ServiceWorkerGlobalScope & {
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST || []);
 
+self.skipWaiting();
+self.addEventListener("activate", (event: ExtendableEvent) => {
+  event.waitUntil(self.clients.claim());
+});
+
 const API_BASE =
   import.meta.env.VITE_API_BASE_URL || "https://placement-tracker-yzdq.onrender.com";
 
@@ -63,13 +68,21 @@ self.addEventListener("notificationclick", (event: NotificationEvent) => {
 
   const targetUrl =
     (event.notification.data?.target_url as string) ||
-    (event.notification.data?.drive_id ? `/drives/${event.notification.data.drive_id}` : "/");
+    (event.notification.data?.drive_id ? `/?drive=${event.notification.data.drive_id}` : "/");
 
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (clientList) => {
       for (const client of clientList) {
-        if ("focus" in client && client.url.includes(targetUrl)) {
-          return client.focus();
+        try {
+          if (new URL(client.url).origin === self.location.origin && "focus" in client) {
+            await client.focus();
+            if ("navigate" in client) {
+              return client.navigate(targetUrl);
+            }
+            return client;
+          }
+        } catch {
+          // Ignore malformed client URLs
         }
       }
       if (self.clients.openWindow) {

@@ -50,8 +50,8 @@ We process your data strictly to provide and maintain the Service:
 ## 3. AI Processing & Model Privacy
 
 3.1. **Inference Providers**: AI extraction is executed via:
-* Cloud LPU inference powered by **Groq** (`llama-3.3-70b-versatile`); or
-* Self-hosted local inference powered by **Ollama** (`llama3:8b`).
+* Cloud LPU inference powered by **Groq** (`openai/gpt-oss-20b`); or
+* Self-hosted local inference powered by **Ollama** (`qwen2.5:7b`).
 
 3.2. **Data Minimization in Prompts**:
 * Notice text sent to the LLM is processed transiently with strict JSON schema instructions to extract hiring parameters (dates, eligibility, company name, role).

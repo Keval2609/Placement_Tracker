@@ -2,7 +2,7 @@
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import AwareDatetime, BaseModel, Field
 
 
 class ConfirmedDateItem(BaseModel):
@@ -18,11 +18,22 @@ class ConfirmedDateItem(BaseModel):
         "other",
     ]
     label: str | None = None
-    date_iso: str
+    date_iso: AwareDatetime
     date_raw: str | None = None
     source: Literal["ai_suggested", "user_added"] = "user_added"
     confirmed_by_user: bool = False
     is_primary_deadline: bool = False
+
+
+ApplicationStatusLiteral = Literal[
+    "not_applied",
+    "applied",
+    "oa",
+    "interview",
+    "offer",
+    "rejected",
+    "withdrawn",
+]
 
 
 class CreateDriveRequest(BaseModel):
@@ -36,7 +47,9 @@ class CreateDriveRequest(BaseModel):
     eligible_branches: list[str] = Field(default_factory=list)
     application_link: str | None = None
     ctc_display: str | None = None
-    application_status: str | None = None
+    location: str | None = None
+    application_status: ApplicationStatusLiteral | None = None
+    is_off_campus: bool = False
     dates: list[ConfirmedDateItem] = Field(default_factory=list)
 
 
@@ -113,6 +126,7 @@ class DriveDetailResponse(BaseModel):
     eligible_branches: list[str] = Field(default_factory=list)
     application_link: str | None = None
     ctc_display: str | None = None
+    location: str | None = None
     status: str = "confirmed"
     application_status: str = "not_applied"
     application_id: str | None = None
@@ -195,9 +209,9 @@ class DriveCardResponse(BaseModel):
     application_id: str
     application_status: str = "not_applied"
     applied_at: str | None = None
-    primary_deadline_iso: str
-    days_left: int
-    is_overdue: bool
+    primary_deadline_iso: str | None = None
+    days_left: int | None = None
+    is_overdue: bool = False
     created_at: str
     ctc_display: str | None = None
     location: str | None = None

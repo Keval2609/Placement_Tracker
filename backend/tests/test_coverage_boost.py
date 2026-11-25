@@ -60,9 +60,9 @@ def test_save_drive_supabase_flow(mock_get_client: MagicMock, mock_settings: Mag
     mock_settings.return_value = dummy_settings
 
     mock_client = MagicMock()
-    # Company search returns empty -> creates company
-    mock_client.table().select().ilike().execute.return_value.data = []
-    # Drive dedup search returns empty -> creates drive
+    # Company search returns empty -> creates company via upsert + re-select
+    mock_client.table().select().eq().execute.return_value.data = []
+    # Drive dedup search returns empty -> creates drive via atomic RPC
     mock_client.table().select().eq().eq().execute.return_value.data = []
 
     mock_get_client.return_value = mock_client
@@ -90,6 +90,8 @@ def test_save_drive_supabase_flow(mock_get_client: MagicMock, mock_settings: Mag
     assert resp.company_name == "Stripe"
     assert resp.status == "confirmed"
     mock_client.storage.from_().upload.assert_called_once()
+    mock_client.rpc.assert_called_once()
+    assert mock_client.rpc.call_args[0][0] == "create_drive_atomic"
 
 
 @patch("app.services.drive_service.get_settings")
@@ -106,8 +108,8 @@ def test_build_existing_drive_summary_supabase(
     d_data = [{"id": "drive1", "company_id": "c1", "role_title": "SWE", "min_cgpa": 8.0}]
     c_data = [{"name": "Apple"}]
     date_data = [{"date_type": "application_deadline", "date_iso": "2026-08-15T23:59:59+05:30"}]
+    mock_client.table().select().eq().eq().execute.return_value = MagicMock(data=d_data)
     mock_client.table().select().eq().execute.side_effect = [
-        MagicMock(data=d_data),
         MagicMock(data=c_data),
         MagicMock(data=date_data),
     ]
@@ -188,6 +190,13 @@ def test_confirm_and_merge_update_supabase_flow(
         supabase_service_role_key="fake-key",
     )
     mock_client = MagicMock()
+    mock_client.table().select().eq().eq().execute.return_value = MagicMock(
+        data=[{"id": "drive123", "company_id": "c1", "role_title": "SWE"}]
+    )
+    mock_client.table().select().eq().execute.side_effect = [
+        MagicMock(data=[{"name": "Stripe"}]),
+        MagicMock(data=[]),
+    ]
     mock_get_client.return_value = mock_client
 
     payload = ConfirmUpdatePayload(
@@ -213,7 +222,8 @@ def test_confirm_and_merge_update_supabase_flow(
     )
     assert resp.drive_id == "drive123"
     assert resp.added_dates_count == 1
-    mock_client.table().insert.assert_called()
+    mock_client.rpc.assert_called_once()
+    assert mock_client.rpc.call_args[0][0] == "confirm_drive_update_atomic"
 
 
 @patch("app.services.drive_service.get_settings")
@@ -251,7 +261,7 @@ def test_get_drive_detail_timeline_documents_supabase(
     def table_mock(table_name: str) -> MagicMock:
         t_mock = MagicMock()
         if table_name == "drives":
-            t_mock.select().eq().execute.return_value = MagicMock(data=[drive_row])
+            t_mock.select().eq().eq().execute.return_value = MagicMock(data=[drive_row])
         elif table_name == "companies":
             t_mock.select().eq().execute.return_value = MagicMock(data=[company_row])
         elif table_name == "drive_dates":

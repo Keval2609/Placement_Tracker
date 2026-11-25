@@ -223,19 +223,21 @@ def test_extraction_result_with_ctc() -> None:
     assert result.postings[0].ctc_display == "₹34.50 LPA"
 
 
-def test_heuristic_fallback_extraction_extracts_ctc() -> None:
-    """Heuristic fallback parses CTC/package line when LLM is unavailable."""
-    from app.services.llm import _heuristic_fallback_extraction
+def test_normalize_extraction_payload_does_not_fabricate_missing_date_iso() -> None:
+    """normalize_extraction_payload leaves missing date_iso as None instead of fabricating now."""
+    from app.services.llm import normalize_extraction_payload
 
-    notice = """
-    Hiring Drive for Microsoft
-    Role: Software Engineer
-    Package (CTC): 28.00 LPA (16L Base + 12L Stocks)
-    Apply before: 15 Sep 2026
-    """
-    result = _heuristic_fallback_extraction(notice, "2026-09-01T10:00:00+05:30")
-    assert len(result.postings) == 1
-    assert "28.00 LPA" in (result.postings[0].ctc_display or "")
+    data = {
+        "postings": [
+            {
+                "company_name": "Microsoft",
+                "role_title": "Software Engineer",
+                "dates": [{"date_type": "application_deadline", "date_raw": "TBD"}],
+            }
+        ]
+    }
+    normalized = normalize_extraction_payload(data, "raw text", "2026-09-01T10:00:00+05:30")
+    assert normalized["postings"][0]["dates"][0]["date_iso"] is None
 
 
 def test_normalize_extraction_payload_ctc() -> None:

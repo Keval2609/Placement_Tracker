@@ -21,10 +21,10 @@ def init_sentry() -> None:
     sentry_sdk.init(
         dsn=dsn,
         integrations=[FastApiIntegration()],
-        send_default_pii=True,
+        send_default_pii=False,
         enable_logs=True,
-        traces_sample_rate=1.0,
-        profile_session_sample_rate=1.0,
+        traces_sample_rate=0.2,
+        profile_session_sample_rate=0.2,
         profile_lifecycle="trace",
     )
     logger.info("Sentry SDK initialized successfully.")

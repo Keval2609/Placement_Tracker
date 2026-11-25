@@ -64,9 +64,13 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
 
   // Gating Validation Calculations
   const allDates = postings.flatMap((p) => p.dates);
+  const missingIsoDates = allDates.filter((d) => !d.date_iso);
   const unconfirmedDates = allDates.filter((d) => !d.confirmed_by_user);
+  const confirmableUnconfirmedCount = allDates.filter(
+    (d) => !d.confirmed_by_user && Boolean(d.date_iso)
+  ).length;
   const hasConfirmedDeadline = allDates.some(
-    (d) => d.date_type === "application_deadline" && d.confirmed_by_user
+    (d) => d.date_type === "application_deadline" && d.confirmed_by_user && Boolean(d.date_iso)
   );
   const allPostingsHaveNames = postings.every(
     (p) => p.company_name.trim() !== "" && p.role_title.trim() !== ""
@@ -75,6 +79,8 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
   let disableSaveReason = "";
   if (!allPostingsHaveNames) {
     disableSaveReason = "All postings must have a company name and role title.";
+  } else if (missingIsoDates.length > 0) {
+    disableSaveReason = `Please pick a date & time for all dates (${missingIsoDates.length} missing).`;
   } else if (unconfirmedDates.length > 0) {
     disableSaveReason = `Please confirm or dismiss all dates (${unconfirmedDates.length} remaining).`;
   } else if (!hasConfirmedDeadline) {
@@ -101,7 +107,7 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
         ...posting,
         dates: posting.dates.map((d) => ({
           ...d,
-          confirmed_by_user: true,
+          confirmed_by_user: d.date_iso ? true : d.confirmed_by_user,
         })),
       }))
     );
@@ -173,14 +179,14 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
         </button>
 
         <div className="flex items-center gap-2">
-          {unconfirmedDates.length > 0 && (
+          {confirmableUnconfirmedCount > 0 && (
             <button
               type="button"
               onClick={handleConfirmAllDates}
               className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.5px] px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition-colors cursor-pointer shadow-xs"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>Confirm All ({unconfirmedDates.length}) Dates</span>
+              <span>Confirm All ({confirmableUnconfirmedCount}) Dates</span>
             </button>
           )}
 

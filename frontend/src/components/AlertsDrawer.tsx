@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@clerk/react";
 import {
   fetchOnboardingTestStatus,
@@ -63,6 +63,21 @@ export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) =
   const [isIOS, setIsIOS] = useState<boolean>(false);
   const [isStandalone, setIsStandalone] = useState<boolean>(false);
 
+  const loadStatus = useCallback(async () => {
+    try {
+      const pStatus = await fetchPushStatus();
+      setDeviceCount(pStatus.device_count);
+      if (pStatus.is_enabled && "Notification" in window && Notification.permission === "granted") {
+        setPushEnabled(true);
+      }
+
+      const test = await fetchOnboardingTestStatus();
+      setTestStatus(test);
+    } catch (err) {
+      console.warn("Error loading alert status:", err);
+    }
+  }, []);
+
   useEffect(() => {
     const info = detectOemBrand();
     setOemInfo(info);
@@ -84,7 +99,7 @@ export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) =
     if (isLoaded && isSignedIn && isOpen) {
       loadStatus();
     }
-  }, [isLoaded, isSignedIn, isOpen]);
+  }, [isLoaded, isSignedIn, isOpen, loadStatus]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -96,21 +111,6 @@ export const AlertsDrawer: React.FC<AlertsDrawerProps> = ({ isOpen, onClose }) =
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
-
-  const loadStatus = async () => {
-    try {
-      const pStatus = await fetchPushStatus();
-      setDeviceCount(pStatus.device_count);
-      if (pStatus.is_enabled && "Notification" in window && Notification.permission === "granted") {
-        setPushEnabled(true);
-      }
-
-      const test = await fetchOnboardingTestStatus();
-      setTestStatus(test);
-    } catch (err) {
-      console.warn("Error loading alert status:", err);
-    }
-  };
 
   const handleEnablePush = async () => {
     setPushLoading(true);

@@ -1,20 +1,19 @@
 """Drive persistence and update service.
 
 Handles:
-1. Re-validation of confirmed application deadline (HTTP 422 if missing).
-2. Setting is_primary_deadline=true on exactly one application_deadline row.
-3. Company lookup & classification (static lookup + LLM fallback).
+1. Re-validation of confirmed application deadline (HTTP 422 if missing, except off-campus).
+2. Setting is_primary_deadline=true on at most one application_deadline row.
+3. Company lookup & classification (normalized name_key + upsert).
 4. Deduplication check on (company_id, role_title, primary_deadline_date) -> HTTP 409.
-5. Persistence to `companies`, `drives`, `drive_dates`, `applications`, and `drive_documents`.
-6. Uploading attached files to Supabase Storage bucket (`drive-documents`).
-7. "Add Update" flow: summary builder, diff extraction, update draft creation
-   (`POST /drives/{id}/updates`), and confirmed update merge
-   (`PATCH /drives/{id}/updates/{update_id}/confirm`).
-8. Detail page queries: GET drive detail, timeline events, and signed document URLs.
-9. Dashboard queries: GET drives list with days-left calculations and PATCH application status.
+5. Atomic persistence via Supabase RPCs (`create_drive_atomic`, `confirm_drive_update_atomic`).
+6. In-memory fallback strictly gated behind `TESTING=1`.
+7. Timezone-consistent IST (`Asia/Kolkata`) date comparisons.
 """
 
+import json
 import logging
+import os
+import time
 import uuid
 import zoneinfo
 from datetime import datetime
@@ -49,7 +48,7 @@ from app.supabase_client import get_service_client
 logger = logging.getLogger(__name__)
 KOLKATA_TZ = zoneinfo.ZoneInfo("Asia/Kolkata")
 
-# Fallback in-memory storage for test/offline execution when Supabase is unconfigured
+# In-memory storage strictly for TESTING=1 offline execution
 _in_memory_companies: dict[str, dict[str, Any]] = {}
 _in_memory_drives: dict[str, dict[str, Any]] = {}
 _in_memory_dates: list[dict[str, Any]] = []
@@ -57,6 +56,9 @@ _in_memory_applications: dict[str, dict[str, Any]] = {}
 _in_memory_documents: list[dict[str, Any]] = []
 _in_memory_updates: list[dict[str, Any]] = []
 _in_memory_update_drafts: dict[str, dict[str, Any]] = {}
+
+_DRAFT_TTL_SECONDS = 3600.0
+_MAX_UPDATE_DRAFTS = 100
 
 ALLOWED_DRIVE_FIELDS = {
     "min_cgpa",
@@ -68,6 +70,47 @@ ALLOWED_DRIVE_FIELDS = {
     "ctc_display",
     "location",
 }
+
+_VALID_DATE_TYPES = {
+    "application_deadline",
+    "oa",
+    "interview",
+    "ppt",
+    "result",
+    "joining",
+    "other",
+}
+
+
+def _is_testing() -> bool:
+    return os.environ.get("TESTING") == "1"
+
+
+def _use_supabase() -> bool:
+    settings = get_settings()
+    configured = bool(settings.supabase_url and settings.supabase_service_role_key)
+    if not configured and not _is_testing():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database is not configured.",
+        )
+    return configured
+
+
+def _prune_update_drafts() -> None:
+    """Evict expired or excess in-memory update drafts to prevent unbounded growth."""
+    now = time.monotonic()
+    expired = [
+        uid
+        for uid, info in _in_memory_update_drafts.items()
+        if (now - info.get("_created_monotonic", now)) > _DRAFT_TTL_SECONDS
+    ]
+    for uid in expired:
+        _in_memory_update_drafts.pop(uid, None)
+
+    while len(_in_memory_update_drafts) >= _MAX_UPDATE_DRAFTS:
+        oldest_key = next(iter(_in_memory_update_drafts))
+        _in_memory_update_drafts.pop(oldest_key, None)
 
 
 def clear_in_memory_db() -> None:
@@ -81,15 +124,23 @@ def clear_in_memory_db() -> None:
     _in_memory_update_drafts.clear()
 
 
+def _to_ist_date_str(iso_or_dt: str | datetime) -> str:
+    """Convert an ISO string or datetime to an Asia/Kolkata YYYY-MM-DD date string."""
+    if isinstance(iso_or_dt, datetime):
+        dt = iso_or_dt
+    else:
+        dt = datetime.fromisoformat(str(iso_or_dt))
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=KOLKATA_TZ)
+    return dt.astimezone(KOLKATA_TZ).date().isoformat()
+
+
 def generate_signed_storage_url(
     storage_path: str,
     doc_id: str = "",
     expires_in_seconds: int = 300,
 ) -> str:
-    """Generate a short-expiry (5-minute) signed URL via Supabase Storage.
-
-    Falls back to a backend proxy endpoint if Supabase credentials are missing or unconfigured.
-    """
+    """Generate a short-expiry (5-minute) signed URL via Supabase Storage."""
     try:
         supabase = get_service_client()
         res = supabase.storage.from_("drive-documents").create_signed_url(
@@ -107,17 +158,27 @@ def generate_signed_storage_url(
     return f"/drives/documents/{doc_id}/download"
 
 
-def validate_and_normalize_deadlines(dates: list[ConfirmedDateItem]) -> list[ConfirmedDateItem]:
-    """Re-validate that at least one date_type=application_deadline has confirmed_by_user=true.
+def validate_and_normalize_deadlines(
+    dates: list[ConfirmedDateItem],
+    is_off_campus: bool = False,
+) -> list[ConfirmedDateItem]:
+    """Re-validate that at least one application_deadline has confirmed_by_user=true.
 
-    Ensures exactly one application_deadline date has is_primary_deadline=True.
-    Raises HTTP 422 if no confirmed application deadline exists.
+    Off-campus entries may have zero dates. Ensures at most one date has
+    is_primary_deadline=True. Raises HTTP 422 if a campus drive has no confirmed deadline.
     """
+    if is_off_campus and not dates:
+        return []
+
     confirmed_deadlines = [
         d for d in dates if d.date_type == "application_deadline" and d.confirmed_by_user
     ]
 
     if not confirmed_deadlines:
+        if is_off_campus:
+            for d in dates:
+                d.is_primary_deadline = False
+            return dates
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="At least one application_deadline entry must be confirmed by the user.",
@@ -148,15 +209,15 @@ def validate_and_normalize_deadlines(dates: list[ConfirmedDateItem]) -> list[Con
     return dates
 
 
-def _get_primary_deadline_date_iso(dates: list[ConfirmedDateItem]) -> str:
-    """Extract date_iso string of the primary application deadline."""
+def _get_primary_deadline_dt(dates: list[ConfirmedDateItem]) -> datetime | None:
+    """Extract datetime of the primary application deadline, or None if absent."""
     for d in dates:
         if d.is_primary_deadline:
             return d.date_iso
     for d in dates:
         if d.date_type == "application_deadline" and d.confirmed_by_user:
             return d.date_iso
-    raise ValueError("No primary deadline date found.")
+    return None
 
 
 def save_drive(
@@ -166,38 +227,24 @@ def save_drive(
     filename: str | None = None,
     content_type: str | None = None,
 ) -> DriveResponse:
-    """Save confirmed drive data and attached document."""
+    """Save confirmed drive data and attached document atomically."""
     settings = get_settings()
     now_iso = datetime.now(KOLKATA_TZ).isoformat()
 
-    has_confirmed_deadline = any(
-        d.date_type == "application_deadline" and d.confirmed_by_user for d in payload.dates
+    payload.dates = validate_and_normalize_deadlines(
+        payload.dates, is_off_campus=payload.is_off_campus
     )
-    if not has_confirmed_deadline and (payload.application_status or payload.job_description):
-        default_deadline_iso = payload.dates[0].date_iso if payload.dates else now_iso
-        payload.dates = [
-            ConfirmedDateItem(
-                date_type="application_deadline",
-                label="Application Deadline",
-                date_iso=default_deadline_iso,
-                date_raw="Direct Entry",
-                source="user_added",
-                confirmed_by_user=True,
-                is_primary_deadline=True,
-            )
-        ] + [d for d in payload.dates if d.date_type != "application_deadline"]
-
-    payload.dates = validate_and_normalize_deadlines(payload.dates)
-    primary_date_iso = _get_primary_deadline_date_iso(payload.dates)
-    primary_date_str = primary_date_iso.split("T")[0]
+    primary_dt = _get_primary_deadline_dt(payload.dates)
+    primary_date_str = _to_ist_date_str(primary_dt) if primary_dt is not None else None
 
     company_name_clean = payload.company_name.strip()
+    name_key = company_name_clean.lower()
     role_title_clean = payload.role_title.strip()
 
     company_id: str | None = None
     company_type: str | None = None
 
-    use_supabase = bool(settings.supabase_url and settings.supabase_service_role_key)
+    use_supabase = _use_supabase()
 
     if use_supabase:
         try:
@@ -205,7 +252,7 @@ def save_drive(
             res = (
                 supabase.table("companies")
                 .select("id, company_type, name")
-                .ilike("name", company_name_clean)
+                .eq("name_key", name_key)
                 .execute()
             )
             if res.data:
@@ -220,15 +267,31 @@ def save_drive(
                     "company_type": company_type,
                     "created_at": now_iso,
                 }
-                supabase.table("companies").insert(company_row).execute()
-                company_id = new_company_id
+                supabase.table("companies").upsert(
+                    company_row, on_conflict="name_key"
+                ).execute()
+                fetch_res = (
+                    supabase.table("companies")
+                    .select("id, company_type")
+                    .eq("name_key", name_key)
+                    .execute()
+                )
+                if fetch_res.data:
+                    company_id = fetch_res.data[0]["id"]
+                    company_type = fetch_res.data[0]["company_type"]
+                else:
+                    company_id = new_company_id
+        except HTTPException:
+            raise
         except Exception as err:
-            logger.warning("Supabase company operation failed, falling back to in-memory: %s", err)
-            use_supabase = False
-
-    if not use_supabase or not company_id:
+            logger.error("Supabase company operation failed: %s", err)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to resolve company record.",
+            ) from err
+    else:
         for cid, comp in _in_memory_companies.items():
-            if comp["name"].lower() == company_name_clean.lower():
+            if comp["name"].strip().lower() == name_key:
                 company_id = cid
                 company_type = comp["company_type"]
                 break
@@ -239,59 +302,63 @@ def save_drive(
             _in_memory_companies[company_id] = {
                 "id": company_id,
                 "name": company_name_clean,
+                "name_key": name_key,
                 "company_type": company_type,
                 "created_at": now_iso,
             }
 
-    # Deduplication check
+    # Deduplication check (only when a primary deadline exists)
     existing_drive_id: str | None = None
 
-    if use_supabase:
-        try:
-            supabase = get_service_client()
-            drives_res = (
-                supabase.table("drives")
-                .select("id, role_title")
-                .eq("user_id", user_id)
-                .eq("company_id", company_id)
-                .execute()
-            )
-            for d_row in drives_res.data:
-                if d_row["role_title"].strip().lower() == role_title_clean.lower():
-                    dates_res = (
-                        supabase.table("drive_dates")
-                        .select("date_iso")
-                        .eq("drive_id", d_row["id"])
-                        .eq("is_primary_deadline", True)
-                        .execute()
-                    )
-                    for date_row in dates_res.data:
-                        d_iso = date_row["date_iso"]
-                        if d_iso.split("T")[0] == primary_date_str:
-                            existing_drive_id = d_row["id"]
+    if primary_date_str is not None:
+        if use_supabase:
+            try:
+                supabase = get_service_client()
+                drives_res = (
+                    supabase.table("drives")
+                    .select("id, role_title")
+                    .eq("user_id", user_id)
+                    .eq("company_id", company_id)
+                    .execute()
+                )
+                for d_row in drives_res.data:
+                    if d_row["role_title"].strip().lower() == role_title_clean.lower():
+                        dates_res = (
+                            supabase.table("drive_dates")
+                            .select("date_iso")
+                            .eq("drive_id", d_row["id"])
+                            .eq("is_primary_deadline", True)
+                            .execute()
+                        )
+                        for date_row in dates_res.data:
+                            if _to_ist_date_str(date_row["date_iso"]) == primary_date_str:
+                                existing_drive_id = d_row["id"]
+                                break
+                        if existing_drive_id:
                             break
-                    if existing_drive_id:
-                        break
-        except Exception as err:
-            logger.warning("Supabase dedup check failed: %s", err)
-
-    if not existing_drive_id:
-        for did, d_row in _in_memory_drives.items():
-            if (
-                d_row["user_id"] == user_id
-                and d_row["company_id"] == company_id
-                and d_row["role_title"].strip().lower() == role_title_clean.lower()
-            ):
-                for date_row in _in_memory_dates:
-                    if (
-                        date_row["drive_id"] == did
-                        and date_row.get("is_primary_deadline")
-                        and date_row["date_iso"].split("T")[0] == primary_date_str
-                    ):
-                        existing_drive_id = did
-                        break
-            if existing_drive_id:
-                break
+            except Exception as err:
+                logger.error("Supabase dedup check failed: %s", err)
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed during duplicate drive check.",
+                ) from err
+        else:
+            for did, d_row in _in_memory_drives.items():
+                if (
+                    d_row["user_id"] == user_id
+                    and d_row["company_id"] == company_id
+                    and d_row["role_title"].strip().lower() == role_title_clean.lower()
+                ):
+                    for date_row in _in_memory_dates:
+                        if (
+                            date_row["drive_id"] == did
+                            and date_row.get("is_primary_deadline")
+                            and _to_ist_date_str(date_row["date_iso"]) == primary_date_str
+                        ):
+                            existing_drive_id = did
+                            break
+                if existing_drive_id:
+                    break
 
     if existing_drive_id:
         raise HTTPException(
@@ -315,7 +382,9 @@ def save_drive(
         "job_description": desc,
         "min_cgpa": payload.min_cgpa,
         "eligible_branches": payload.eligible_branches,
+        "application_link": payload.application_link,
         "ctc_display": payload.ctc_display,
+        "location": payload.location,
         "status": "confirmed",
         "created_at": now_iso,
     }
@@ -326,7 +395,7 @@ def save_drive(
             "drive_id": drive_id,
             "date_type": d.date_type,
             "label": d.label,
-            "date_iso": d.date_iso,
+            "date_iso": d.date_iso.astimezone(KOLKATA_TZ).isoformat(),
             "date_raw": d.date_raw,
             "source": d.source,
             "confirmed_by_user": d.confirmed_by_user,
@@ -343,7 +412,7 @@ def save_drive(
         "drive_id": drive_id,
         "status": app_status,
         "applied_at": now_iso if app_status != "not_applied" else None,
-        "notes": payload.application_link if payload.application_link else None,
+        "notes": None,
         "updated_at": now_iso,
     }
 
@@ -372,31 +441,25 @@ def save_drive(
             "uploaded_at": now_iso,
         }
 
-    written_to_supabase = False
     if use_supabase:
         try:
             supabase = get_service_client()
-            try:
-                supabase.table("drives").insert(drive_row).execute()
-            except Exception:
-                filtered_row = dict(drive_row)
-                if "ctc_display" in filtered_row:
-                    del filtered_row["ctc_display"]
-                try:
-                    supabase.table("drives").insert(filtered_row).execute()
-                except Exception:
-                    if "job_description" in filtered_row:
-                        del filtered_row["job_description"]
-                    supabase.table("drives").insert(filtered_row).execute()
-            supabase.table("drive_dates").insert(date_rows).execute()
-            supabase.table("applications").insert(app_row).execute()
-            if doc_row:
-                supabase.table("drive_documents").insert(doc_row).execute()
-            written_to_supabase = True
+            supabase.rpc(
+                "create_drive_atomic",
+                {
+                    "p_drive": drive_row,
+                    "p_dates": date_rows,
+                    "p_application": app_row,
+                    "p_document": doc_row,
+                },
+            ).execute()
         except Exception as err:
-            logger.warning("Failed writing drive data to Supabase: %s", err)
-
-    if not written_to_supabase:
+            logger.error("Failed atomic drive creation in Supabase: %s", err)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to save drive to database.",
+            ) from err
+    else:
         _in_memory_drives[drive_id] = drive_row
         _in_memory_dates.extend(date_rows)
         _in_memory_applications[drive_id] = app_row
@@ -415,60 +478,54 @@ def save_drive(
     )
 
 
-def _execute_drive_query(query_builder: Any, user_id: str) -> Any:
-    """Execute a drives table query filtered by user_id, with fallback for single .eq mock tests."""
-    q_user = query_builder.eq("user_id", user_id)
-    ret_val = str(getattr(getattr(q_user, "execute", None), "_mock_return_value", ""))
-    if (
-        hasattr(query_builder, "_mock_return_value")
-        and getattr(getattr(q_user, "execute", None), "_mock_side_effect", None) is None
-        and ret_val == "sentinel.DEFAULT"
-    ):
-        first_execute = getattr(query_builder, "execute", None)
-        if first_execute and (
-            getattr(first_execute, "_mock_side_effect", None) is not None
-            or str(getattr(first_execute, "_mock_return_value", "")) != "sentinel.DEFAULT"
-        ):
-            return query_builder.execute()
-    return q_user.execute()
-
-
 def build_existing_drive_summary(drive_id: str, user_id: str) -> str:
     """Construct existing_drive_summary string for PRD Section 3.2 diff prompt."""
-    settings = get_settings()
     drive_data = None
     company_name = "Unknown Company"
-    dates_data = []
+    dates_data: list[dict[str, Any]] = []
 
-    use_supabase = bool(settings.supabase_url and settings.supabase_service_role_key)
+    use_supabase = _use_supabase()
 
     if use_supabase:
         try:
             supabase = get_service_client()
-            q = supabase.table("drives").select("*").eq("id", drive_id)
-            d_res = _execute_drive_query(q, user_id)
-            if d_res.data:
-                drive_data = d_res.data[0]
-                c_res = (
-                    supabase.table("companies")
-                    .select("name")
-                    .eq("id", drive_data["company_id"])
-                    .execute()
+            d_res = (
+                supabase.table("drives")
+                .select("*")
+                .eq("id", drive_id)
+                .eq("user_id", user_id)
+                .execute()
+            )
+            if not d_res.data:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Drive with ID {drive_id} not found.",
                 )
-                if c_res.data:
-                    company_name = c_res.data[0]["name"]
-                dates_res = (
-                    supabase.table("drive_dates")
-                    .select("*")
-                    .eq("drive_id", drive_id)
-                    .execute()
-                )
-                dates_data = dates_res.data
+            drive_data = d_res.data[0]
+            c_res = (
+                supabase.table("companies")
+                .select("name")
+                .eq("id", drive_data["company_id"])
+                .execute()
+            )
+            if c_res.data:
+                company_name = c_res.data[0]["name"]
+            dates_res = (
+                supabase.table("drive_dates")
+                .select("*")
+                .eq("drive_id", drive_id)
+                .execute()
+            )
+            dates_data = dates_res.data
+        except HTTPException:
+            raise
         except Exception as err:
-            logger.warning("Failed fetching drive from Supabase for summary: %s", err)
-            use_supabase = False
-
-    if not drive_data:
+            logger.error("Failed fetching drive from Supabase for summary: %s", err)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed fetching drive details.",
+            ) from err
+    else:
         drive_data = _in_memory_drives.get(drive_id)
         if not drive_data or drive_data.get("user_id") != user_id:
             raise HTTPException(
@@ -547,13 +604,14 @@ def create_update_draft(
     if not reference_date_iso:
         reference_date_iso = datetime.now(KOLKATA_TZ).isoformat()
 
-    update_result, status_str, err_msg = extract_update_diff(
+    update_result, _status_str, _err_msg = extract_update_diff(
         new_raw_text=raw_text,
         existing_drive_summary=existing_summary,
         reference_date_iso=reference_date_iso,
     )
 
     update_id = str(uuid.uuid4())
+    _prune_update_drafts()
 
     _in_memory_update_drafts[update_id] = {
         "update_id": update_id,
@@ -565,6 +623,7 @@ def create_update_draft(
         "filename": filename,
         "content_type": file_content_type,
         "update_result": update_result,
+        "_created_monotonic": time.monotonic(),
     }
 
     return DriveUpdateDraftResponse(
@@ -582,13 +641,19 @@ def confirm_and_merge_update(
     user_id: str,
     payload: ConfirmUpdatePayload,
 ) -> ConfirmUpdateResponse:
-    """Confirm and merge an update draft into the database."""
+    """Confirm and merge an update draft into the database atomically."""
     settings = get_settings()
     now_iso = datetime.now(KOLKATA_TZ).isoformat()
 
     _ = build_existing_drive_summary(drive_id, user_id)
 
     draft_info = _in_memory_update_drafts.get(update_id)
+    if draft_info is not None:
+        if draft_info.get("drive_id") != drive_id or draft_info.get("user_id") != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Update draft not found for this drive.",
+            )
 
     raw_text = payload.raw_text or (draft_info["raw_text"] if draft_info else "")
     st = payload.source_type or (
@@ -609,21 +674,36 @@ def confirm_and_merge_update(
         "created_at": now_iso,
     }
 
-    new_date_rows = [
-        {
-            "id": str(uuid.uuid4()),
-            "drive_id": drive_id,
-            "date_type": d.date_type,
-            "label": d.label,
-            "date_iso": d.date_iso,
-            "date_raw": d.date_raw,
-            "source": d.source,
-            "confirmed_by_user": True,
-            "is_primary_deadline": False,
-            "created_at": now_iso,
-        }
-        for d in payload.confirmed_new_dates
-    ]
+    promote_primary = False
+    new_date_rows: list[dict[str, Any]] = []
+    for d in payload.confirmed_new_dates:
+        is_primary = bool(
+            d.date_type == "application_deadline"
+            and d.is_primary_deadline
+            and not promote_primary
+        )
+        if is_primary:
+            promote_primary = True
+        new_date_rows.append(
+            {
+                "id": str(uuid.uuid4()),
+                "drive_id": drive_id,
+                "date_type": d.date_type,
+                "label": d.label,
+                "date_iso": d.date_iso.astimezone(KOLKATA_TZ).isoformat(),
+                "date_raw": d.date_raw,
+                "source": d.source,
+                "confirmed_by_user": True,
+                "is_primary_deadline": is_primary,
+                "created_at": now_iso,
+            }
+        )
+
+    field_updates = {
+        k: v
+        for k, v in payload.confirmed_field_changes.items()
+        if k in ALLOWED_DRIVE_FIELDS
+    }
 
     doc_row = None
     if draft_info and draft_info.get("file_bytes") and draft_info.get("filename"):
@@ -652,61 +732,59 @@ def confirm_and_merge_update(
             "uploaded_at": now_iso,
         }
 
-    use_supabase = bool(settings.supabase_url and settings.supabase_service_role_key)
-    written_to_supabase = False
+    use_supabase = _use_supabase()
 
     if use_supabase:
         try:
             supabase = get_service_client()
-            supabase.table("drive_updates").insert(update_row).execute()
-            if new_date_rows:
-                supabase.table("drive_dates").insert(new_date_rows).execute()
-            if payload.confirmed_field_changes:
-                field_updates = {
-                    k: v
-                    for k, v in payload.confirmed_field_changes.items()
-                    if k in ALLOWED_DRIVE_FIELDS
-                }
-                if field_updates:
-                    (
-                        supabase.table("drives")
-                        .update(field_updates)
-                        .eq("id", drive_id)
-                        .eq("user_id", user_id)
-                        .execute()
-                    )
-            if doc_row:
-                supabase.table("drive_documents").insert(doc_row).execute()
-            written_to_supabase = True
+            supabase.rpc(
+                "confirm_drive_update_atomic",
+                {
+                    "p_drive_id": drive_id,
+                    "p_user_id": user_id,
+                    "p_update": update_row,
+                    "p_new_dates": new_date_rows,
+                    "p_field_updates": field_updates,
+                    "p_document": doc_row,
+                    "p_promote_primary": promote_primary,
+                },
+            ).execute()
         except Exception as err:
-            logger.warning("Failed writing update to Supabase: %s", err)
-
-    if not written_to_supabase:
+            logger.error("Failed atomic update merge in Supabase: %s", err)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to confirm drive update.",
+            ) from err
+    else:
         _in_memory_updates.append(update_row)
+        if promote_primary:
+            for existing_d in _in_memory_dates:
+                if existing_d["drive_id"] == drive_id and existing_d.get("is_primary_deadline"):
+                    existing_d["is_primary_deadline"] = False
         _in_memory_dates.extend(new_date_rows)
         if (
             drive_id in _in_memory_drives
             and _in_memory_drives[drive_id].get("user_id") == user_id
-            and payload.confirmed_field_changes
+            and field_updates
         ):
-            for k, v in payload.confirmed_field_changes.items():
-                if k in ALLOWED_DRIVE_FIELDS:
-                    _in_memory_drives[drive_id][k] = v
+            _in_memory_drives[drive_id].update(field_updates)
         if doc_row:
             _in_memory_documents.append(doc_row)
+
+    # Evict draft after successful merge to release memory/file bytes
+    _in_memory_update_drafts.pop(update_id, None)
 
     return ConfirmUpdateResponse(
         update_id=update_id,
         drive_id=drive_id,
         summary_of_changes=summary_of_changes,
         added_dates_count=len(payload.confirmed_new_dates),
-        updated_fields_count=len(payload.confirmed_field_changes),
+        updated_fields_count=len(field_updates),
     )
 
 
 def get_drive_detail(drive_id: str, user_id: str) -> DriveDetailResponse:
     """Fetch complete drive detail view (header, dates, application status)."""
-    settings = get_settings()
     drive_data = None
     company_name = "Unknown Company"
     company_type = "unknown"
@@ -714,47 +792,60 @@ def get_drive_detail(drive_id: str, user_id: str) -> DriveDetailResponse:
     app_id: str | None = None
     dates_data: list[dict[str, Any]] = []
 
-    use_supabase = bool(settings.supabase_url and settings.supabase_service_role_key)
+    use_supabase = _use_supabase()
 
     if use_supabase:
         try:
             supabase = get_service_client()
-            q = supabase.table("drives").select("*").eq("id", drive_id)
-            d_res = _execute_drive_query(q, user_id)
-            if d_res.data:
-                drive_data = d_res.data[0]
-                c_res = (
-                    supabase.table("companies")
-                    .select("name, company_type")
-                    .eq("id", drive_data["company_id"])
-                    .execute()
+            d_res = (
+                supabase.table("drives")
+                .select("*")
+                .eq("id", drive_id)
+                .eq("user_id", user_id)
+                .execute()
+            )
+            if not d_res.data:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Drive with ID {drive_id} not found.",
                 )
-                if c_res.data:
-                    company_name = c_res.data[0]["name"]
-                    company_type = c_res.data[0].get("company_type", "unknown")
+            drive_data = d_res.data[0]
+            c_res = (
+                supabase.table("companies")
+                .select("name, company_type")
+                .eq("id", drive_data["company_id"])
+                .execute()
+            )
+            if c_res.data:
+                company_name = c_res.data[0]["name"]
+                company_type = c_res.data[0].get("company_type", "unknown")
 
-                app_res = (
-                    supabase.table("applications")
-                    .select("id, status")
-                    .eq("drive_id", drive_id)
-                    .execute()
-                )
-                if app_res.data:
-                    app_status = app_res.data[0].get("status", "not_applied")
-                    app_id = app_res.data[0].get("id")
+            app_res = (
+                supabase.table("applications")
+                .select("id, status")
+                .eq("drive_id", drive_id)
+                .execute()
+            )
+            if app_res.data:
+                app_status = app_res.data[0].get("status", "not_applied")
+                app_id = app_res.data[0].get("id")
 
-                dates_res = (
-                    supabase.table("drive_dates")
-                    .select("*")
-                    .eq("drive_id", drive_id)
-                    .execute()
-                )
-                dates_data = dates_res.data
+            dates_res = (
+                supabase.table("drive_dates")
+                .select("*")
+                .eq("drive_id", drive_id)
+                .execute()
+            )
+            dates_data = dates_res.data
+        except HTTPException:
+            raise
         except Exception as err:
-            logger.warning("Failed fetching drive detail from Supabase: %s", err)
-            use_supabase = False
-
-    if not drive_data:
+            logger.error("Failed fetching drive detail from Supabase: %s", err)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed fetching drive details.",
+            ) from err
+    else:
         drive_data = _in_memory_drives.get(drive_id)
         if not drive_data or drive_data.get("user_id") != user_id:
             raise HTTPException(
@@ -773,29 +864,24 @@ def get_drive_detail(drive_id: str, user_id: str) -> DriveDetailResponse:
 
         dates_data = [d for d in _in_memory_dates if d["drive_id"] == drive_id]
 
-    valid_date_types = {
-        "application_deadline",
-        "oa",
-        "interview",
-        "ppt",
-        "result",
-        "joining",
-        "other",
-    }
     dates_models = []
     for d in dates_data:
         dtype = d.get("date_type", "other")
-        if dtype not in valid_date_types:
+        if dtype not in _VALID_DATE_TYPES:
             dtype = "other"
         src = d.get("source")
         if src not in ("ai_suggested", "user_added"):
             src = "user_added"
+        raw_iso = d.get("date_iso") or datetime.now(KOLKATA_TZ).isoformat()
+        parsed_dt = datetime.fromisoformat(str(raw_iso))
+        if parsed_dt.tzinfo is None:
+            parsed_dt = parsed_dt.replace(tzinfo=KOLKATA_TZ)
         dates_models.append(
             DriveDateSaved(
                 id=str(d.get("id") or uuid.uuid4()),
                 date_type=dtype,
                 label=d.get("label"),
-                date_iso=str(d.get("date_iso") or datetime.now(KOLKATA_TZ).isoformat()),
+                date_iso=parsed_dt,
                 date_raw=d.get("date_raw"),
                 source=src,
                 confirmed_by_user=bool(d.get("confirmed_by_user", True)),
@@ -806,7 +892,6 @@ def get_drive_detail(drive_id: str, user_id: str) -> DriveDetailResponse:
     branches = drive_data.get("eligible_branches")
     if isinstance(branches, str):
         try:
-            import json
             branches = json.loads(branches)
         except Exception:
             branches = [branches]
@@ -826,6 +911,7 @@ def get_drive_detail(drive_id: str, user_id: str) -> DriveDetailResponse:
         eligible_branches=branches,
         application_link=drive_data.get("application_link"),
         ctc_display=drive_data.get("ctc_display"),
+        location=drive_data.get("location"),
         status=drive_data.get("status", "confirmed"),
         application_status=app_status,
         application_id=app_id,
@@ -837,7 +923,6 @@ def get_drive_detail(drive_id: str, user_id: str) -> DriveDetailResponse:
 def get_drive_timeline(drive_id: str, user_id: str) -> DriveTimelineResponse:
     """Fetch chronological timeline combining initial capture and all drive_updates."""
     drive_detail = get_drive_detail(drive_id, user_id)
-    settings = get_settings()
 
     initial_event = TimelineEvent(
         id="initial",
@@ -848,8 +933,7 @@ def get_drive_timeline(drive_id: str, user_id: str) -> DriveTimelineResponse:
     )
 
     update_events: list[TimelineEvent] = []
-
-    use_supabase = bool(settings.supabase_url and settings.supabase_service_role_key)
+    use_supabase = _use_supabase()
 
     if use_supabase:
         try:
@@ -873,10 +957,12 @@ def get_drive_timeline(drive_id: str, user_id: str) -> DriveTimelineResponse:
                     )
                 )
         except Exception as err:
-            logger.warning("Failed fetching timeline from Supabase: %s", err)
-            use_supabase = False
-
-    if not use_supabase:
+            logger.error("Failed fetching timeline from Supabase: %s", err)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed fetching drive timeline.",
+            ) from err
+    else:
         mem_updates = [u for u in _in_memory_updates if u["drive_id"] == drive_id]
         mem_updates.sort(key=lambda u: u.get("created_at", ""))
         for u in mem_updates:
@@ -903,11 +989,9 @@ def get_drive_timeline(drive_id: str, user_id: str) -> DriveTimelineResponse:
 def get_drive_documents(drive_id: str, user_id: str) -> DriveDocumentsResponse:
     """Fetch list of all drive_documents with 5-minute signed download URLs."""
     _ = get_drive_detail(drive_id, user_id)
-    settings = get_settings()
 
     doc_rows: list[dict[str, Any]] = []
-
-    use_supabase = bool(settings.supabase_url and settings.supabase_service_role_key)
+    use_supabase = _use_supabase()
 
     if use_supabase:
         try:
@@ -921,10 +1005,12 @@ def get_drive_documents(drive_id: str, user_id: str) -> DriveDocumentsResponse:
             )
             doc_rows = res.data
         except Exception as err:
-            logger.warning("Failed fetching documents from Supabase: %s", err)
-            use_supabase = False
-
-    if not use_supabase:
+            logger.error("Failed fetching documents from Supabase: %s", err)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed fetching drive documents.",
+            ) from err
+    else:
         doc_rows = [d for d in _in_memory_documents if d["drive_id"] == drive_id]
 
     doc_items: list[DocumentItem] = []
@@ -969,8 +1055,7 @@ def get_drive_documents(drive_id: str, user_id: str) -> DriveDocumentsResponse:
 
 
 def list_drives_for_dashboard(user_id: str) -> DriveListResponse:
-    """Fetch card list of all drives for main dashboard with days-left calculations."""
-    settings = get_settings()
+    """Fetch card list of all drives for main dashboard with IST days-left calculations."""
     now_dt = datetime.now(KOLKATA_TZ)
     now_date = now_dt.date()
 
@@ -979,7 +1064,7 @@ def list_drives_for_dashboard(user_id: str) -> DriveListResponse:
     dates_data: list[dict[str, Any]] = []
     apps_data: list[dict[str, Any]] = []
 
-    use_supabase = bool(settings.supabase_url and settings.supabase_service_role_key)
+    use_supabase = _use_supabase()
 
     if use_supabase:
         try:
@@ -1009,10 +1094,12 @@ def list_drives_for_dashboard(user_id: str) -> DriveListResponse:
                 )
                 apps_data = apps_res.data
         except Exception as err:
-            logger.warning("Failed fetching drives for dashboard from Supabase: %s", err)
-            use_supabase = False
-
-    if not use_supabase:
+            logger.error("Failed fetching drives for dashboard from Supabase: %s", err)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed loading dashboard drives.",
+            ) from err
+    else:
         drives_data = [d for d in _in_memory_drives.values() if d["user_id"] == user_id]
         companies_map = _in_memory_companies
         dates_data = _in_memory_dates
@@ -1031,7 +1118,6 @@ def list_drives_for_dashboard(user_id: str) -> DriveListResponse:
         app_status = app_info.get("status", "not_applied")
         applied_at = app_info.get("applied_at")
 
-        # Find primary deadline
         drive_dates = [dt for dt in dates_data if dt["drive_id"] == did]
         primary_dt = next((dt for dt in drive_dates if dt.get("is_primary_deadline")), None)
         if not primary_dt:
@@ -1039,25 +1125,24 @@ def list_drives_for_dashboard(user_id: str) -> DriveListResponse:
                 (dt for dt in drive_dates if dt.get("date_type") == "application_deadline"),
                 None,
             )
-
         if not primary_dt and drive_dates:
             primary_dt = drive_dates[0]
 
-        primary_iso = (
-            primary_dt["date_iso"]
-            if primary_dt
-            else datetime.now(KOLKATA_TZ).isoformat()
-        )
-
-        try:
-            deadline_dt = datetime.fromisoformat(primary_iso)
-            if deadline_dt.tzinfo is None:
-                deadline_dt = deadline_dt.replace(tzinfo=KOLKATA_TZ)
-            deadline_date = deadline_dt.date()
-            days_left = (deadline_date - now_date).days
-            is_overdue = deadline_date < now_date
-        except Exception:
-            days_left = 0
+        if primary_dt:
+            primary_iso: str | None = primary_dt["date_iso"]
+            try:
+                deadline_dt = datetime.fromisoformat(str(primary_iso))
+                if deadline_dt.tzinfo is None:
+                    deadline_dt = deadline_dt.replace(tzinfo=KOLKATA_TZ)
+                deadline_date = deadline_dt.astimezone(KOLKATA_TZ).date()
+                days_left: int | None = (deadline_date - now_date).days
+                is_overdue = deadline_date < now_date
+            except Exception:
+                days_left = 0
+                is_overdue = False
+        else:
+            primary_iso = None
+            days_left = None
             is_overdue = False
 
         cards.append(
@@ -1079,8 +1164,6 @@ def list_drives_for_dashboard(user_id: str) -> DriveListResponse:
             )
         )
 
-    # Sort active drives (not overdue OR active in pipeline) nearest deadline first,
-    # overdue drives placed at bottom
     active_pipeline_statuses = {"applied", "oa", "interview"}
 
     active_cards = [
@@ -1092,11 +1175,22 @@ def list_drives_for_dashboard(user_id: str) -> DriveListResponse:
         if c.is_overdue and c.application_status not in active_pipeline_statuses
     ]
 
-    active_cards.sort(key=lambda c: (c.days_left, c.primary_deadline_iso))
-    overdue_cards.sort(key=lambda c: (c.days_left, c.primary_deadline_iso))
+    active_cards.sort(
+        key=lambda c: (
+            c.days_left is None,
+            c.days_left if c.days_left is not None else 0,
+            c.primary_deadline_iso or "",
+        )
+    )
+    overdue_cards.sort(
+        key=lambda c: (
+            c.days_left is None,
+            c.days_left if c.days_left is not None else 0,
+            c.primary_deadline_iso or "",
+        )
+    )
 
     return DriveListResponse(drives=[*active_cards, *overdue_cards])
-
 
 
 def update_application_status(
@@ -1106,11 +1200,10 @@ def update_application_status(
     user_id: str,
 ) -> ApplicationResponse:
     """Update application status. Sets applied_at once if moving to 'applied' for the first time."""
-    settings = get_settings()
     now_iso = datetime.now(KOLKATA_TZ).isoformat()
 
     app_row: dict[str, Any] | None = None
-    use_supabase = bool(settings.supabase_url and settings.supabase_service_role_key)
+    use_supabase = _use_supabase()
 
     if use_supabase:
         try:
@@ -1121,31 +1214,36 @@ def update_application_status(
                 .eq("id", application_id)
                 .execute()
             )
-            if res.data:
-                candidate_app = res.data[0]
-                drive_check = (
-                    supabase.table("drives")
-                    .select("id")
-                    .eq("id", candidate_app.get("drive_id", ""))
-                    .eq("user_id", user_id)
-                    .execute()
+            if not res.data:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Application record with ID {application_id} not found.",
                 )
-                if not drive_check.data:
-                    raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND,
-                        detail=f"Application record with ID {application_id} not found.",
-                    )
-                app_row = candidate_app
+            candidate_app = res.data[0]
+            drive_check = (
+                supabase.table("drives")
+                .select("id")
+                .eq("id", candidate_app.get("drive_id", ""))
+                .eq("user_id", user_id)
+                .execute()
+            )
+            if not drive_check.data:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Application record with ID {application_id} not found.",
+                )
+            app_row = candidate_app
         except HTTPException:
             raise
         except Exception as err:
-            logger.warning("Failed fetching application from Supabase: %s", err)
-            use_supabase = False
-
-    if not app_row:
+            logger.error("Failed fetching application from Supabase: %s", err)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed fetching application record.",
+            ) from err
+    else:
         candidate_app = _in_memory_applications.get(application_id)
         if not candidate_app:
-            # Fallback search by drive_id or value match
             for a in _in_memory_applications.values():
                 if a.get("id") == application_id:
                     candidate_app = a
@@ -1168,7 +1266,6 @@ def update_application_status(
 
     existing_applied_at = app_row.get("applied_at")
 
-    # Set applied_at ONCE if moving to 'applied' and not set before
     if new_status == "applied" and not existing_applied_at:
         applied_at = now_iso
     else:
@@ -1182,16 +1279,17 @@ def update_application_status(
     if notes is not None:
         updates["notes"] = notes
 
-    written_to_supabase = False
     if use_supabase:
         try:
             supabase = get_service_client()
             supabase.table("applications").update(updates).eq("id", application_id).execute()
-            written_to_supabase = True
         except Exception as err:
-            logger.warning("Failed updating application in Supabase: %s", err)
-
-    if not written_to_supabase:
+            logger.error("Failed updating application in Supabase: %s", err)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed updating application status.",
+            ) from err
+    else:
         app_row.update(updates)
         _in_memory_applications[application_id] = app_row
         if "drive_id" in app_row:
@@ -1213,21 +1311,16 @@ def update_drive(
     payload: UpdateDriveRequest,
 ) -> DriveDetailResponse:
     """Directly update drive details (CTC, role, eligibility, links) and return updated detail."""
-    settings = get_settings()
-
-    # Verify drive exists (raises 404 if not found)
     _ = get_drive_detail(drive_id=drive_id, user_id=user_id)
 
-    # Collect fields explicitly provided
     update_data = payload.model_dump(exclude_unset=True)
 
-    # Sync job_description and eligibility_raw if one is provided
     if "job_description" in update_data and "eligibility_raw" not in update_data:
         update_data["eligibility_raw"] = update_data["job_description"]
     elif "eligibility_raw" in update_data and "job_description" not in update_data:
         update_data["job_description"] = update_data["eligibility_raw"]
 
-    use_supabase = bool(settings.supabase_url and settings.supabase_service_role_key)
+    use_supabase = _use_supabase()
     if use_supabase:
         try:
             supabase = get_service_client()
@@ -1236,35 +1329,23 @@ def update_drive(
                 if k in ALLOWED_DRIVE_FIELDS
             }
             if filtered_fields:
-                try:
-                    (
-                        supabase.table("drives")
-                        .update(filtered_fields)
-                        .eq("id", drive_id)
-                        .eq("user_id", user_id)
-                        .execute()
-                    )
-                except Exception as inner_err:
-                    if "job_description" in filtered_fields:
-                        del filtered_fields["job_description"]
-                        (
-                            supabase.table("drives")
-                            .update(filtered_fields)
-                            .eq("id", drive_id)
-                            .eq("user_id", user_id)
-                            .execute()
-                        )
-                    else:
-                        raise inner_err
+                (
+                    supabase.table("drives")
+                    .update(filtered_fields)
+                    .eq("id", drive_id)
+                    .eq("user_id", user_id)
+                    .execute()
+                )
         except Exception as err:
-            logger.warning("Failed updating drive in Supabase: %s", err)
-            use_supabase = False
-
-    # Also update in-memory cache for fallback and tests
-    if drive_id in _in_memory_drives and _in_memory_drives[drive_id].get("user_id") == user_id:
-        for k, v in update_data.items():
-            if k in ALLOWED_DRIVE_FIELDS:
-                _in_memory_drives[drive_id][k] = v
+            logger.error("Failed updating drive in Supabase: %s", err)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed updating drive details.",
+            ) from err
+    else:
+        if drive_id in _in_memory_drives and _in_memory_drives[drive_id].get("user_id") == user_id:
+            for k, v in update_data.items():
+                if k in ALLOWED_DRIVE_FIELDS:
+                    _in_memory_drives[drive_id][k] = v
 
     return get_drive_detail(drive_id=drive_id, user_id=user_id)
-

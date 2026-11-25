@@ -240,7 +240,7 @@ function App() {
                 </h1>
                 <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-sm bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-700">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  Official Portal
+                  Personal Workspace
                 </span>
               </div>
               <p className="text-[11px] font-normal text-neutral-500 dark:text-neutral-400">
@@ -368,7 +368,7 @@ function App() {
               PR
             </div>
             <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-tpo-accent block mb-2">
-              University Career & Placement Cell
+              Independent Placement Tracker
             </span>
             <h2 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight text-neutral-900 dark:text-white mb-3">
               Campus Placement Dispatch & Pipeline Registry
@@ -400,7 +400,7 @@ function App() {
                 <ShieldCheck className="w-4 h-4 text-tpo-cobalt" /> Encrypted Student Records
               </span>
               <span>•</span>
-              <span className="font-medium">Institutional Auth</span>
+              <span className="font-medium">Clerk Auth</span>
               <span>•</span>
               <a
                 href="/terms-of-service"
