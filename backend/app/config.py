@@ -1,5 +1,6 @@
 """Application configuration loaded from environment variables."""
 
+import os
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -50,4 +51,12 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     """Return a cached ``Settings`` instance."""
+    if os.environ.get("TESTING") == "1":
+        return Settings(
+            _env_file=None,
+            supabase_url="",
+            supabase_anon_key="",
+            supabase_service_role_key="",
+            groq_api_key="",
+        )
     return Settings()

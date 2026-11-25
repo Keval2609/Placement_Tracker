@@ -29,8 +29,7 @@ When you interact with the Service, you provide:
 * Uploaded circular documents (`.pdf` or `.docx` files, up to 10MB) parsed using server-side document readers.
 
 ### D. Device, Notification & Communication Identifiers
-* **Web Push Subscriptions**: VAPID browser push endpoints and cryptographic keys used solely to transmit deadline reminders to your browser;
-* **Telegram Integration**: Optional Telegram Chat ID linked to your account to escalate urgent deadlines if push notifications go unacknowledged.
+* **Web Push Subscriptions**: VAPID browser push endpoints and cryptographic keys used solely to transmit deadline reminders to your browser and mobile PWA devices.
 
 ### E. Diagnostic & Technical Data
 * Anonymized operational logs and error diagnostics (via **Sentry**) to identify crashes and system performance degradation;
@@ -79,7 +78,6 @@ We utilize trusted third-party infrastructure providers to support the Service:
 | **Clerk** | Authentication, user accounts, and session tokens | [Clerk Privacy Policy](https://clerk.com/privacy) |
 | **Supabase** | PostgreSQL database hosting, Storage & RLS | [Supabase Privacy Policy](https://supabase.com/privacy) |
 | **Groq** | Fast cloud LPU inference for schema-constrained notice parsing | [Groq Privacy Policy](https://groq.com/privacy-policy) |
-| **Telegram Bot API** | Optional secondary alert channel for deadline escalation | [Telegram Privacy Policy](https://telegram.org/privacy) |
 | **Sentry** | Frontend error tracking and crash reporting | [Sentry Privacy Policy](https://sentry.io/privacy) |
 | **Vercel / Render** | Web frontend and backend cloud hosting | [Vercel Privacy](https://vercel.com/legal/privacy-policy) / [Render Privacy](https://render.com/privacy) |
 

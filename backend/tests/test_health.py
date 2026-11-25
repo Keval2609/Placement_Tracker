@@ -28,7 +28,6 @@ def test_health_endpoints_do_not_leak_secrets() -> None:
             "groq_api_key",
             "gemini_api_key",
             "service_role",
-            "telegram_bot_token",
             "vapid_private_key",
             "postgres://",
             "bearer ",

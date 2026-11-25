@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Bell, Send, CheckCircle2, Smartphone } from "lucide-react";
+import { X, Bell, CheckCircle2, Smartphone } from "lucide-react";
 
 interface PrototypeAlertsDrawerProps {
   isOpen: boolean;
@@ -11,17 +11,9 @@ export const PrototypeAlertsDrawer: React.FC<PrototypeAlertsDrawerProps> = ({
   onClose,
 }) => {
   const [pushActive, setPushActive] = useState(true);
-  const [telegramLinked, setTelegramLinked] = useState(false);
-  const [telegramHandle, setTelegramHandle] = useState("");
   const [testSent, setTestSent] = useState(false);
 
   if (!isOpen) return null;
-
-  const handleLinkTelegram = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!telegramHandle) return;
-    setTelegramLinked(true);
-  };
 
   const handleTriggerTest = () => {
     setTestSent(true);
@@ -50,7 +42,7 @@ export const PrototypeAlertsDrawer: React.FC<PrototypeAlertsDrawerProps> = ({
           </div>
           <div>
             <h2 className="text-lg font-bold uppercase tracking-[1px] text-neutral-900 dark:text-white">
-              Multi-Channel Alerts
+              Mobile Web Push Alerts
             </h2>
             <p className="text-xs font-light text-neutral-600 dark:text-neutral-400">
               Never miss a 11:59 PM deadline or OA schedule.
@@ -83,62 +75,6 @@ export const PrototypeAlertsDrawer: React.FC<PrototypeAlertsDrawerProps> = ({
               {pushActive ? "Enabled" : "Enable Push"}
             </button>
           </div>
-        </div>
-
-        {/* Telegram Bot Integration Card */}
-        <div className="p-4 bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-800 rounded-lg space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-md bg-white dark:bg-neutral-800 text-[#1c69d4] dark:text-blue-400 border border-neutral-300 dark:border-neutral-700 flex items-center justify-center">
-                <Send className="w-4 h-4" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">Telegram Alerts Bot</h4>
-                <p className="text-[11px] font-light text-neutral-500 dark:text-neutral-400">High-priority instant alerts with custom sounds</p>
-              </div>
-            </div>
-
-            <span
-              className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-sm border ${
-                telegramLinked
-                  ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
-                  : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900"
-              }`}
-            >
-              {telegramLinked ? "Connected" : "Not Linked"}
-            </span>
-          </div>
-
-          {!telegramLinked ? (
-            <form onSubmit={handleLinkTelegram} className="flex gap-2 pt-1">
-              <input
-                type="text"
-                placeholder="Enter Telegram Chat ID or Username"
-                value={telegramHandle}
-                onChange={(e) => setTelegramHandle(e.target.value)}
-                className="flex-1 px-3 py-1.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-[#1c69d4]"
-              />
-              <button
-                type="submit"
-                className="px-4 py-1.5 bg-[#1c69d4] hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-[0.5px] rounded-md transition-colors cursor-pointer"
-              >
-                Connect
-              </button>
-            </form>
-          ) : (
-            <div className="flex items-center justify-between text-xs pt-1">
-              <span className="text-neutral-600 dark:text-neutral-400">
-                Connected Chat: <strong className="text-neutral-900 dark:text-neutral-100">{telegramHandle || "@student_dev"}</strong>
-              </span>
-              <button
-                type="button"
-                onClick={() => setTelegramLinked(false)}
-                className="text-[11px] text-red-600 dark:text-red-400 hover:underline font-bold uppercase tracking-wider"
-              >
-                Disconnect
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Battery / OEM Optimization Advisory */}

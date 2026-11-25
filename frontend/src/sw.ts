@@ -1,10 +1,15 @@
 /// <reference lib="webworker" />
 import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
 
-declare let self: ServiceWorkerGlobalScope;
+declare let self: ServiceWorkerGlobalScope & {
+  __WB_MANIFEST: Array<{ url: string; revision: string | null }>;
+};
 
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST || []);
+
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL || "https://placement-tracker-yzdq.onrender.com";
 
 // Web Push Notification Event Handler (Desktop + Mobile Android / iOS PWA)
 self.addEventListener("push", (event: PushEvent) => {
@@ -40,7 +45,7 @@ self.addEventListener("push", (event: PushEvent) => {
       const alertId = payload.data?.alert_id as string | undefined;
       if (alertId) {
         // Send ACK
-        fetch("/push/ack", {
+        fetch(`${API_BASE}/push/ack`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ alert_id: alertId }),

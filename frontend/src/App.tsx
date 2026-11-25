@@ -15,7 +15,6 @@ import {
   Layers,
 } from "lucide-react";
 import { setTokenGetter } from "./services/api";
-import { setSupabaseAuth } from "./lib/supabase";
 
 const getInitialLegalTab = (): LegalTab | null => {
   if (typeof window === "undefined") return null;
@@ -83,16 +82,6 @@ function App() {
     }
   });
 
-  useEffect(() => {
-    if (isSignedIn) {
-      getToken({ template: "supabase" })
-        .then(setSupabaseAuth)
-        .catch(() => setSupabaseAuth(null));
-    } else {
-      setSupabaseAuth(null);
-    }
-  }, [isSignedIn, getToken]);
-
   const [showPrototype, setShowPrototype] = useState<boolean>(isDemoEnvironment);
   const [legalTab, setLegalTab] = useState<LegalTab | null>(getInitialLegalTab);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -102,6 +91,18 @@ function App() {
     active: 0,
     urgent: 0,
   });
+
+  const handleDriveCountChange = useCallback(
+    (active: number, urgent: number) => {
+      setCounts((prev) =>
+        prev.active === active && prev.urgent === urgent
+          ? prev
+          : { active, urgent }
+      );
+    },
+    []
+  );
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handleOpenLegal = useCallback((tab: LegalTab) => {
     setLegalTab(tab);
@@ -274,7 +275,7 @@ function App() {
               aria-label="Open alert channel settings"
               onClick={() => setIsAlertsDrawerOpen(true)}
               className="inline-flex items-center justify-center gap-1.5 p-2 sm:px-3 sm:py-2 w-8 h-8 sm:w-auto sm:h-auto text-xs font-semibold text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-md transition-colors cursor-pointer relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt"
-              title="Configure Telegram & Web Push notification channels"
+              title="Configure Mobile & Web Push notifications"
             >
               <Bell className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
               <span className="hidden sm:inline">Alert Channels</span>
@@ -413,9 +414,8 @@ function App() {
           <DashboardPage
             globalSearchQuery={searchQuery}
             onOpenIngest={() => setIsIngestModalOpen(true)}
-            onDriveCountChange={(active, urgent) =>
-              setCounts({ active, urgent })
-            }
+            onDriveCountChange={handleDriveCountChange}
+            refreshKey={refreshKey}
           />
         )}
       </main>
@@ -471,6 +471,7 @@ function App() {
       <IngestModal
         isOpen={isIngestModalOpen}
         onClose={() => setIsIngestModalOpen(false)}
+        onDriveCreated={() => setRefreshKey((k) => k + 1)}
       />
 
       {/* Alerts & Notification Channels Drawer */}

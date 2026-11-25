@@ -115,6 +115,7 @@ class DriveDetailResponse(BaseModel):
     ctc_display: str | None = None
     status: str = "confirmed"
     application_status: str = "not_applied"
+    application_id: str | None = None
     created_at: str
     dates: list[DriveDateSaved] = Field(default_factory=list)
 
@@ -199,6 +200,7 @@ class DriveCardResponse(BaseModel):
     is_overdue: bool
     created_at: str
     ctc_display: str | None = None
+    location: str | None = None
 
 
 class DriveListResponse(BaseModel):

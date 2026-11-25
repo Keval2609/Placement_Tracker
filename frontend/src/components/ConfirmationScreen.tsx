@@ -13,7 +13,7 @@ import { DraftCard } from "./DraftCard";
 interface ConfirmationScreenProps {
   initialResult: ExtractionAPIResponse;
   onReset: () => void;
-  onSaveConfirmedDraft: (confirmedPostings: DrivePostingDraft[]) => void;
+  onSaveConfirmedDraft: (confirmedPostings: DrivePostingDraft[]) => Promise<void>;
 }
 
 export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
@@ -123,10 +123,14 @@ export const ConfirmationScreen: React.FC<ConfirmationScreenProps> = ({
     ]);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!isSaveEnabled) return;
-    setSavedSuccess(true);
-    onSaveConfirmedDraft(postings);
+    try {
+      await onSaveConfirmedDraft(postings);
+      setSavedSuccess(true);
+    } catch {
+      // Error is handled by IngestModal's onSaveConfirmedDraft
+    }
   };
 
   if (savedSuccess) {
