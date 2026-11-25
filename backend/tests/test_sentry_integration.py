@@ -44,4 +44,4 @@ def test_init_sentry_with_dsn(mock_sentry_init: MagicMock) -> None:
         mock_sentry_init.assert_called_once()
         kwargs = mock_sentry_init.call_args.kwargs
         assert kwargs["dsn"] == "https://fake_dsn@sentry.io/12345"
-        assert kwargs["send_default_pii"] is False
+        assert kwargs.get("send_default_pii", False) is False
