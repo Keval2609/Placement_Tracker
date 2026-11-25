@@ -25,12 +25,20 @@ def pg_conn():
 
     with psycopg.connect(DATABASE_URL, autocommit=True) as conn:
         with conn.cursor() as cur:
-            cur.execute("DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;")
+            cur.execute("DROP SCHEMA IF EXISTS public, auth CASCADE; CREATE SCHEMA public;")
             for role in ("anon", "authenticated", "service_role"):
                 cur.execute(
                     f"DO $$ BEGIN CREATE ROLE {role}; "
                     "EXCEPTION WHEN duplicate_object THEN NULL; END $$;"
                 )
+            cur.execute(
+                """
+                CREATE SCHEMA IF NOT EXISTS auth;
+                CREATE OR REPLACE FUNCTION auth.role() RETURNS text LANGUAGE sql STABLE AS $$
+                  SELECT COALESCE(current_setting('request.jwt.claim.role', true), 'authenticated');
+                $$;
+                """
+            )
             for sql_file in sorted(MIGRATIONS_DIR.glob("*.sql")):
                 cur.execute(sql_file.read_text(encoding="utf-8"))
         yield conn
