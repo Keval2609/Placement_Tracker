@@ -87,13 +87,27 @@ export const IngestModal: React.FC<IngestModalProps> = ({
               initialResult={extractionResult}
               onReset={handleReset}
               onSaveConfirmedDraft={async (postings) => {
-                try {
-                  await Promise.all(postings.map((p) => createDrive(p)));
+                const results = await Promise.allSettled(
+                  postings.map((p) => createDrive(p))
+                );
+                const failed = results.filter((r) => r.status === "rejected");
+                const succeeded = results.filter((r) => r.status === "fulfilled");
+
+                if (failed.length === 0) {
                   handleSuccess();
-                } catch (error) {
-                  console.error("Failed to save drives:", error);
+                  return;
+                }
+
+                if (succeeded.length > 0) {
+                  alert(
+                    `${succeeded.length} drive(s) saved successfully, but ${failed.length} failed. ` +
+                      `The failed drives can be retried.`
+                  );
+                } else {
                   alert("Failed to save drives. Please try again.");
                 }
+                console.error("Drive save failures:", failed);
+                throw new Error(`${failed.length} drive(s) failed to save`);
               }}
             />
           ) : (

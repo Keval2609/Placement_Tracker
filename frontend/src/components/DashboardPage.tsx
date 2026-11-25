@@ -16,6 +16,7 @@ interface DashboardPageProps {
   onOpenIngest: () => void;
   globalSearchQuery?: string;
   onDriveCountChange?: (activeCount: number, urgentCount: number) => void;
+  refreshKey?: number;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
@@ -23,6 +24,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onOpenIngest,
   globalSearchQuery = "",
   onDriveCountChange,
+  refreshKey,
 }) => {
   const { isLoaded, isSignedIn } = useAuth();
   const [drives, setDrives] = useState<DriveCard[]>([]);
@@ -62,7 +64,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     } else if (isLoaded && !isSignedIn) {
       setIsLoading(false);
     }
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, refreshKey]);
 
   // Keep parent navbar updated with live counts
   useEffect(() => {
@@ -95,7 +97,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       }
 
       // 2. Status Filter
-      if (selectedStatus !== "all" && drive.application_status !== selectedStatus) {
+      if (selectedStatus === "pipeline") {
+        if (!["applied", "oa", "interview"].includes(drive.application_status)) {
+          return false;
+        }
+      } else if (selectedStatus !== "all" && drive.application_status !== selectedStatus) {
         return false;
       }
 
@@ -150,7 +156,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           setSelectedStatus("all");
         }}
         onFilterActivePipeline={() => {
-          setSelectedStatus("oa");
+          setSelectedStatus("pipeline");
           setDeadlineFilter("all");
         }}
         onFilterOffers={() => {
@@ -281,6 +287,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {/* Modal-First Drive Detail Overlay */}
       <DriveDetailModal
         driveId={modalDriveId}
+        applicationId={
+          drives.find((d) => d.id === modalDriveId)?.application_id
+        }
         onClose={() => setModalDriveId(null)}
         onStatusUpdated={loadDrives}
       />

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Clock, ChevronRight, Loader2, CalendarCheck, MapPin, Plus } from "lucide-react";
 import { ApplicationStatus, DriveCard } from "../types/drive";
 import { updateApplicationStatus } from "../services/api";
@@ -29,6 +29,10 @@ export const DriveCardComponent: React.FC<DriveCardComponentProps> = ({
 }) => {
   const [currentStatus, setCurrentStatus] = useState<ApplicationStatus>(drive.application_status);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  useEffect(() => {
+    setCurrentStatus(drive.application_status);
+  }, [drive.application_status]);
 
   const handleStatusChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();

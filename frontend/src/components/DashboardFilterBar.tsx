@@ -40,6 +40,7 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = ({
 
   const statuses = [
     { id: "all", label: "All Stages" },
+    { id: "pipeline", label: "In Pipeline" },
     { id: "not_applied", label: "Not Applied" },
     { id: "applied", label: "Applied" },
     { id: "oa", label: "OA Stage" },

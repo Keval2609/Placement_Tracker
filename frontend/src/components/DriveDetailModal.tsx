@@ -132,6 +132,7 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
       await loadData();
     } catch (err: unknown) {
       console.error("Failed updating application status:", err);
+      setError(`Failed to update status: ${(err as Error).message || "Unknown error"}`);
     } finally {
       setIsUpdatingStatus(false);
     }

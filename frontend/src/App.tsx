@@ -103,6 +103,18 @@ function App() {
     urgent: 0,
   });
 
+  const handleDriveCountChange = useCallback(
+    (active: number, urgent: number) => {
+      setCounts((prev) =>
+        prev.active === active && prev.urgent === urgent
+          ? prev
+          : { active, urgent }
+      );
+    },
+    []
+  );
+  const [refreshKey, setRefreshKey] = useState(0);
+
   const handleOpenLegal = useCallback((tab: LegalTab) => {
     setLegalTab(tab);
     const path = tab === "terms" ? "/terms-of-service" : "/privacy-policy";
@@ -413,9 +425,8 @@ function App() {
           <DashboardPage
             globalSearchQuery={searchQuery}
             onOpenIngest={() => setIsIngestModalOpen(true)}
-            onDriveCountChange={(active, urgent) =>
-              setCounts({ active, urgent })
-            }
+            onDriveCountChange={handleDriveCountChange}
+            refreshKey={refreshKey}
           />
         )}
       </main>
@@ -471,6 +482,7 @@ function App() {
       <IngestModal
         isOpen={isIngestModalOpen}
         onClose={() => setIsIngestModalOpen(false)}
+        onDriveCreated={() => setRefreshKey((k) => k + 1)}
       />
 
       {/* Alerts & Notification Channels Drawer */}
