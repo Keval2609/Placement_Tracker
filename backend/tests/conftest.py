@@ -8,6 +8,7 @@ os.environ["SUPABASE_ANON_KEY"] = ""
 os.environ["GROQ_API_KEY"] = ""
 
 from app.config import get_settings
+
 get_settings.cache_clear()
 
 import pytest  # noqa: E402
