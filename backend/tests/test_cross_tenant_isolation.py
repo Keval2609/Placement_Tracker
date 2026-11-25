@@ -1,5 +1,13 @@
 """Cross-tenant isolation tests: verify user A cannot access user B's drives."""
 
+import os
+
+os.environ["TESTING"] = "1"
+os.environ["SENTRY_DSN"] = ""
+os.environ["SUPABASE_URL"] = ""
+os.environ["SUPABASE_SERVICE_ROLE_KEY"] = ""
+os.environ["GROQ_API_KEY"] = ""
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -25,7 +33,7 @@ def _override_user(user_id: str):
     app.dependency_overrides[get_current_user_id] = _mock
 
 
-def _create_drive_as(user_id: str, company: str = "Acme Corp") -> str:
+def _create_drive_as(user_id: str, company: str = "Google") -> str:
     _override_user(user_id)
     payload = {
         "company_name": company,
