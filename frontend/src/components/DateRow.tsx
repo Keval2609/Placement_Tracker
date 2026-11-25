@@ -6,6 +6,7 @@ interface DateRowProps {
   date: DetectedDateDraft;
   onUpdate: (updated: DetectedDateDraft) => void;
   onDismiss: () => void;
+  allowPrimaryToggle?: boolean;
 }
 
 const DATE_TYPE_LABELS: Record<DateType, string> = {
@@ -22,9 +23,11 @@ export const DateRow: React.FC<DateRowProps> = ({
   date,
   onUpdate,
   onDismiss,
+  allowPrimaryToggle = false,
 }) => {
   // Convert ISO string to datetime-local input format (YYYY-MM-DDTHH:mm)
-  const formatForInput = (isoStr: string): string => {
+  const formatForInput = (isoStr: string | null): string => {
+    if (!isoStr) return "";
     try {
       const d = new Date(isoStr);
       if (isNaN(d.getTime())) return "";
@@ -41,13 +44,19 @@ export const DateRow: React.FC<DateRowProps> = ({
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    if (!val) return;
+    if (!val) {
+      onUpdate({
+        ...date,
+        date_iso: null,
+        confirmed_by_user: false,
+      });
+      return;
+    }
     try {
       const newIso = new Date(val).toISOString();
       onUpdate({
         ...date,
         date_iso: newIso,
-        confirmed_by_user: true,
       });
     } catch {
       // Ignore invalid parsing
@@ -58,7 +67,6 @@ export const DateRow: React.FC<DateRowProps> = ({
     onUpdate({
       ...date,
       label: e.target.value,
-      confirmed_by_user: true,
     });
   };
 
@@ -66,11 +74,11 @@ export const DateRow: React.FC<DateRowProps> = ({
     onUpdate({
       ...date,
       date_type: e.target.value as DateType,
-      confirmed_by_user: true,
     });
   };
 
   const handleConfirm = () => {
+    if (!date.date_iso) return;
     onUpdate({
       ...date,
       confirmed_by_user: true,
@@ -114,11 +122,29 @@ export const DateRow: React.FC<DateRowProps> = ({
 
         {/* Actions */}
         <div className="flex items-center gap-2">
+          {allowPrimaryToggle && date.date_type === "application_deadline" && (
+            <label className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 cursor-pointer mr-1">
+              <input
+                type="checkbox"
+                checked={Boolean(date.is_primary_deadline)}
+                onChange={(e) =>
+                  onUpdate({
+                    ...date,
+                    is_primary_deadline: e.target.checked,
+                  })
+                }
+                className="rounded border-neutral-300 text-tpo-cobalt focus:ring-tpo-cobalt"
+              />
+              <span>Set as Primary</span>
+            </label>
+          )}
           {!date.confirmed_by_user && (
             <button
               type="button"
               onClick={handleConfirm}
-              className="inline-flex items-center gap-1 px-3 py-1 text-xs font-bold uppercase tracking-[0.5px] text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-colors cursor-pointer shadow-xs"
+              disabled={!date.date_iso}
+              title={!date.date_iso ? "Pick a date and time first" : "Confirm this date"}
+              className="inline-flex items-center gap-1 px-3 py-1 text-xs font-bold uppercase tracking-[0.5px] text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-md transition-colors cursor-pointer shadow-xs"
             >
               <Check className="w-3.5 h-3.5" /> Confirm
             </button>

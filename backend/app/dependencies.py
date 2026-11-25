@@ -1,19 +1,26 @@
-"""FastAPI request dependencies (auth user resolution)."""
+"""FastAPI request dependencies (auth user resolution and startup config validation)."""
 
 import logging
 import os
+import threading
+import time
 from typing import Annotated
 
 import httpx
 import jwt
-from fastapi import Header, HTTPException
+from fastapi import Header, HTTPException, Request
+
+from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_MOCK_USER_ID = "00000000-0000-0000-0000-000000000001"
+JWKS_REFETCH_COOLDOWN_SECONDS = 60.0
 
-# Lazy-loaded JWKS client
+# Lazy-loaded JWKS client with cooldown lock
 _jwk_client = None
+_last_jwks_fetch_ts: float = 0.0
+_jwks_lock = threading.Lock()
 
 
 class StaticJWKClient:
@@ -33,10 +40,20 @@ class StaticJWKClient:
         raise jwt.PyJWKClientError(f"Unable to find a signing key that matches '{kid}'")
 
 
-def get_jwk_client():
-    global _jwk_client
+def get_jwk_client(force_refresh: bool = False):
+    """Return cached JWKS client, respecting cooldown on forced refreshes."""
+    global _jwk_client, _last_jwks_fetch_ts
 
-    if _jwk_client is None:
+    with _jwks_lock:
+        now = time.monotonic()
+        if _jwk_client is not None and not force_refresh:
+            return _jwk_client
+
+        if force_refresh and _jwk_client is not None:
+            if (now - _last_jwks_fetch_ts) < JWKS_REFETCH_COOLDOWN_SECONDS:
+                logger.warning("JWKS refetch skipped due to cooldown")
+                return _jwk_client
+
         secret_key = os.environ.get("CLERK_SECRET_KEY")
         if not secret_key:
             logger.error("CLERK_SECRET_KEY environment variable is not set")
@@ -52,6 +69,7 @@ def get_jwk_client():
             response.raise_for_status()
             jwks_data = response.json()
             _jwk_client = StaticJWKClient(jwks_data)
+            _last_jwks_fetch_ts = time.monotonic()
         except Exception as exc:
             logger.error("Failed to fetch Clerk JWKS from %s: %s", url, exc)
             raise
@@ -59,14 +77,33 @@ def get_jwk_client():
     return _jwk_client
 
 
-async def get_current_user_id(
+def validate_startup_config() -> None:
+    """Fail fast at startup in non-test mode if required production secrets are missing."""
+    if os.environ.get("TESTING") == "1":
+        return
+
+    settings = get_settings()
+    missing: list[str] = []
+    if not settings.supabase_url.strip():
+        missing.append("SUPABASE_URL")
+    if not settings.supabase_service_role_key.strip():
+        missing.append("SUPABASE_SERVICE_ROLE_KEY")
+    if not settings.vapid_public_key.strip():
+        missing.append("VAPID_PUBLIC_KEY")
+    if not settings.vapid_private_key.strip():
+        missing.append("VAPID_PRIVATE_KEY")
+
+    if missing:
+        raise RuntimeError(
+            f"Missing required production environment variable(s): {', '.join(missing)}"
+        )
+
+
+def get_current_user_id(
+    request: Request,
     authorization: Annotated[str | None, Header()] = None,
-    x_user_id: Annotated[str | None, Header()] = None,
 ) -> str:
     """Extract and verify authenticated user ID from Clerk JWT Authorization header."""
-    if x_user_id and os.environ.get("ENVIRONMENT") == "development":
-        return x_user_id
-
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(
             status_code=401,
@@ -78,16 +115,13 @@ async def get_current_user_id(
         raise HTTPException(status_code=401, detail="Empty token")
 
     try:
-        global _jwk_client
         jwk_client = get_jwk_client()
 
         try:
             signing_key = jwk_client.get_signing_key_from_jwt(token)
         except jwt.PyJWKClientError:
-            # Re-fetch once in case keys were rotated
-            logger.info("Key not found in cached JWKS, refreshing from Clerk...")
-            _jwk_client = None
-            jwk_client = get_jwk_client()
+            logger.info("Key not found in cached JWKS, attempting cooldown-gated refresh...")
+            jwk_client = get_jwk_client(force_refresh=True)
             signing_key = jwk_client.get_signing_key_from_jwt(token)
 
         payload = jwt.decode(
@@ -96,15 +130,21 @@ async def get_current_user_id(
             algorithms=["RS256"],
             options={"verify_aud": False},
         )
-        return str(payload.get("sub"))
+        sub = payload.get("sub")
+        if not sub or not isinstance(sub, str):
+            raise HTTPException(status_code=401, detail="Token missing valid 'sub' claim")
 
+        request.state.user_id = sub
+        return sub
+
+    except HTTPException:
+        raise
     except jwt.PyJWTError as exc:
         logger.warning("Invalid JWT token: %s", exc)
         raise HTTPException(
             status_code=401,
             detail=f"Invalid token: {exc}",
         ) from exc
-
     except Exception as exc:
         logger.error("Authentication failed: %s", exc, exc_info=True)
         raise HTTPException(

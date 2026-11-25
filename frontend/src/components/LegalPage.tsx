@@ -390,7 +390,7 @@ function PrivacyPolicyContent({ onSwitchToTerms }: { onSwitchToTerms: () => void
           2. AI Extraction & Model Privacy
         </h2>
         <p>
-          When you upload or paste a notice, the text is processed via <strong>Groq Cloud LPUs</strong> (`llama-3.3-70b-versatile`) or a self-hosted <strong>Ollama</strong> instance to output structured JSON.
+          When you upload or paste a notice, the text is processed via <strong>Groq Cloud LPUs</strong> (`openai/gpt-oss-20b`) or a self-hosted <strong>Ollama</strong> instance to output structured JSON.
         </p>
         <div className="p-4 rounded-lg bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800 text-xs space-y-2">
           <p className="font-bold text-neutral-900 dark:text-white">

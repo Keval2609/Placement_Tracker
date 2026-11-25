@@ -18,6 +18,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from app.config import get_settings
+from app.dependencies import validate_startup_config
 from app.limiter import limiter
 from app.logging_config import setup_logging
 from app.middleware import RequestLoggingMiddleware
@@ -39,9 +40,17 @@ scheduler = AsyncIOScheduler() if AsyncIOScheduler is not None else None
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Lifespan manager starting APScheduler background jobs for deadline alerts."""
+    validate_startup_config()
     is_testing = os.environ.get("TESTING") == "1"
     if scheduler is not None and not is_testing:
-        scheduler.add_job(run_deadline_check_job, "interval", minutes=5, id="deadline_check")
+        scheduler.add_job(
+            run_deadline_check_job,
+            "interval",
+            minutes=5,
+            id="deadline_check",
+            max_instances=1,
+            coalesce=True,
+        )
         scheduler.start()
         logger.info("APScheduler started for deadline checks.")
     yield
@@ -62,8 +71,7 @@ app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
-    allow_origin_regex=r"https://.*(drivetrack\.page|vercel\.app)",
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -100,11 +108,5 @@ async def scheduler_health() -> dict[str, Any]:
             detail=details,
         )
     return details
-
-
-@app.get("/sentry-debug")
-async def sentry_debug() -> None:
-    """Deliberately trigger a caught/unhandled exception for Sentry error verification."""
-    _ = 1 / 0
 
 

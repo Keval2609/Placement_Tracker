@@ -13,8 +13,8 @@ export interface DetectedDateDraft {
   id: string;
   date_type: DateType;
   label?: string | null;
-  date_iso: string;
-  date_raw: string;
+  date_iso: string | null;
+  date_raw?: string | null;
   source: DateSource;
   confirmed_by_user: boolean;
   is_primary_deadline?: boolean;
@@ -33,6 +33,7 @@ export interface DrivePostingDraft {
   application_link?: string | null;
   ctc_display?: string | null;
   application_status?: ApplicationStatus;
+  is_off_campus?: boolean;
   dates: DetectedDateDraft[];
 }
 
@@ -48,8 +49,8 @@ export interface ExtractionAPIResponse {
     dates: {
       date_type: DateType;
       label?: string | null;
-      date_iso: string;
-      date_raw: string;
+      date_iso: string | null;
+      date_raw?: string | null;
     }[];
   }[];
 }

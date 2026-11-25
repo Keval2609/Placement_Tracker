@@ -18,7 +18,11 @@ export const DashboardMetricsStrip: React.FC<DashboardMetricsStripProps> = ({
 }) => {
   const totalDrives = drives.length;
   const urgentDrives = drives.filter(
-    (d) => !d.is_overdue && d.days_left <= 3 && d.application_status === "not_applied"
+    (d) =>
+      !d.is_overdue &&
+      d.days_left !== null &&
+      d.days_left <= 3 &&
+      d.application_status === "not_applied"
   );
   const inPipeline = drives.filter((d) =>
     ["applied", "oa", "interview"].includes(d.application_status)

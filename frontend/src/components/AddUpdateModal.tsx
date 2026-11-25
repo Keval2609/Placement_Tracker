@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { X, Sparkles, AlertCircle, Check, Plus, Upload, Loader2 } from "lucide-react";
 import { DateRow } from "./DateRow";
 import { DetectedDateDraft } from "../types/extraction";
@@ -30,7 +30,32 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
   const [draft, setDraft] = useState<DriveUpdateDraft | null>(null);
   const [dates, setDates] = useState<DetectedDateDraft[]>([]);
   const [fieldChanges, setFieldChanges] = useState<Record<string, unknown>>({});
+  const [acceptedFields, setAcceptedFields] = useState<Record<string, boolean>>({});
   const [summaryOfChanges, setSummaryOfChanges] = useState<string>("");
+
+  const handleClose = useCallback(() => {
+    setDraft(null);
+    setTextInput("");
+    setSelectedFile(null);
+    setError(null);
+    setDates([]);
+    setFieldChanges({});
+    setAcceptedFields({});
+    setSummaryOfChanges("");
+    onClose();
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        handleClose();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [isOpen, handleClose]);
 
   if (!isOpen) return null;
 
@@ -50,8 +75,19 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
       }
 
       setDraft(result);
-      setDates(result.update_result.new_dates || []);
-      setFieldChanges(result.update_result.field_changes || {});
+      setDates(
+        (result.update_result.new_dates || []).map((d, i) => ({
+          ...d,
+          id: d.id || `diff_date_${Date.now()}_${i}`,
+          source: d.source || "ai_suggested",
+          confirmed_by_user: false,
+        }))
+      );
+      const changes = result.update_result.field_changes || {};
+      setFieldChanges(changes);
+      setAcceptedFields(
+        Object.fromEntries(Object.keys(changes).map((k) => [k, true]))
+      );
       setSummaryOfChanges(result.update_result.summary_of_changes || "");
     } catch (err: unknown) {
       setError((err as Error).message || "Failed to extract update diff.");
@@ -91,9 +127,12 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
     setIsLoading(true);
 
     try {
+      const confirmedFields = Object.fromEntries(
+        Object.entries(fieldChanges).filter(([k]) => acceptedFields[k] !== false)
+      );
       await confirmDriveUpdate(driveId, draft.update_id, {
         confirmed_new_dates: dates,
-        confirmed_field_changes: fieldChanges,
+        confirmed_field_changes: confirmedFields,
         summary_of_changes: summaryOfChanges,
         raw_text: draft.raw_text || undefined,
         source_type: draft.source_type,
@@ -108,18 +147,9 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
     }
   };
 
-  const handleClose = () => {
-    setDraft(null);
-    setTextInput("");
-    setSelectedFile(null);
-    setError(null);
-    setDates([]);
-    setFieldChanges({});
-    setSummaryOfChanges("");
-    onClose();
-  };
-
-  const allDatesConfirmed = dates.every((d) => d.confirmed_by_user !== false);
+  const allDatesConfirmed = dates.every(
+    (d) => d.confirmed_by_user !== false && Boolean(d.date_iso)
+  );
   const canSave = allDatesConfirmed && !isLoading;
 
   return (
@@ -236,12 +266,30 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
                     {Object.entries(fieldChanges).map(([k, v]) => (
-                      <div key={k} className="p-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
-                        <span className="text-neutral-500 dark:text-neutral-400 uppercase font-mono text-[10px] block">
-                          {k}
-                        </span>
-                        <span className="text-tpo-cobalt dark:text-blue-400 font-bold">{String(v)}</span>
-                      </div>
+                      <label
+                        key={k}
+                        className="p-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 flex items-start gap-2 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={acceptedFields[k] !== false}
+                          onChange={(e) =>
+                            setAcceptedFields((prev) => ({
+                              ...prev,
+                              [k]: e.target.checked,
+                            }))
+                          }
+                          className="mt-0.5 rounded border-neutral-300 text-tpo-cobalt focus:ring-tpo-cobalt"
+                        />
+                        <div className="min-w-0">
+                          <span className="text-neutral-500 dark:text-neutral-400 uppercase font-mono text-[10px] block">
+                            {k}
+                          </span>
+                          <span className="text-tpo-cobalt dark:text-blue-400 font-bold break-words">
+                            {String(v)}
+                          </span>
+                        </div>
+                      </label>
                     ))}
                   </div>
                 </div>
@@ -273,6 +321,7 @@ export const AddUpdateModal: React.FC<AddUpdateModalProps> = ({
                       <DateRow
                         key={date.id || idx}
                         date={date}
+                        allowPrimaryToggle={true}
                         onUpdate={(updated) => handleUpdateDate(idx, updated)}
                         onDismiss={() => handleDismissDate(idx)}
                       />

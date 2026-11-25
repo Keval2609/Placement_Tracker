@@ -211,6 +211,7 @@ def test_create_off_campus_manual_entry() -> None:
         "job_description": "Payments infrastructure, distributed systems, Python/Go.",
         "application_status": "applied",
         "application_link": "https://stripe.com/jobs/123",
+        "is_off_campus": True,
         "dates": [],
     }
 
@@ -226,7 +227,6 @@ def test_create_off_campus_manual_entry() -> None:
     assert detail["job_description"] == "Payments infrastructure, distributed systems, Python/Go."
     assert detail["eligibility_raw"] == "Payments infrastructure, distributed systems, Python/Go."
     assert detail["application_status"] == "applied"
-    assert len(detail["dates"]) >= 1
-    assert detail["dates"][0]["date_type"] == "application_deadline"
-    assert detail["dates"][0]["confirmed_by_user"] is True
+    assert detail["application_link"] == "https://stripe.com/jobs/123"
+    assert detail["dates"] == []
 

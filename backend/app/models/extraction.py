@@ -18,8 +18,8 @@ class DetectedDate(BaseModel):
         "other",
     ]
     label: str | None = None
-    date_iso: str
-    date_raw: str
+    date_iso: str | None = None
+    date_raw: str | None = None
 
 
 class DrivePosting(BaseModel):

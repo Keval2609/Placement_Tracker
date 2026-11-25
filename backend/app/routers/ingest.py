@@ -1,15 +1,18 @@
 """FastAPI router for ingestion endpoints (/ingest/text, /ingest/file)."""
 
+import asyncio
 import zoneinfo
 from datetime import datetime
+from typing import Annotated
 
-from fastapi import APIRouter, File, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, Request, UploadFile, status
 
+from app.dependencies import get_current_user_id
 from app.limiter import limiter
 from app.models.extraction import ExtractionResult, IngestTextRequest
 from app.services.ingestion_logger import log_ingestion_attempt
 from app.services.llm import extract_with_retry
-from app.services.parsers import validate_and_parse_file
+from app.services.parsers import MAX_FILE_SIZE_BYTES, validate_and_parse_file
 
 router = APIRouter(prefix="/ingest", tags=["Ingestion"])
 
@@ -34,7 +37,12 @@ def get_current_reference_date_iso() -> str:
     ),
 )
 @limiter.limit("10/minute")
-async def ingest_text(request: Request, payload: IngestTextRequest) -> ExtractionResult:
+def ingest_text(
+    request: Request,
+    payload: IngestTextRequest,
+    user_id: Annotated[str, Depends(get_current_user_id)],
+) -> ExtractionResult:
+    request.state.user_id = user_id
     reference_date_iso = get_current_reference_date_iso()
     result, extraction_status, error_msg = extract_with_retry(
         raw_text=payload.text,
@@ -62,17 +70,26 @@ async def ingest_text(request: Request, payload: IngestTextRequest) -> Extractio
     ),
 )
 @limiter.limit("10/minute")
-async def ingest_file(request: Request, file: UploadFile = File(...)) -> ExtractionResult:
-    content = await file.read()
-    parsed_text, source_type = validate_and_parse_file(file, content)
+async def ingest_file(
+    request: Request,
+    user_id: Annotated[str, Depends(get_current_user_id)],
+    file: UploadFile = File(...),
+) -> ExtractionResult:
+    request.state.user_id = user_id
+    content = await file.read(MAX_FILE_SIZE_BYTES + 1)
+    parsed_text, source_type = await asyncio.to_thread(
+        validate_and_parse_file, file, content
+    )
 
     reference_date_iso = get_current_reference_date_iso()
-    result, extraction_status, error_msg = extract_with_retry(
+    result, extraction_status, error_msg = await asyncio.to_thread(
+        extract_with_retry,
         raw_text=parsed_text,
         reference_date_iso=reference_date_iso,
     )
 
-    log_ingestion_attempt(
+    await asyncio.to_thread(
+        log_ingestion_attempt,
         source_type=source_type,
         status=extraction_status,
         error_message=error_msg,

@@ -119,9 +119,7 @@ export const IngestInput: React.FC<IngestInputProps> = ({
     setErrorMsg(null);
 
     try {
-      const chosenDate = deadlineDate.trim()
-        ? new Date(deadlineDate).toISOString()
-        : new Date().toISOString();
+      const hasDeadline = deadlineDate.trim().length > 0;
 
       await createDrive({
         company_name: companyName.trim(),
@@ -133,18 +131,21 @@ export const IngestInput: React.FC<IngestInputProps> = ({
         eligible_branches: [],
         application_link: applicationLink.trim() || null,
         application_status: applicationStatus,
-        dates: [
-          {
-            id: `manual-deadline-${Date.now()}`,
-            date_type: "application_deadline",
-            label: "Application Deadline",
-            date_iso: chosenDate,
-            date_raw: "Manual Off-Campus Entry",
-            source: "user_added",
-            confirmed_by_user: true,
-            is_primary_deadline: true,
-          },
-        ],
+        is_off_campus: true,
+        dates: hasDeadline
+          ? [
+              {
+                id: `manual-deadline-${Date.now()}`,
+                date_type: "application_deadline",
+                label: "Application Deadline",
+                date_iso: new Date(deadlineDate).toISOString(),
+                date_raw: "Manual Off-Campus Entry",
+                source: "user_added",
+                confirmed_by_user: true,
+                is_primary_deadline: true,
+              },
+            ]
+          : [],
       });
 
       if (onDirectSaveSuccess) {

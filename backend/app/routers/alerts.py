@@ -45,7 +45,7 @@ class PushAckRequest(BaseModel):
     status_code=status.HTTP_200_OK,
     summary="Get public VAPID key for Web Push subscription",
 )
-async def fetch_vapid_public_key() -> dict[str, str]:
+def fetch_vapid_public_key() -> dict[str, str]:
     return {"public_key": get_vapid_public_key()}
 
 
@@ -54,7 +54,7 @@ async def fetch_vapid_public_key() -> dict[str, str]:
     status_code=status.HTTP_200_OK,
     summary="Register Web Push subscription for current user",
 )
-async def subscribe_push(
+def subscribe_push(
     payload: PushSubscriptionRequest,
     user_id: Annotated[str, Depends(get_current_user_id)],
     user_agent: Annotated[str | None, Header(alias="user-agent")] = None,
@@ -72,7 +72,7 @@ async def subscribe_push(
     status_code=status.HTTP_200_OK,
     summary="Unregister Web Push subscription for current device",
 )
-async def unsubscribe_push(
+def unsubscribe_push(
     payload: PushUnsubscribeRequest,
     user_id: Annotated[str, Depends(get_current_user_id)],
 ) -> dict[str, str]:
@@ -85,7 +85,7 @@ async def unsubscribe_push(
     status_code=status.HTTP_200_OK,
     summary="Get push notification subscription count and status for current user",
 )
-async def fetch_push_status(
+def fetch_push_status(
     user_id: Annotated[str, Depends(get_current_user_id)],
 ) -> dict[str, Any]:
     subs = get_user_subscriptions(user_id=user_id)
@@ -100,7 +100,7 @@ async def fetch_push_status(
     status_code=status.HTTP_200_OK,
     summary="Trigger immediate mobile verification push notification",
 )
-async def trigger_test_push_notification(
+def trigger_test_push_notification(
     user_id: Annotated[str, Depends(get_current_user_id)],
 ) -> dict[str, Any]:
     return send_test_push_async(user_id=user_id)
@@ -111,7 +111,7 @@ async def trigger_test_push_notification(
     status_code=status.HTTP_200_OK,
     summary="Acknowledge receipt of Web Push notification",
 )
-async def acknowledge_push(
+def acknowledge_push(
     payload: PushAckRequest,
 ) -> dict[str, Any]:
     success = record_push_ack(alert_id=payload.alert_id)
@@ -123,7 +123,7 @@ async def acknowledge_push(
     status_code=status.HTTP_200_OK,
     summary="Trigger onboarding self-test push notification",
 )
-async def trigger_test_push(
+def trigger_test_push(
     user_id: Annotated[str, Depends(get_current_user_id)],
 ) -> dict[str, Any]:
     return trigger_onboarding_test(user_id=user_id)
@@ -134,7 +134,7 @@ async def trigger_test_push(
     status_code=status.HTTP_200_OK,
     summary="Get status of onboarding self-test push notification",
 )
-async def fetch_test_push_status(
+def fetch_test_push_status(
     user_id: Annotated[str, Depends(get_current_user_id)],
 ) -> dict[str, Any]:
     return get_onboarding_test_status(user_id=user_id)
