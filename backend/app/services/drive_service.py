@@ -711,6 +711,7 @@ def get_drive_detail(drive_id: str, user_id: str) -> DriveDetailResponse:
     company_name = "Unknown Company"
     company_type = "unknown"
     app_status = "not_applied"
+    app_id: str | None = None
     dates_data: list[dict[str, Any]] = []
 
     use_supabase = bool(settings.supabase_url and settings.supabase_service_role_key)
@@ -734,12 +735,13 @@ def get_drive_detail(drive_id: str, user_id: str) -> DriveDetailResponse:
 
                 app_res = (
                     supabase.table("applications")
-                    .select("status")
+                    .select("id, status")
                     .eq("drive_id", drive_id)
                     .execute()
                 )
                 if app_res.data:
                     app_status = app_res.data[0].get("status", "not_applied")
+                    app_id = app_res.data[0].get("id")
 
                 dates_res = (
                     supabase.table("drive_dates")
@@ -767,6 +769,7 @@ def get_drive_detail(drive_id: str, user_id: str) -> DriveDetailResponse:
         app_obj = _in_memory_applications.get(drive_id)
         if app_obj:
             app_status = app_obj.get("status", "not_applied")
+            app_id = app_obj.get("id")
 
         dates_data = [d for d in _in_memory_dates if d["drive_id"] == drive_id]
 
@@ -825,6 +828,7 @@ def get_drive_detail(drive_id: str, user_id: str) -> DriveDetailResponse:
         ctc_display=drive_data.get("ctc_display"),
         status=drive_data.get("status", "confirmed"),
         application_status=app_status,
+        application_id=app_id,
         created_at=str(drive_data.get("created_at") or datetime.now(KOLKATA_TZ).isoformat()),
         dates=dates_models,
     )
@@ -1071,6 +1075,7 @@ def list_drives_for_dashboard(user_id: str) -> DriveListResponse:
                 is_overdue=is_overdue,
                 created_at=d.get("created_at", now_dt.isoformat()),
                 ctc_display=d.get("ctc_display"),
+                location=d.get("location"),
             )
         )
 
