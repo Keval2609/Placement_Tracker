@@ -230,3 +230,107 @@ def test_create_off_campus_manual_entry() -> None:
     assert detail["application_link"] == "https://stripe.com/jobs/123"
     assert detail["dates"] == []
 
+
+# ---------------------------------------------------------------------------
+# 7. Work Mode, Location & Drive Deletion Tests
+# ---------------------------------------------------------------------------
+
+def test_create_and_edit_location_and_work_mode() -> None:
+    """Drive can be created with location + work_mode and edited anytime after."""
+    payload = {
+        "company_name": "Atlassian",
+        "role_title": "SDE - 1",
+        "location": "Bangalore",
+        "work_mode": "hybrid",
+        "is_off_campus": True,
+        "dates": [],
+    }
+
+    create_resp = client.post("/drives", json=payload)
+    assert create_resp.status_code == 201
+    drive_id = create_resp.json()["id"]
+
+    # Verify detail and dashboard list return location & work_mode
+    detail = client.get(f"/drives/{drive_id}").json()
+    assert detail["location"] == "Bangalore"
+    assert detail["work_mode"] == "hybrid"
+
+    cards = client.get("/drives").json()["drives"]
+    matching = [c for c in cards if c["id"] == drive_id]
+    assert len(matching) == 1
+    assert matching[0]["location"] == "Bangalore"
+    assert matching[0]["work_mode"] == "hybrid"
+
+    # Edit work_mode and location after creation
+    patch_resp = client.patch(
+        f"/drives/{drive_id}",
+        json={"location": "Remote (India)", "work_mode": "remote"},
+    )
+    assert patch_resp.status_code == 200
+    updated = patch_resp.json()
+    assert updated["location"] == "Remote (India)"
+    assert updated["work_mode"] == "remote"
+
+
+def test_invalid_work_mode_rejected() -> None:
+    """Invalid work_mode values are rejected with HTTP 422."""
+    resp = client.post(
+        "/drives",
+        json={
+            "company_name": "Acme",
+            "role_title": "Intern",
+            "work_mode": "planet_mars",
+            "is_off_campus": True,
+            "dates": [],
+        },
+    )
+    assert resp.status_code == 422
+
+
+def test_delete_single_drive_and_bulk_delete() -> None:
+    """DELETE /drives/{id} and POST /drives/bulk-delete remove owned drives cleanly."""
+    d1 = client.post(
+        "/drives",
+        json={
+            "company_name": "Company A",
+            "role_title": "Role A",
+            "is_off_campus": True,
+            "dates": [],
+        },
+    ).json()["id"]
+    d2 = client.post(
+        "/drives",
+        json={
+            "company_name": "Company B",
+            "role_title": "Role B",
+            "is_off_campus": True,
+            "dates": [],
+        },
+    ).json()["id"]
+    d3 = client.post(
+        "/drives",
+        json={
+            "company_name": "Company C",
+            "role_title": "Role C",
+            "is_off_campus": True,
+            "dates": [],
+        },
+    ).json()["id"]
+
+    # Single delete
+    del_resp = client.delete(f"/drives/{d1}")
+    assert del_resp.status_code == 204
+    assert client.get(f"/drives/{d1}").status_code == 404
+    assert client.delete(f"/drives/{d1}").status_code == 404
+
+    # Bulk delete (includes an already-deleted ID which should be skipped gracefully)
+    bulk_resp = client.post(
+        "/drives/bulk-delete",
+        json={"drive_ids": [d1, d2, d3]},
+    )
+    assert bulk_resp.status_code == 200
+    bulk_data = bulk_resp.json()
+    assert bulk_data["deleted_count"] == 2
+    assert set(bulk_data["deleted_ids"]) == {d2, d3}
+    assert client.get("/drives").json()["drives"] == []
+

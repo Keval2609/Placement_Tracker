@@ -8,7 +8,9 @@ import {
   AlertCircle,
   FileText,
   IndianRupee,
+  MapPin,
 } from "lucide-react";
+import { WorkMode } from "../types/drive";
 import { DateType, DetectedDateDraft, DrivePostingDraft } from "../types/extraction";
 import { DateRow } from "./DateRow";
 
@@ -196,6 +198,51 @@ export const DraftCard: React.FC<DraftCardProps> = ({
             placeholder="https://..."
             className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-tpo-cobalt dark:focus:border-blue-400"
           />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-[1px] text-neutral-800 dark:text-neutral-200 mb-1 flex items-center gap-1.5">
+            <MapPin className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
+            Job Location (City / Office)
+          </label>
+          <input
+            type="text"
+            value={posting.location ?? ""}
+            onChange={(e) =>
+              handleFieldChange("location", e.target.value || null)
+            }
+            placeholder="e.g. Bangalore / Hyderabad"
+            className="w-full text-xs px-3 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:border-tpo-cobalt dark:focus:border-blue-400"
+          />
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-xs font-bold uppercase tracking-[1px] text-neutral-800 dark:text-neutral-200 mb-1.5 flex items-center gap-1.5">
+            <MapPin className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
+            Work Mode
+          </label>
+          <div className="inline-flex bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 p-0.5 rounded-md gap-1">
+            {(["onsite", "remote", "hybrid"] as WorkMode[]).map((mode) => {
+              const isSelected = posting.work_mode === mode;
+              return (
+                <button
+                  key={mode}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() =>
+                    handleFieldChange("work_mode", isSelected ? null : mode)
+                  }
+                  className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors cursor-pointer ${
+                    isSelected
+                      ? "bg-tpo-cobalt text-white shadow-xs"
+                      : "text-neutral-700 dark:text-neutral-300 hover:bg-white dark:hover:bg-neutral-700"
+                  }`}
+                >
+                  {mode}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="md:col-span-2">

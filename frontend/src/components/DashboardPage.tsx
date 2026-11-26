@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useCallback, useEffect, useState, useMemo } from "react";
 import { useAuth } from "@clerk/react";
-import { AlertCircle, Sparkles, FolderArchive, Layers } from "lucide-react";
+import { AlertCircle, Sparkles, FolderArchive, Layers, Trash2, Loader2 } from "lucide-react";
 import { DashboardFilterBar, DashboardViewMode, DeadlineFilterType } from "./DashboardFilterBar";
 import { DriveCardComponent } from "./DriveCardComponent";
 import { DashboardMetricsStrip } from "./DashboardMetricsStrip";
@@ -11,7 +11,7 @@ import {
   DriveDetailModalSkeleton,
 } from "./Skeleton";
 import { ApplicationStatus, DriveCard } from "../types/drive";
-import { fetchDashboardDrives } from "../services/api";
+import { bulkDeleteDrives, fetchDashboardDrives } from "../services/api";
 
 const DashboardFunnelView = lazy(() =>
   import("./DashboardFunnelView").then((m) => ({
@@ -62,7 +62,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   // Filters State
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedCompanyType, setSelectedCompanyType] = useState<string>("all");
+  const [selectedWorkMode, setSelectedWorkMode] = useState<string>("all");
   const [deadlineFilter, setDeadlineFilter] = useState<DeadlineFilterType>("all");
+  const [isConfirmingClearOverdue, setIsConfirmingClearOverdue] = useState<boolean>(false);
+  const [isClearingOverdue, setIsClearingOverdue] = useState<boolean>(false);
 
   const loadDrives = useCallback(async (silent = false) => {
     if (!silent) {
@@ -132,7 +135,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         const matchRole = drive.role_title.toLowerCase().includes(q);
         const matchType = drive.company_type.toLowerCase().includes(q);
         const matchCtc = (drive.ctc_display || "").toLowerCase().includes(q);
-        if (!matchName && !matchRole && !matchType && !matchCtc) {
+        const matchLocation = (drive.location || "").toLowerCase().includes(q);
+        const matchWorkMode = (drive.work_mode || "").toLowerCase().includes(q);
+        if (!matchName && !matchRole && !matchType && !matchCtc && !matchLocation && !matchWorkMode) {
           return false;
         }
       }
@@ -148,6 +153,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
       // 3. Company Type Filter
       if (selectedCompanyType !== "all" && drive.company_type !== selectedCompanyType) {
+        return false;
+      }
+
+      // 3b. Work Mode Filter
+      if (selectedWorkMode !== "all" && drive.work_mode !== selectedWorkMode) {
         return false;
       }
 
@@ -168,11 +178,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
       return true;
     });
-  }, [drives, globalSearchQuery, selectedStatus, selectedCompanyType, deadlineFilter]);
+  }, [drives, globalSearchQuery, selectedStatus, selectedCompanyType, selectedWorkMode, deadlineFilter]);
 
   const handleResetFilters = () => {
     setSelectedStatus("all");
     setSelectedCompanyType("all");
+    setSelectedWorkMode("all");
     setDeadlineFilter("all");
   };
 
@@ -218,6 +229,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         onStatusChange={setSelectedStatus}
         selectedCompanyType={selectedCompanyType}
         onCompanyTypeChange={setSelectedCompanyType}
+        selectedWorkMode={selectedWorkMode}
+        onWorkModeChange={setSelectedWorkMode}
         deadlineFilter={deadlineFilter}
         onDeadlineFilterChange={setDeadlineFilter}
         viewMode={viewMode}
@@ -315,9 +328,56 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               {/* Overdue / Closed Drives Section */}
               {overdueDrives.length > 0 && (
                 <div className="space-y-3.5 pt-6 border-t border-neutral-200 dark:border-neutral-800">
-                  <div className="flex items-center gap-2 text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-[1.5px]">
-                    <FolderArchive className="w-4 h-4 text-red-600 dark:text-red-400" />
-                    <span>Closed / Past Drives ({overdueDrives.length})</span>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-[1.5px]">
+                      <FolderArchive className="w-4 h-4 text-red-600 dark:text-red-400" />
+                      <span>Closed / Past Drives ({overdueDrives.length})</span>
+                    </div>
+
+                    {isConfirmingClearOverdue ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-red-600 dark:text-red-400 font-medium">
+                          Delete all {overdueDrives.length} past drives?
+                        </span>
+                        <button
+                          type="button"
+                          disabled={isClearingOverdue}
+                          onClick={() => setIsConfirmingClearOverdue(false)}
+                          className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isClearingOverdue}
+                          onClick={async () => {
+                            setIsClearingOverdue(true);
+                            try {
+                              await bulkDeleteDrives(overdueDrives.map((d) => d.id));
+                              setIsConfirmingClearOverdue(false);
+                              await loadDrives(true);
+                            } catch (err: unknown) {
+                              setError((err as Error).message || "Failed deleting old drives.");
+                            } finally {
+                              setIsClearingOverdue(false);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-md cursor-pointer"
+                        >
+                          {isClearingOverdue ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                          <span>{isClearingOverdue ? "Deleting..." : "Confirm"}</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setIsConfirmingClearOverdue(true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/60 border border-red-200 dark:border-red-900 rounded-md transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Clear Old Drives</span>
+                      </button>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 opacity-80 hover:opacity-100 transition-opacity">

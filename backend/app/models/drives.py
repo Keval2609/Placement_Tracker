@@ -35,6 +35,8 @@ ApplicationStatusLiteral = Literal[
     "withdrawn",
 ]
 
+WorkModeLiteral = Literal["onsite", "remote", "hybrid"]
+
 
 class CreateDriveRequest(BaseModel):
     """Payload sent by client when confirming and saving a drive."""
@@ -48,6 +50,7 @@ class CreateDriveRequest(BaseModel):
     application_link: str | None = None
     ctc_display: str | None = None
     location: str | None = None
+    work_mode: WorkModeLiteral | None = None
     application_status: ApplicationStatusLiteral | None = None
     is_off_campus: bool = False
     dates: list[ConfirmedDateItem] = Field(default_factory=list)
@@ -64,6 +67,7 @@ class UpdateDriveRequest(BaseModel):
     job_description: str | None = None
     eligibility_raw: str | None = None
     location: str | None = None
+    work_mode: WorkModeLiteral | None = None
 
 
 class DriveResponse(BaseModel):
@@ -127,6 +131,7 @@ class DriveDetailResponse(BaseModel):
     application_link: str | None = None
     ctc_display: str | None = None
     location: str | None = None
+    work_mode: WorkModeLiteral | None = None
     status: str = "confirmed"
     application_status: str = "not_applied"
     application_id: str | None = None
@@ -215,9 +220,23 @@ class DriveCardResponse(BaseModel):
     created_at: str
     ctc_display: str | None = None
     location: str | None = None
+    work_mode: WorkModeLiteral | None = None
 
 
 class DriveListResponse(BaseModel):
     """Response wrapper for GET /drives."""
 
     drives: list[DriveCardResponse] = Field(default_factory=list)
+
+
+class BulkDeleteDrivesRequest(BaseModel):
+    """Payload for POST /drives/bulk-delete."""
+
+    drive_ids: list[str] = Field(min_length=1, max_length=100)
+
+
+class DeleteDriveResponse(BaseModel):
+    """Response returned upon deleting one or more drives."""
+
+    deleted_count: int
+    deleted_ids: list[str] = Field(default_factory=list)

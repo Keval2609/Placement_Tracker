@@ -89,6 +89,11 @@ export const DashboardFunnelView: React.FC<DashboardFunnelViewProps> = ({
                     <p className="text-xs text-neutral-600 dark:text-neutral-400 font-medium line-clamp-1">
                       {drive.role_title}
                     </p>
+                    {drive.work_mode && (
+                      <span className="inline-block mt-1 text-[10px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-blue-50 dark:bg-blue-950/40 text-tpo-cobalt dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                        {drive.work_mode}
+                      </span>
+                    )}
                   </div>
                   <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-sm bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-600 shrink-0">
                     {drive.company_type}

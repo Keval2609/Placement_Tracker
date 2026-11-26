@@ -32,6 +32,8 @@ class DrivePosting(BaseModel):
     eligible_branches: list[str] = Field(default_factory=list)
     application_link: str | None = None
     ctc_display: str | None = None
+    location: str | None = None
+    work_mode: Literal["onsite", "remote", "hybrid"] | None = None
     dates: list[DetectedDate] = Field(default_factory=list)
 
 

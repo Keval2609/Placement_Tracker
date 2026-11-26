@@ -11,6 +11,8 @@ export type ApplicationStatus =
 
 export type CompanyType = "product" | "startup" | "service" | "psu" | "unknown";
 
+export type WorkMode = "onsite" | "remote" | "hybrid";
+
 export type DeadlineWindow = "next_7_days" | "next_30_days" | "all";
 
 export interface ApplicationResponse {
@@ -36,6 +38,7 @@ export interface DriveCard {
   is_overdue: boolean;
   created_at: string;
   location?: string | null;
+  work_mode?: WorkMode | null;
   ctc_display?: string | null;
 }
 
@@ -65,6 +68,7 @@ export interface DriveDetail {
   application_status: ApplicationStatus;
   application_id?: string;
   location?: string | null;
+  work_mode?: WorkMode | null;
   ctc_display?: string | null;
   primary_deadline_iso?: string | null;
   created_at: string;
@@ -127,5 +131,7 @@ export interface UpdateDrivePayload {
   application_link?: string | null;
   job_description?: string | null;
   eligibility_raw?: string | null;
+  location?: string | null;
+  work_mode?: WorkMode | null;
 }
 

@@ -10,10 +10,12 @@ import {
   Plus,
   Pencil,
   Check,
+  Trash2,
 } from "lucide-react";
 import { DriveDetailModalSkeleton } from "./Skeleton";
 import { DriveDetail, TimelineEvent, ApplicationStatus } from "../types/drive";
 import {
+  deleteDrive,
   fetchDriveDetail,
   fetchDriveTimeline,
   updateApplicationStatus,
@@ -55,6 +57,8 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
   const [isAddUpdateOpen, setIsAddUpdateOpen] = useState<boolean>(false);
   const [isEditDriveOpen, setIsEditDriveOpen] = useState<boolean>(false);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState<boolean>(false);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   // Quick Inline CTC Edit state
   const [isEditingCtc, setIsEditingCtc] = useState<boolean>(false);
@@ -229,6 +233,11 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
                       <MapPin className="w-3.5 h-3.5 text-neutral-500" />
                       {drive.location || "Campus / Remote"}
                     </span>
+                    {drive.work_mode && (
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-sm bg-blue-50 dark:bg-blue-950/40 text-tpo-cobalt dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                        {drive.work_mode}
+                      </span>
+                    )}
                     <span>•</span>
                     <span className="flex items-center gap-1 font-mono font-medium">
                       <Clock className="w-3.5 h-3.5 text-tpo-accent" />
@@ -327,9 +336,57 @@ export const DriveDetailModal: React.FC<DriveDetailModalProps> = ({
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setIsConfirmingDelete(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/60 border border-red-200 dark:border-red-900 rounded-md transition-colors cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                    title="Delete this placement drive"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
                 </div>
               </div>
             </div>
+
+            {isConfirmingDelete && (
+              <div className="p-3.5 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs font-medium text-red-800 dark:text-red-300">
+                  Permanently delete this drive, its dates, timeline updates, and attached documents?
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={isDeleting}
+                    onClick={() => setIsConfirmingDelete(false)}
+                    className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isDeleting}
+                    onClick={async () => {
+                      setIsDeleting(true);
+                      try {
+                        await deleteDrive(drive.id);
+                        setIsConfirmingDelete(false);
+                        if (onStatusUpdated) onStatusUpdated();
+                        onClose();
+                      } catch (err: unknown) {
+                        setStatusError((err as Error).message || "Failed to delete drive.");
+                      } finally {
+                        setIsDeleting(false);
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-md cursor-pointer"
+                  >
+                    {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                    <span>{isDeleting ? "Deleting..." : "Confirm Delete"}</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Quick Status Control Bar */}
             <div className="bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-800 p-3.5 rounded-lg flex flex-wrap items-center justify-between gap-3">
