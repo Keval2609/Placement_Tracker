@@ -9,9 +9,11 @@ from fastapi.responses import JSONResponse, Response
 
 from app.dependencies import get_current_user_id
 from app.models.drives import (
+    BulkDeleteDrivesRequest,
     ConfirmUpdatePayload,
     ConfirmUpdateResponse,
     CreateDriveRequest,
+    DeleteDriveResponse,
     DriveDetailResponse,
     DriveDocumentsResponse,
     DriveListResponse,
@@ -21,8 +23,10 @@ from app.models.drives import (
 )
 from app.models.extraction import DriveUpdateDraftResponse
 from app.services.drive_service import (
+    bulk_delete_drives,
     confirm_and_merge_update,
     create_update_draft,
+    delete_drive,
     get_drive_detail,
     get_drive_documents,
     get_drive_timeline,
@@ -87,6 +91,8 @@ async def create_drive(
                 "min_cgpa": float(form.get("min_cgpa")) if form.get("min_cgpa") else None,
                 "application_link": form.get("application_link"),
                 "ctc_display": form.get("ctc_display"),
+                "location": form.get("location"),
+                "work_mode": form.get("work_mode") or None,
             }
             dates_raw = form.get("dates")
             if dates_raw and isinstance(dates_raw, str):
@@ -153,7 +159,7 @@ def fetch_drive_detail(
     "/{id}",
     response_model=DriveDetailResponse,
     status_code=status.HTTP_200_OK,
-    summary="Directly edit drive details (CTC package, role, criteria, link)",
+    summary="Directly edit drive details (CTC package, role, criteria, link, location)",
 )
 def update_drive_details(
     id: str,
@@ -161,6 +167,32 @@ def update_drive_details(
     user_id: Annotated[str, Depends(get_current_user_id)],
 ) -> DriveDetailResponse:
     return update_drive(drive_id=id, user_id=user_id, payload=payload)
+
+
+@router.delete(
+    "/{id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Permanently delete a placement drive",
+)
+def remove_drive(
+    id: str,
+    user_id: Annotated[str, Depends(get_current_user_id)],
+) -> Response:
+    delete_drive(drive_id=id, user_id=user_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/bulk-delete",
+    response_model=DeleteDriveResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Permanently delete multiple placement drives",
+)
+def remove_drives_bulk(
+    payload: BulkDeleteDrivesRequest,
+    user_id: Annotated[str, Depends(get_current_user_id)],
+) -> DeleteDriveResponse:
+    return bulk_delete_drives(drive_ids=payload.drive_ids, user_id=user_id)
 
 
 @router.get(

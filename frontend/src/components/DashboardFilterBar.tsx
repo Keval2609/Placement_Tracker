@@ -13,6 +13,8 @@ interface DashboardFilterBarProps {
   onStatusChange: (s: string) => void;
   selectedCompanyType: string;
   onCompanyTypeChange: (t: string) => void;
+  selectedWorkMode: string;
+  onWorkModeChange: (m: string) => void;
   deadlineFilter: DeadlineFilterType;
   onDeadlineFilterChange: (d: DeadlineFilterType) => void;
   totalCount: number;
@@ -27,6 +29,8 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = ({
   onStatusChange,
   selectedCompanyType,
   onCompanyTypeChange,
+  selectedWorkMode,
+  onWorkModeChange,
   deadlineFilter,
   onDeadlineFilterChange,
   totalCount,
@@ -36,6 +40,7 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = ({
   const isFiltered =
     selectedStatus !== "all" ||
     selectedCompanyType !== "all" ||
+    selectedWorkMode !== "all" ||
     deadlineFilter !== "all";
 
   const statuses = [
@@ -53,6 +58,13 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = ({
     { id: "product", label: "Product" },
     { id: "service", label: "Service" },
     { id: "startup", label: "Startup" },
+  ];
+
+  const workModes = [
+    { id: "all", label: "All Modes" },
+    { id: "onsite", label: "Onsite" },
+    { id: "remote", label: "Remote" },
+    { id: "hybrid", label: "Hybrid" },
   ];
 
   return (
@@ -169,6 +181,30 @@ export const DashboardFilterBar: React.FC<DashboardFilterBarProps> = ({
                 )}
               >
                 {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Work Mode filter */}
+          <div
+            role="group"
+            aria-label="Filter by work mode"
+            className="inline-flex bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 p-0.5 rounded-md"
+          >
+            {workModes.map((wm) => (
+              <button
+                key={wm.id}
+                type="button"
+                aria-pressed={selectedWorkMode === wm.id}
+                onClick={() => onWorkModeChange(wm.id)}
+                className={cn(
+                  "px-2.5 py-1 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer min-h-[30px] rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tpo-cobalt",
+                  selectedWorkMode === wm.id
+                    ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
+                    : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                )}
+              >
+                {wm.label}
               </button>
             ))}
           </div>

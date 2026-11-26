@@ -23,6 +23,8 @@ You MUST respond with a single valid JSON object strictly matching this schema:
       "eligible_branches": ["CSE", "IT", "ECE"],
       "application_link": "https://...",
       "ctc_display": "₹34.5 LPA, 18.00 LPA, or null if not disclosed",
+      "location": "City/office (e.g. 'Bangalore / Hyderabad'), or null if not mentioned",
+      "work_mode": "onsite | remote | hybrid | null",
       "dates": [
         {{
           "date_type": "application_deadline",
@@ -39,7 +41,7 @@ Rules:
 1. Always wrap all extracted postings in a top-level "postings" array, even if there is only 1.
 2. Extract every distinct company posting as a separate object. Do not merge multiple companies.
 3. Use exact keys: "company_name", "role_title", "eligibility_raw", "min_cgpa",
-   "eligible_branches", "application_link", "ctc_display", "dates".
+   "eligible_branches", "application_link", "ctc_display", "location", "work_mode", "dates".
 4. For each date in "dates", use "date_type", "label", "date_iso", "date_raw".
    "date_type" must be: "application_deadline", "oa", "interview", "ppt", "result",
    "joining", or "other".
@@ -50,7 +52,8 @@ Rules:
 7. "eligibility_raw" should capture complete requirements or criteria paragraph verbatim.
 8. "ctc_display" should capture the compensation package or salary (e.g. "₹34.5 LPA",
    "18.00 LPA", "₹12-15 LPA") if mentioned, or null if not mentioned/disclosed.
-9. Output ONLY the raw JSON object. No prose, no markdown fences."""
+9. "work_mode" must be one of "onsite", "remote", "hybrid", or null if not mentioned.
+10. Output ONLY the raw JSON object. No prose, no markdown fences."""
 
 
 
@@ -76,8 +79,8 @@ Rules:
    extended to the 20th"), add it as a new entry — do not silently
    overwrite; the confirmation UI will show it as a proposed change
    against the existing value.
-3. If the new content changes eligibility, min_cgpa, ctc_display, or the application
-   link, include only the changed field(s) in `field_changes`.
+3. If the new content changes eligibility, min_cgpa, ctc_display, location, work_mode,
+   or the application link, include only the changed field(s) in `field_changes`.
 4. Write a one-line, human-readable `summary_of_changes` describing what
    this update adds (e.g. "Interview date announced: Oct 12; CGPA cutoff
    revised to 7.5").

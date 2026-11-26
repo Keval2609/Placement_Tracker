@@ -20,7 +20,7 @@ export interface DetectedDateDraft {
   is_primary_deadline?: boolean;
 }
 
-import { ApplicationStatus } from "./drive";
+import { ApplicationStatus, WorkMode } from "./drive";
 
 export interface DrivePostingDraft {
   id?: string;
@@ -32,6 +32,8 @@ export interface DrivePostingDraft {
   eligible_branches?: string[];
   application_link?: string | null;
   ctc_display?: string | null;
+  location?: string | null;
+  work_mode?: WorkMode | null;
   application_status?: ApplicationStatus;
   is_off_campus?: boolean;
   dates: DetectedDateDraft[];
@@ -46,6 +48,8 @@ export interface ExtractionAPIResponse {
     eligible_branches?: string[];
     application_link?: string | null;
     ctc_display?: string | null;
+    location?: string | null;
+    work_mode?: WorkMode | null;
     dates: {
       date_type: DateType;
       label?: string | null;

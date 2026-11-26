@@ -14,8 +14,11 @@ from app.models.drives import (  # noqa: E402
     UpdateDriveRequest,
 )
 from app.services.drive_service import (  # noqa: E402
+    bulk_delete_drives,
     clear_in_memory_db,
+    delete_drive,
     get_drive_detail,
+    list_drives_for_dashboard,
     save_drive,
     update_drive,
 )
@@ -119,4 +122,72 @@ def test_update_drive_clear_ctc() -> None:
         payload=UpdateDriveRequest(ctc_display=None),
     )
     assert updated.ctc_display is None
+
+
+def test_create_and_edit_location_and_work_mode() -> None:
+    """Drives persist location + work_mode on create and allow editing anytime."""
+    payload = CreateDriveRequest(
+        company_name="Atlassian",
+        role_title="SDE - 1",
+        location="Bangalore",
+        work_mode="hybrid",
+        is_off_campus=True,
+        dates=[],
+    )
+    res = save_drive(payload=payload, user_id="test-user-1")
+
+    detail = get_drive_detail(drive_id=res.id, user_id="test-user-1")
+    assert detail.location == "Bangalore"
+    assert detail.work_mode == "hybrid"
+
+    dashboard = list_drives_for_dashboard(user_id="test-user-1")
+    assert len(dashboard.drives) == 1
+    assert dashboard.drives[0].location == "Bangalore"
+    assert dashboard.drives[0].work_mode == "hybrid"
+
+    updated = update_drive(
+        drive_id=res.id,
+        user_id="test-user-1",
+        payload=UpdateDriveRequest(location="Remote (India)", work_mode="remote"),
+    )
+    assert updated.location == "Remote (India)"
+    assert updated.work_mode == "remote"
+
+
+def test_delete_and_bulk_delete_drives_with_isolation() -> None:
+    """delete_drive and bulk_delete_drives enforce ownership and remove drives."""
+    from fastapi import HTTPException
+
+    d1 = create_sample_drive(user_id="test-user-1")
+    d2 = save_drive(
+        payload=CreateDriveRequest(
+            company_name="Stripe",
+            role_title="Backend",
+            is_off_campus=True,
+            dates=[],
+        ),
+        user_id="test-user-1",
+    ).id
+    other_user_drive = create_sample_drive(user_id="other-user-2")
+
+    # Cross-tenant delete must fail with 404
+    with pytest.raises(HTTPException) as exc_info:
+        delete_drive(drive_id=other_user_drive, user_id="test-user-1")
+    assert exc_info.value.status_code == 404
+
+    # Single delete
+    delete_drive(drive_id=d1, user_id="test-user-1")
+    with pytest.raises(HTTPException) as exc_info:
+        get_drive_detail(drive_id=d1, user_id="test-user-1")
+    assert exc_info.value.status_code == 404
+
+    # Bulk delete skips non-owned / already-deleted IDs and deletes owned ones
+    bulk_res = bulk_delete_drives(
+        drive_ids=[d1, d2, other_user_drive],
+        user_id="test-user-1",
+    )
+    assert bulk_res.deleted_count == 1
+    assert bulk_res.deleted_ids == [d2]
+    assert list_drives_for_dashboard(user_id="test-user-1").drives == []
+    assert len(list_drives_for_dashboard(user_id="other-user-2").drives) == 1
 

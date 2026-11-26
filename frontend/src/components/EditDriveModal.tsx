@@ -10,8 +10,9 @@ import {
   Check,
   AlertCircle,
   Loader2,
+  MapPin,
 } from "lucide-react";
-import { DriveDetail, UpdateDrivePayload } from "../types/drive";
+import { DriveDetail, UpdateDrivePayload, WorkMode } from "../types/drive";
 import { updateDrive } from "../services/api";
 
 interface EditDriveModalProps {
@@ -32,6 +33,8 @@ export const EditDriveModal: React.FC<EditDriveModalProps> = ({
   const [minCgpa, setMinCgpa] = useState("");
   const [eligibleBranchesText, setEligibleBranchesText] = useState("");
   const [applicationLink, setApplicationLink] = useState("");
+  const [locationText, setLocationText] = useState("");
+  const [workMode, setWorkMode] = useState<WorkMode | null>(null);
   const [jobDescription, setJobDescription] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
@@ -49,6 +52,8 @@ export const EditDriveModal: React.FC<EditDriveModalProps> = ({
           : ""
       );
       setApplicationLink(drive.application_link || "");
+      setLocationText(drive.location || "");
+      setWorkMode(drive.work_mode || null);
       setJobDescription(drive.job_description || drive.eligibility_raw || "");
       setError(null);
     }
@@ -90,6 +95,8 @@ export const EditDriveModal: React.FC<EditDriveModalProps> = ({
         min_cgpa: minCgpa ? parseFloat(minCgpa) : null,
         eligible_branches: branches,
         application_link: applicationLink.trim() || null,
+        location: locationText.trim() || null,
+        work_mode: workMode,
         job_description: jobDescription.trim() || null,
         eligibility_raw: jobDescription.trim() || null,
       };
@@ -220,6 +227,50 @@ export const EditDriveModal: React.FC<EditDriveModalProps> = ({
                 className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-tpo-cobalt dark:focus:border-blue-400"
                 disabled={isLoading}
               />
+            </div>
+
+            {/* Job Location & Work Mode */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
+                <span>Job Location (City / Office)</span>
+              </label>
+              <input
+                type="text"
+                value={locationText}
+                onChange={(e) => setLocationText(e.target.value)}
+                placeholder="e.g. Bangalore / Hyderabad"
+                className="w-full px-3.5 py-2.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-tpo-cobalt dark:focus:border-blue-400"
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-[0.5px] text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-tpo-cobalt dark:text-blue-400" />
+                <span>Work Mode</span>
+              </label>
+              <div className="inline-flex w-full bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 p-1 rounded-md gap-1">
+                {(["onsite", "remote", "hybrid"] as WorkMode[]).map((mode) => {
+                  const isSelected = workMode === mode;
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      disabled={isLoading}
+                      aria-pressed={isSelected}
+                      onClick={() => setWorkMode(isSelected ? null : mode)}
+                      className={`flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors cursor-pointer ${
+                        isSelected
+                          ? "bg-tpo-cobalt text-white shadow-xs"
+                          : "text-neutral-700 dark:text-neutral-300 hover:bg-white dark:hover:bg-neutral-700"
+                      }`}
+                    >
+                      {mode}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Application Portal Link */}

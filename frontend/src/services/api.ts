@@ -145,6 +145,36 @@ export async function updateDrive(
   return response.json();
 }
 
+export async function deleteDrive(id: string): Promise<void> {
+  const response = await apiFetch(`${API_BASE_URL}/drives/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Failed to delete drive (${response.status})`);
+  }
+}
+
+export async function bulkDeleteDrives(
+  driveIds: string[]
+): Promise<{ deleted_count: number; deleted_ids: string[] }> {
+  const response = await apiFetch(`${API_BASE_URL}/drives/bulk-delete`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ drive_ids: driveIds }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Failed to delete drives (${response.status})`);
+  }
+
+  return response.json();
+}
+
 export async function fetchDriveTimeline(id: string): Promise<TimelineEvent[]> {
   const response = await apiFetch(`${API_BASE_URL}/drives/${id}/timeline`);
   if (!response.ok) {

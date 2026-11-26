@@ -28,6 +28,7 @@ from app.models.drives import (
     ConfirmUpdatePayload,
     ConfirmUpdateResponse,
     CreateDriveRequest,
+    DeleteDriveResponse,
     DocumentItem,
     DriveCardResponse,
     DriveDateSaved,
@@ -69,6 +70,7 @@ ALLOWED_DRIVE_FIELDS = {
     "eligible_branches",
     "ctc_display",
     "location",
+    "work_mode",
 }
 
 _VALID_DATE_TYPES = {
@@ -385,6 +387,7 @@ def save_drive(
         "application_link": payload.application_link,
         "ctc_display": payload.ctc_display,
         "location": payload.location,
+        "work_mode": payload.work_mode,
         "status": "confirmed",
         "created_at": now_iso,
     }
@@ -912,6 +915,7 @@ def get_drive_detail(drive_id: str, user_id: str) -> DriveDetailResponse:
         application_link=drive_data.get("application_link"),
         ctc_display=drive_data.get("ctc_display"),
         location=drive_data.get("location"),
+        work_mode=drive_data.get("work_mode"),
         status=drive_data.get("status", "confirmed"),
         application_status=app_status,
         application_id=app_id,
@@ -1161,6 +1165,7 @@ def list_drives_for_dashboard(user_id: str) -> DriveListResponse:
                 created_at=d.get("created_at", now_dt.isoformat()),
                 ctc_display=d.get("ctc_display"),
                 location=d.get("location"),
+                work_mode=d.get("work_mode"),
             )
         )
 
@@ -1349,3 +1354,75 @@ def update_drive(
                     _in_memory_drives[drive_id][k] = v
 
     return get_drive_detail(drive_id=drive_id, user_id=user_id)
+
+
+def _delete_drive_storage_files(supabase: Any, drive_id: str) -> None:
+    """Best-effort removal of uploaded documents for a drive from Supabase Storage."""
+    try:
+        docs_res = (
+            supabase.table("drive_documents")
+            .select("storage_path")
+            .eq("drive_id", drive_id)
+            .execute()
+        )
+        paths = [row["storage_path"] for row in (docs_res.data or []) if row.get("storage_path")]
+        if paths:
+            supabase.storage.from_("drive-documents").remove(paths)
+    except Exception as err:
+        logger.warning("Failed cleaning up storage files for drive %s: %s", drive_id, err)
+
+
+def _delete_in_memory_drive(drive_id: str) -> None:
+    """Remove all in-memory records associated with a deleted drive."""
+    _in_memory_drives.pop(drive_id, None)
+    _in_memory_dates[:] = [d for d in _in_memory_dates if d.get("drive_id") != drive_id]
+    _in_memory_documents[:] = [d for d in _in_memory_documents if d.get("drive_id") != drive_id]
+    _in_memory_updates[:] = [u for u in _in_memory_updates if u.get("drive_id") != drive_id]
+    app_row = _in_memory_applications.pop(drive_id, None)
+    if app_row and app_row.get("id"):
+        _in_memory_applications.pop(app_row["id"], None)
+
+
+def delete_drive(drive_id: str, user_id: str) -> None:
+    """Permanently delete a drive owned by user_id and its associated files."""
+    _ = get_drive_detail(drive_id=drive_id, user_id=user_id)
+
+    use_supabase = _use_supabase()
+    if use_supabase:
+        try:
+            supabase = get_service_client()
+            _delete_drive_storage_files(supabase, drive_id)
+            (
+                supabase.table("drives")
+                .delete()
+                .eq("id", drive_id)
+                .eq("user_id", user_id)
+                .execute()
+            )
+        except HTTPException:
+            raise
+        except Exception as err:
+            logger.error("Failed deleting drive %s in Supabase: %s", drive_id, err)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed deleting placement drive.",
+            ) from err
+    else:
+        _delete_in_memory_drive(drive_id)
+
+
+def bulk_delete_drives(drive_ids: list[str], user_id: str) -> DeleteDriveResponse:
+    """Delete multiple drives owned by user_id, skipping any not found or not owned."""
+    unique_ids = list(dict.fromkeys(drive_ids))
+    deleted_ids: list[str] = []
+
+    for did in unique_ids:
+        try:
+            delete_drive(drive_id=did, user_id=user_id)
+            deleted_ids.append(did)
+        except HTTPException as err:
+            if err.status_code == status.HTTP_404_NOT_FOUND:
+                continue
+            raise
+
+    return DeleteDriveResponse(deleted_count=len(deleted_ids), deleted_ids=deleted_ids)

@@ -74,8 +74,13 @@ export const DashboardTableView: React.FC<DashboardTableViewProps> = ({
                       <div className="font-serif font-bold text-sm text-neutral-900 dark:text-white group-hover:text-tpo-cobalt transition-colors">
                         {drive.company_name}
                       </div>
-                      <div className="text-xs font-normal text-neutral-600 dark:text-neutral-400">
-                        {drive.role_title}
+                      <div className="text-xs font-normal text-neutral-600 dark:text-neutral-400 flex items-center gap-1.5 flex-wrap">
+                        <span>{drive.role_title}</span>
+                        {drive.work_mode && (
+                          <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-blue-50 dark:bg-blue-950/40 text-tpo-cobalt dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                            {drive.work_mode}
+                          </span>
+                        )}
                       </div>
                     </td>
 

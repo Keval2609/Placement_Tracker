@@ -178,11 +178,16 @@ export const DriveCardComponent: React.FC<DriveCardComponentProps> = ({
               {drive.role_title}
             </p>
 
-            <div className="flex items-center gap-2 text-[11px] text-neutral-600 dark:text-neutral-400">
+            <div className="flex items-center gap-2 text-[11px] text-neutral-600 dark:text-neutral-400 flex-wrap">
               <span className="flex items-center gap-1 font-medium truncate">
                 <MapPin className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
                 <span className="truncate">{drive.location || "Campus / Remote"}</span>
               </span>
+              {drive.work_mode && (
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-blue-50 dark:bg-blue-950/40 text-tpo-cobalt dark:text-blue-300 border border-blue-200 dark:border-blue-800 shrink-0">
+                  {drive.work_mode}
+                </span>
+              )}
             </div>
           </div>
         </div>
