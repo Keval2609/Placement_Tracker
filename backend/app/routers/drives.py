@@ -6,6 +6,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse, Response
+from pydantic import ValidationError
 
 from app.dependencies import get_current_user_id
 from app.models.drives import (
@@ -97,9 +98,21 @@ async def create_drive(
             dates_raw = form.get("dates")
             if dates_raw and isinstance(dates_raw, str):
                 payload_dict["dates"] = json.loads(dates_raw)
-            payload = CreateDriveRequest.model_validate(payload_dict)
+            try:
+                payload = CreateDriveRequest.model_validate(payload_dict)
+            except ValidationError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    detail=exc.errors(),
+                ) from exc
         else:
-            payload = CreateDriveRequest.model_validate_json(payload_raw)
+            try:
+                payload = CreateDriveRequest.model_validate_json(payload_raw)
+            except ValidationError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    detail=exc.errors(),
+                ) from exc
 
         uploaded_file = form.get("file")
         if uploaded_file and hasattr(uploaded_file, "read"):
@@ -113,7 +126,13 @@ async def create_drive(
                 )
     else:
         body_bytes = await request.body()
-        payload = CreateDriveRequest.model_validate_json(body_bytes)
+        try:
+            payload = CreateDriveRequest.model_validate_json(body_bytes)
+        except ValidationError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail=exc.errors(),
+            ) from exc
 
     try:
         response = await asyncio.to_thread(
