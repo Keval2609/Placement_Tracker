@@ -82,7 +82,7 @@ def test_save_drive_supabase_flow(mock_get_client: MagicMock, mock_settings: Mag
     resp = save_drive(
         payload=payload,
         user_id="user123",
-        file_bytes=b"dummy content",
+        file_bytes=b"%PDF-1.7 dummy content",
         filename="jd.pdf",
         content_type="application/pdf",
     )
@@ -92,6 +92,15 @@ def test_save_drive_supabase_flow(mock_get_client: MagicMock, mock_settings: Mag
     mock_client.storage.from_().upload.assert_called_once()
     mock_client.rpc.assert_called_once()
     assert mock_client.rpc.call_args[0][0] == "create_drive_atomic"
+
+    duplicate_error = RuntimeError("Duplicate drive")
+    duplicate_error.code = "P4090"
+    duplicate_error.details = "existing-drive-id"
+    mock_client.rpc.return_value.execute.side_effect = duplicate_error
+    with pytest.raises(HTTPException) as exc:
+        save_drive(payload=payload, user_id="user123")
+    assert exc.value.status_code == 409
+    assert exc.value.detail["existing_drive_id"] == "existing-drive-id"
 
 
 @patch("app.services.drive_service.get_settings")

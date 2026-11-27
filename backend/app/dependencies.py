@@ -92,6 +92,12 @@ def validate_startup_config() -> None:
         missing.append("VAPID_PUBLIC_KEY")
     if not settings.vapid_private_key.strip():
         missing.append("VAPID_PRIVATE_KEY")
+    if settings.llm_provider.strip().lower() == "groq" and not settings.groq_api_key.strip():
+        missing.append("GROQ_API_KEY")
+    if not settings.clerk_issuer.strip():
+        missing.append("CLERK_ISSUER")
+    if not settings.clerk_authorized_party_list:
+        missing.append("CLERK_AUTHORIZED_PARTIES")
 
     if missing:
         raise RuntimeError(
@@ -124,12 +130,18 @@ def get_current_user_id(
             jwk_client = get_jwk_client(force_refresh=True)
             signing_key = jwk_client.get_signing_key_from_jwt(token)
 
+        settings = get_settings()
+        if not settings.clerk_issuer or not settings.clerk_authorized_party_list:
+            raise HTTPException(status_code=503, detail="Authentication is not configured.")
         payload = jwt.decode(
             token,
             signing_key.key,
             algorithms=["RS256"],
+            issuer=settings.clerk_issuer,
             options={"verify_aud": False},
         )
+        if "azp" in payload and payload["azp"] not in settings.clerk_authorized_party_list:
+            raise jwt.InvalidTokenError("Unauthorized token origin")
         sub = payload.get("sub")
         if not sub or not isinstance(sub, str):
             raise HTTPException(status_code=401, detail="Token missing valid 'sub' claim")

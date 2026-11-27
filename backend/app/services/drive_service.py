@@ -43,7 +43,7 @@ from app.models.drives import (
 from app.models.extraction import DriveUpdateDraftResponse
 from app.services.company_classifier import classify_company
 from app.services.llm import extract_update_diff
-from app.services.parsers import validate_and_parse_file
+from app.services.parsers import validate_and_parse_file, validate_document_signature
 from app.supabase_client import get_service_client
 
 logger = logging.getLogger(__name__)
@@ -232,6 +232,13 @@ def save_drive(
     """Save confirmed drive data and attached document atomically."""
     settings = get_settings()
     now_iso = datetime.now(KOLKATA_TZ).isoformat()
+
+    if file_bytes is not None:
+        kind = validate_document_signature(file_bytes)
+        content_type = (
+            "application/pdf" if kind == "pdf"
+            else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
 
     payload.dates = validate_and_normalize_deadlines(
         payload.dates, is_off_campus=payload.is_off_campus
@@ -458,6 +465,17 @@ def save_drive(
             ).execute()
         except Exception as err:
             logger.error("Failed atomic drive creation in Supabase: %s", err)
+            if getattr(err, "code", None) == "P4090":
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail={
+                        "message": (
+                            "A drive with matching company, role, and primary deadline "
+                            "already exists."
+                        ),
+                        "existing_drive_id": getattr(err, "details", None),
+                    },
+                ) from err
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to save drive to database.",

@@ -1,6 +1,7 @@
 """File parsing utilities for PDF and DOCX documents (PRD Section 1.3.2 & 2.2)."""
 
 import io
+import zipfile
 from typing import Literal
 
 import docx
@@ -14,6 +15,24 @@ ALLOWED_MIME_TYPES = {
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "application/msword",
 }
+
+
+def validate_document_signature(content: bytes) -> Literal["pdf", "docx"]:
+    """Identify supported documents from bytes rather than upload metadata."""
+    if len(content) > MAX_FILE_SIZE_BYTES:
+        raise HTTPException(status_code=400, detail="File size exceeds the 10MB limit.")
+    if content.startswith(b"%PDF-"):
+        return "pdf"
+    try:
+        with zipfile.ZipFile(io.BytesIO(content)) as archive:
+            names = set(archive.namelist())
+            if {"[Content_Types].xml", "_rels/.rels", "word/document.xml"} <= names:
+                return "docx"
+    except (zipfile.BadZipFile, OSError):
+        pass
+    raise HTTPException(
+        status_code=400, detail="Unsupported file type. Only PDF and DOCX are supported."
+    )
 
 
 def parse_pdf(file_bytes: bytes) -> str:
@@ -72,10 +91,9 @@ def validate_and_parse_file(
             detail="File size exceeds the 10MB limit.",
         )
 
-    filename = (file.filename or "").lower()
-    content_type = (file.content_type or "").lower()
+    document_type = validate_document_signature(content)
 
-    if filename.endswith(".pdf") or content_type == "application/pdf":
+    if document_type == "pdf":
         try:
             parsed_text = parse_pdf(content)
             return parsed_text, "pdf"
@@ -85,10 +103,7 @@ def validate_and_parse_file(
                 detail=f"Failed to parse PDF file: {err}",
             ) from err
 
-    elif (
-        filename.endswith(".docx")
-        or content_type in ALLOWED_MIME_TYPES
-    ):
+    elif document_type == "docx":
         try:
             parsed_text = parse_docx(content)
             return parsed_text, "docx"
