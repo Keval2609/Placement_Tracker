@@ -16,6 +16,12 @@ class Settings(BaseSettings):
     supabase_url: str = ""
     supabase_anon_key: str = ""
     supabase_service_role_key: str = ""
+    clerk_issuer: str = ""
+    clerk_authorized_parties: str = ""
+
+    @property
+    def clerk_authorized_party_list(self) -> list[str]:
+        return [p.strip() for p in self.clerk_authorized_parties.split(",") if p.strip()]
 
     # LLM Provider Configuration
     llm_provider: str = "groq"

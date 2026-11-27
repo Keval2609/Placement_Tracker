@@ -7,6 +7,8 @@ import json
 import os
 import pathlib
 import uuid
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 
 import pytest
 
@@ -54,6 +56,42 @@ def _create_company(conn, name: str = "Acme Corp") -> str:
         )
         cur.execute("SELECT id FROM companies WHERE name_key = lower(btrim(%s))", (name,))
         return str(cur.fetchone()[0])
+
+
+def test_concurrent_drive_dedup(pg_conn):
+    """Separate concurrent transactions must create exactly one matching drive."""
+    import psycopg
+
+    company_id = _create_company(pg_conn, "Concurrent Dedup Corp")
+    start = Barrier(2)
+
+    def create():
+        drive_id = str(uuid.uuid4())
+        drive = {"id": drive_id, "user_id": "dedup_user", "company_id": company_id,
+                 "role_title": " Engineer "}
+        dates = [{"id": str(uuid.uuid4()), "drive_id": drive_id,
+                  "date_type": "application_deadline", "source": "user_added",
+                  "date_iso": "2026-12-01T12:00:00+05:30",
+                  "confirmed_by_user": True, "is_primary_deadline": True}]
+        application = {"id": str(uuid.uuid4()), "drive_id": drive_id}
+        with psycopg.connect(DATABASE_URL, autocommit=True) as conn:
+            conn.execute("SET statement_timeout = '10s'")
+            start.wait(timeout=10)
+            try:
+                conn.execute("SELECT create_drive_atomic(%s::jsonb,%s::jsonb,%s::jsonb,NULL)",
+                             (json.dumps(drive), json.dumps(dates), json.dumps(application)))
+                return "created", drive_id
+            except psycopg.Error as exc:
+                assert exc.sqlstate == "P4090"
+                return "duplicate", exc.diag.message_detail
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(lambda _: create(), range(2)))
+    assert sorted(r[0] for r in results) == ["created", "duplicate"]
+    assert results[0][1] == results[1][1]
+    with pg_conn.cursor() as cur:
+        cur.execute("SELECT count(*) FROM drives WHERE company_id = %s", (company_id,))
+        assert cur.fetchone()[0] == 1
 
 
 def test_create_drive_atomic_rollback_on_bad_date(pg_conn) -> None:
